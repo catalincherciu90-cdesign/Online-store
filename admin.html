@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin | Acoperiș PRO</title>
+  <meta name="robots" content="noindex">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23e07b39' d='M12 3 2 12h3v8h14v-8h3z'/%3E%3C/svg%3E">
+  <style>
+    .admin-top { background: var(--ink); color: #fff; }
+    .admin-top .container { display: flex; align-items: center; justify-content: space-between; height: 60px; }
+    .admin-top .logo { color: #fff; } .admin-top .logo b { color: var(--terra); }
+    .admin-tabs { display: flex; gap: 6px; border-bottom: 1px solid var(--line); margin: 24px 0; }
+    .admin-tabs button { padding: 12px 18px; border: 0; background: none; font-family: inherit; font-size: .98rem; font-weight: 600; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; }
+    .admin-tabs button.active { color: var(--navy); border-bottom-color: var(--terra); }
+    .a-table { width: 100%; border-collapse: collapse; background: #fff; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+    .a-table th, .a-table td { text-align: left; padding: 11px 14px; border-bottom: 1px solid var(--line); font-size: .92rem; vertical-align: top; }
+    .a-table th { background: var(--bg); font-size: .78rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+    .a-table tr:last-child td { border-bottom: 0; }
+    .a-actions { display: flex; gap: 8px; }
+    .a-btn-sm { padding: 6px 12px; font-size: .85rem; border-radius: 8px; border: 1px solid var(--line-strong); background: #fff; cursor: pointer; font-family: inherit; }
+    .a-btn-sm:hover { border-color: var(--navy); }
+    .a-btn-sm.danger { color: var(--danger); }
+    .a-btn-sm.danger:hover { border-color: var(--danger); background: #fdecec; }
+    .login-wrap { max-width: 400px; margin: 60px auto; background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 32px; box-shadow: var(--shadow); }
+    .overlay { position: fixed; inset: 0; background: rgba(11,22,38,.5); display: none; align-items: flex-start; justify-content: center; padding: 40px 16px; overflow: auto; z-index: 60; }
+    .overlay.open { display: flex; }
+    .modal { background: #fff; border-radius: var(--radius); padding: 26px; width: 100%; max-width: 560px; }
+    .badge-pill { display: inline-block; padding: 2px 9px; border-radius: 20px; font-size: .74rem; font-weight: 700; background: var(--accent-soft); color: var(--terra-dark); }
+    .muted-sm { color: var(--muted); font-size: .85rem; }
+    .toolbar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; align-items: center; }
+    .toolbar .grow { flex: 1; }
+    .a-empty { padding: 40px; text-align: center; color: var(--muted); }
+  </style>
+</head>
+<body>
+
+  <div class="admin-top">
+    <div class="container">
+      <a href="index.html" class="logo">Acoperiș<b>PRO</b> · Admin</a>
+      <div id="whoami" style="display:none;align-items:center;gap:14px">
+        <span class="muted-sm" style="color:#aeb9c9" id="admin-user"></span>
+        <button class="a-btn-sm" onclick="logout()">Ieșire</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- LOGIN -->
+  <div id="login-view" class="container">
+    <div class="login-wrap">
+      <h2 style="margin-bottom:6px">Autentificare admin</h2>
+      <p class="muted-sm" style="margin-bottom:20px">Panou de administrare Acoperiș PRO.</p>
+      <form id="login-form" class="checkout-form" onsubmit="doLogin(event)">
+        <div class="field"><label>Utilizator</label><input name="user" value="admin" required></div>
+        <div class="field"><label>Parolă</label><input name="password" type="password" required></div>
+        <button class="btn btn-primary btn-block btn-lg" style="margin-top:6px">Intră</button>
+        <div class="form-status" id="login-status"></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div id="dash-view" class="container" style="display:none;padding-bottom:60px">
+    <div class="admin-tabs">
+      <button class="active" data-tab="produse" onclick="showTab('produse')">Produse</button>
+      <button data-tab="comenzi" onclick="showTab('comenzi')">Comenzi</button>
+      <button data-tab="cereri" onclick="showTab('cereri')">Cereri ofertă</button>
+    </div>
+
+    <div id="tab-produse">
+      <div class="toolbar">
+        <h2 class="grow" style="font-size:1.3rem">Produse</h2>
+        <button class="a-btn-sm" onclick="seedFromCatalog()">⭳ Importă din catalog</button>
+        <button class="btn btn-primary" style="padding:9px 16px" onclick="openEditor()">+ Produs nou</button>
+      </div>
+      <div id="products-box"></div>
+    </div>
+
+    <div id="tab-comenzi" style="display:none">
+      <h2 style="font-size:1.3rem;margin-bottom:16px">Comenzi</h2>
+      <div id="orders-box"></div>
+    </div>
+
+    <div id="tab-cereri" style="display:none">
+      <h2 style="font-size:1.3rem;margin-bottom:16px">Cereri de ofertă</h2>
+      <div id="quotes-box"></div>
+    </div>
+  </div>
+
+  <!-- EDITOR PRODUS -->
+  <div class="overlay" id="editor">
+    <div class="modal">
+      <h3 id="editor-title" style="margin-bottom:18px">Produs</h3>
+      <form class="checkout-form" id="prod-form" onsubmit="saveProduct(event)">
+        <div class="form-row">
+          <div class="field"><label>ID (unic) *</label><input name="id" required></div>
+          <div class="field"><label>Categorie *</label><select name="cat" id="f-cat" required></select></div>
+        </div>
+        <div class="field full"><label>Nume *</label><input name="name" required></div>
+        <div class="form-row">
+          <div class="field"><label>Preț *</label><input name="price" type="number" step="0.01" required></div>
+          <div class="field"><label>Unitate</label><input name="unit" value="mp"></div>
+        </div>
+        <div class="field full"><label>Badge (opțional)</label><input name="badge" placeholder="Best seller / Premium / Nou"></div>
+        <div class="field full"><label>Descriere</label><textarea name="desc" rows="2"></textarea></div>
+        <div class="field full"><label>Specificații (câte una pe linie: „Cheie: valoare")</label><textarea name="specs" rows="4" placeholder="Grosime: 0.5 mm&#10;Garanție: 15 ani"></textarea></div>
+        <div class="field full">
+          <label>Opțiuni de personalizare</label>
+          <select name="optmode" id="f-optmode" onchange="toggleOptChecks()">
+            <option value="default">Implicit (după categorie)</option>
+            <option value="custom">Personalizat</option>
+            <option value="none">Fără opțiuni</option>
+          </select>
+          <div id="opt-checks" style="display:none;gap:14px;margin-top:8px">
+            <label class="filter-opt"><input type="checkbox" value="finisaj"> Finisaj</label>
+            <label class="filter-opt"><input type="checkbox" value="grosime"> Grosime</label>
+            <label class="filter-opt"><input type="checkbox" value="culoare"> Culoare</label>
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:8px">
+          <button class="btn btn-primary" style="flex:1">Salvează</button>
+          <button type="button" class="btn btn-outline" onclick="closeEditor()">Anulează</button>
+        </div>
+        <div class="form-status" id="editor-status"></div>
+      </form>
+    </div>
+  </div>
+
+  <script src="assets/js/data.js"></script>
+  <script>
+    const TKEY = 'acoperispro_admin_token';
+    const token = () => localStorage.getItem(TKEY);
+    const fmt = v => new Intl.NumberFormat('ro-RO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(v) || 0) + ' lei';
+    const esc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+    async function api(path, opts = {}) {
+      const res = await fetch('/api' + path, {
+        ...opts,
+        headers: { 'Content-Type': 'application/json', ...(token() ? { Authorization: 'Bearer ' + token() } : {}), ...(opts.headers || {}) },
+      });
+      if (res.status === 401) { logout(); throw new Error('Sesiune expirată'); }
+      return res;
+    }
+
+    // ── Auth ──
+    async function doLogin(e) {
+      e.preventDefault();
+      const fd = Object.fromEntries(new FormData(e.target).entries());
+      const st = document.getElementById('login-status');
+      try {
+        const res = await fetch('/api/admin/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(fd) });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok && data.token) { localStorage.setItem(TKEY, data.token); enterDash(); }
+        else { st.className = 'form-status err'; st.textContent = data.error || 'Autentificare eșuată.'; }
+      } catch { st.className = 'form-status err'; st.textContent = 'Eroare de rețea.'; }
+    }
+    function logout() { localStorage.removeItem(TKEY); location.reload(); }
+
+    function enterDash() {
+      document.getElementById('login-view').style.display = 'none';
+      document.getElementById('dash-view').style.display = 'block';
+      document.getElementById('whoami').style.display = 'flex';
+      document.getElementById('admin-user').textContent = 'Conectat';
+      loadProducts(); loadOrders(); loadQuotes();
+    }
+
+    function showTab(t) {
+      ['produse', 'comenzi', 'cereri'].forEach(x => {
+        document.getElementById('tab-' + x).style.display = x === t ? 'block' : 'none';
+        document.querySelector(`.admin-tabs [data-tab="${x}"]`).classList.toggle('active', x === t);
+      });
+    }
+
+    // ── Produse ──
+    async function loadProducts() {
+      const box = document.getElementById('products-box');
+      try {
+        const res = await api('/products'); const list = await res.json();
+        if (!Array.isArray(list) || !list.length) {
+          box.innerHTML = `<div class="a-empty">Niciun produs în baza de date. Apasă „Importă din catalog" ca să populezi din catalogul existent.</div>`;
+          return;
+        }
+        box.innerHTML = `<table class="a-table"><thead><tr><th>Nume</th><th>Categorie</th><th>Preț</th><th>Badge</th><th></th></tr></thead><tbody>${
+          list.map(p => `<tr>
+            <td><b>${esc(p.name)}</b><br><span class="muted-sm">${esc(p.id)}</span></td>
+            <td>${esc(categoryName(p.cat))}</td>
+            <td>${fmt(p.price)} <span class="muted-sm">/ ${esc(p.unit)}</span></td>
+            <td>${p.badge ? `<span class="badge-pill">${esc(p.badge)}</span>` : '—'}</td>
+            <td><div class="a-actions">
+              <button class="a-btn-sm" onclick='openEditor(${JSON.stringify(p).replace(/'/g, "&#39;")})'>Editează</button>
+              <button class="a-btn-sm danger" onclick="delProduct('${esc(p.id)}')">Șterge</button>
+            </div></td></tr>`).join('')
+        }</tbody></table>`;
+      } catch (e) { box.innerHTML = `<div class="a-empty">Eroare la încărcare. Verifică configurarea D1.</div>`; }
+    }
+
+    async function seedFromCatalog() {
+      if (!confirm('Importă cele ' + PRODUCTS.length + ' produse din catalog în baza de date?')) return;
+      try {
+        const res = await api('/admin/seed', { method: 'POST', body: JSON.stringify({ products: PRODUCTS }) });
+        const d = await res.json();
+        alert(d.ok ? `Importate: ${d.imported} produse.` : (d.error || 'Eroare.'));
+        loadProducts();
+      } catch (e) { alert('Eroare: ' + e.message); }
+    }
+
+    function specsToText(specs) { return Object.entries(specs || {}).map(([k, v]) => `${k}: ${v}`).join('\n'); }
+    function textToSpecs(t) {
+      const o = {};
+      (t || '').split('\n').forEach(line => { const i = line.indexOf(':'); if (i > 0) o[line.slice(0, i).trim()] = line.slice(i + 1).trim(); });
+      return o;
+    }
+    function toggleOptChecks() {
+      document.getElementById('opt-checks').style.display = document.getElementById('f-optmode').value === 'custom' ? 'flex' : 'none';
+    }
+
+    function openEditor(p) {
+      const f = document.getElementById('prod-form');
+      f.reset();
+      document.getElementById('editor-status').className = 'form-status';
+      document.getElementById('f-cat').innerHTML = CATEGORIES.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+      document.getElementById('editor-title').textContent = p ? 'Editează produs' : 'Produs nou';
+      f.id.readOnly = !!p;
+      if (p) {
+        f.id.value = p.id; f.cat.value = p.cat; f.name.value = p.name; f.price.value = p.price;
+        f.unit.value = p.unit || 'mp'; f.badge.value = p.badge || ''; f.desc.value = p.desc || '';
+        f.specs.value = specsToText(p.specs);
+        if (p.options === undefined) f.optmode.value = 'default';
+        else if (p.options.length === 0) f.optmode.value = 'none';
+        else { f.optmode.value = 'custom'; p.options.forEach(g => { const c = f.querySelector(`#opt-checks input[value="${g}"]`); if (c) c.checked = true; }); }
+      } else { f.optmode.value = 'default'; }
+      toggleOptChecks();
+      document.getElementById('editor').classList.add('open');
+    }
+    function closeEditor() { document.getElementById('editor').classList.remove('open'); }
+
+    async function saveProduct(e) {
+      e.preventDefault();
+      const f = e.target;
+      const mode = f.optmode.value;
+      let options;
+      if (mode === 'none') options = [];
+      else if (mode === 'custom') options = [...f.querySelectorAll('#opt-checks input:checked')].map(c => c.value);
+      else options = undefined;
+      const body = {
+        id: f.id.value.trim(), cat: f.cat.value, name: f.name.value.trim(),
+        price: parseFloat(f.price.value), unit: f.unit.value.trim() || 'mp',
+        badge: f.badge.value.trim() || null, desc: f.desc.value.trim(),
+        specs: textToSpecs(f.specs.value), options,
+      };
+      const isEdit = f.id.readOnly;
+      try {
+        const res = await api(isEdit ? '/products/' + encodeURIComponent(body.id) : '/products',
+          { method: isEdit ? 'PUT' : 'POST', body: JSON.stringify(body) });
+        const d = await res.json();
+        if (d.ok) { closeEditor(); loadProducts(); }
+        else { const st = document.getElementById('editor-status'); st.className = 'form-status err'; st.textContent = d.error || 'Eroare la salvare.'; }
+      } catch (err) { const st = document.getElementById('editor-status'); st.className = 'form-status err'; st.textContent = err.message; }
+    }
+
+    async function delProduct(id) {
+      if (!confirm('Ștergi produsul „' + id + '"?')) return;
+      try { await api('/products/' + encodeURIComponent(id), { method: 'DELETE' }); loadProducts(); }
+      catch (e) { alert('Eroare: ' + e.message); }
+    }
+
+    // ── Comenzi ──
+    async function loadOrders() {
+      const box = document.getElementById('orders-box');
+      try {
+        const res = await api('/orders'); const list = await res.json();
+        if (!list.length) { box.innerHTML = `<div class="a-empty">Nicio comandă încă.</div>`; return; }
+        box.innerHTML = `<table class="a-table"><thead><tr><th>Ref</th><th>Client</th><th>Contact</th><th>Produse</th><th>Total</th><th>Data</th></tr></thead><tbody>${
+          list.map(o => `<tr>
+            <td><b>${esc(o.ref)}</b></td>
+            <td>${esc(o.prenume)} ${esc(o.nume)}<br><span class="muted-sm">${esc(o.adresa)}, ${esc(o.oras)}</span></td>
+            <td>${esc(o.telefon)}<br><span class="muted-sm">${esc(o.email)}</span></td>
+            <td class="muted-sm">${(o.items || []).map(i => `${esc(i.cant)}× ${esc(i.nume)}${i.optiuni ? ` <em>(${esc(i.optiuni)})</em>` : ''}`).join('<br>')}</td>
+            <td><b>${fmt(o.total)}</b></td>
+            <td class="muted-sm">${esc((o.created_at || '').replace('T', ' ').slice(0, 16))}</td></tr>`).join('')
+        }</tbody></table>`;
+      } catch (e) { box.innerHTML = `<div class="a-empty">Eroare la încărcare.</div>`; }
+    }
+
+    // ── Cereri ──
+    async function loadQuotes() {
+      const box = document.getElementById('quotes-box');
+      try {
+        const res = await api('/quotes'); const list = await res.json();
+        if (!list.length) { box.innerHTML = `<div class="a-empty">Nicio cerere încă.</div>`; return; }
+        box.innerHTML = `<table class="a-table"><thead><tr><th>Ref</th><th>Nume</th><th>Contact</th><th>Proiect</th><th>Plan</th><th>Data</th></tr></thead><tbody>${
+          list.map(q => `<tr>
+            <td><b>${esc(q.ref)}</b></td>
+            <td>${esc(q.nume)}</td>
+            <td>${esc(q.telefon)}<br><span class="muted-sm">${esc(q.email)}</span></td>
+            <td>${esc(q.tip)} ${q.suprafata ? `<span class="muted-sm">· ${esc(q.suprafata)} mp</span>` : ''}<br><span class="muted-sm">${esc((q.mesaj || '').slice(0, 80))}</span></td>
+            <td class="muted-sm">${esc(q.plan || '—')}</td>
+            <td class="muted-sm">${esc((q.created_at || '').replace('T', ' ').slice(0, 16))}</td></tr>`).join('')
+        }</tbody></table>`;
+      } catch (e) { box.innerHTML = `<div class="a-empty">Eroare la încărcare.</div>`; }
+    }
+
+    // init
+    if (token()) enterDash();
+  </script>
+</body>
+</html>

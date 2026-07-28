@@ -91,6 +91,16 @@ export async function onRequestPost({ request, env }) {
   // Log (vizibil în Cloudflare → Functions → Real-time logs) — util și fără email configurat
   console.log('Cerere ofertă', ref, { nume, telefon, email, tip, suprafata, plan: planInfo });
 
+  // Salvează cererea în D1 (dacă baza e configurată)
+  if (env.DB) {
+    try {
+      await env.DB.prepare(
+        `INSERT INTO quotes (ref,nume,telefon,email,tip,suprafata,mesaj,plan)
+         VALUES (?,?,?,?,?,?,?,?)`
+      ).bind(ref, nume, telefon, email, tip, suprafata, mesaj, planInfo).run();
+    } catch (e) { console.error('DB quote insert:', e); }
+  }
+
   // Trimitere email (best-effort) dacă e configurat Resend
   let delivered = false, emailError = null;
   if (env.RESEND_API_KEY && env.QUOTE_TO_EMAIL) {

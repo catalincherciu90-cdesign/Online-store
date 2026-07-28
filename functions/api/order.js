@@ -63,6 +63,17 @@ export async function onRequestPost({ request, env }) {
 
   console.log('Comandă nouă', ref, { nume, telefon, email, total, lines: items.length });
 
+  // Salvează comanda în D1 (dacă baza e configurată)
+  if (env.DB) {
+    try {
+      await env.DB.prepare(
+        `INSERT INTO orders (ref,nume,prenume,telefon,email,adresa,oras,judet,obs,items,total)
+         VALUES (?,?,?,?,?,?,?,?,?,?,?)`
+      ).bind(ref, nume, prenume || '', telefon, email || '', adresa, oras || '', judet || '',
+        obs || '', JSON.stringify(items), Number(total) || 0).run();
+    } catch (e) { console.error('DB order insert:', e); }
+  }
+
   const to = env.ORDER_TO_EMAIL || env.QUOTE_TO_EMAIL;
   let delivered = false, emailError = null;
   if (env.RESEND_API_KEY && to) {

@@ -101,6 +101,46 @@ Variabile de mediu: `RESEND_API_KEY`, `ORDER_TO_EMAIL` (fallback
 `QUOTE_TO_EMAIL`), `QUOTE_FROM` (opțional). Fără ele, comanda e acceptată ca
 demo (ramburs) și apare în Functions → Real-time logs.
 
+## Admin (backend Cloudflare D1 + autentificare)
+
+Panou de administrare la `/admin.html`: gestionare produse (adaugă / editează /
+șterge), vizualizare comenzi și cereri de ofertă. Datele stau într-o bază
+**Cloudflare D1**, iar accesul e protejat cu login (JWT).
+
+API (Pages Functions în `functions/api/`):
+- `POST /api/admin/login` → token JWT (8h)
+- `GET /api/products` (public) · `POST /api/products` · `PUT|DELETE /api/products/:id` (admin)
+- `POST /api/admin/seed` (admin) — importă produsele din catalog
+- `GET /api/orders` · `GET /api/quotes` (admin)
+
+Comenzile (`/api/order`) și cererile (`/api/quote`) se salvează automat în D1.
+
+### Setup (o singură dată)
+
+1. **Creează baza D1:**
+   ```bash
+   wrangler d1 create acoperispro-db
+   ```
+2. **Rulează schema:**
+   ```bash
+   wrangler d1 execute acoperispro-db --remote --file=schema.sql
+   ```
+3. **Leagă baza** de proiectul Pages: Dashboard → Pages → proiect → **Settings →
+   Functions → D1 database bindings** → Variable name **`DB`** → selectează
+   `acoperispro-db`.
+4. **Setează variabilele** (Settings → Environment variables):
+   | Variabilă | Rol |
+   |---|---|
+   | `JWT_SECRET` | șir secret lung, aleatoriu (semnare token) |
+   | `ADMIN_USER` | utilizator admin (opțional, implicit `admin`) |
+   | `ADMIN_PASSWORD` | parola de admin (secret) |
+5. **Redeploy**, apoi intră pe `/admin.html`, autentifică-te și apasă
+   **„Importă din catalog"** pentru a popula produsele din `data.js`.
+
+> Notă: magazinul public citește deocamdată produsele din `data.js` (static).
+> Conectarea storefront-ului la produsele din D1 (ca editările din admin să
+> apară pe site) este pasul următor.
+
 ## Rulare locală
 
 Nu necesită build. Servește folderul cu orice server static:
