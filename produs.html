@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Detalii produs | Acoperiș PRO</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23e07b39' d='M12 3 2 12h3v8h14v-8h3z'/%3E%3C/svg%3E">
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="container header-inner">
+      <a href="index.html" class="logo">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M12 3 2 12h3v8h14v-8h3z" fill="#e07b39"/><path d="M9 20v-6h6v6" fill="#16324f"/></svg>
+        Acoperiș<b>PRO</b>
+      </a>
+      <nav class="nav">
+        <a href="index.html">Acasă</a>
+        <a href="produse.html">Produse</a>
+        <a href="produse.html#categorii">Categorii</a>
+        <a href="contact.html">Contact</a>
+      </nav>
+      <div class="header-actions">
+        <a href="cos.html" class="cart-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+          <span>Coș</span><span class="cart-count">0</span>
+        </a>
+        <button class="menu-toggle" aria-label="Meniu">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div class="container" id="pd-root"><!-- injectat de JS --></div>
+
+  <section class="section" style="background:#fff;border-top:1px solid var(--line)">
+    <div class="container">
+      <div class="section-head" style="margin-bottom:32px"><h2>Produse similare</h2></div>
+      <div class="product-grid" id="related"></div>
+    </div>
+  </section>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-col">
+          <div class="logo">Acoperiș<b>PRO</b></div>
+          <p>Sisteme complete de acoperiș pentru case și clădiri industriale. Calitate de la producător, cu garanție și livrare națională.</p>
+        </div>
+        <div class="footer-col">
+          <h4>Produse</h4>
+          <a href="produse.html?cat=tigla-metalica">Țiglă metalică</a>
+          <a href="produse.html?cat=tabla-faltuita">Tablă fălțuită</a>
+          <a href="produse.html?cat=panouri-sandwich">Panouri sandwich</a>
+          <a href="produse.html?cat=sistem-pluvial">Sistem pluvial</a>
+        </div>
+        <div class="footer-col">
+          <h4>Companie</h4>
+          <a href="produse.html">Catalog</a>
+          <a href="contact.html">Contact</a>
+          <a href="contact.html">Cere ofertă</a>
+        </div>
+        <div class="footer-col">
+          <h4>Contact</h4>
+          <p>📞 0740 000 000</p>
+          <p>✉️ comenzi@acoperispro.ro</p>
+          <p>📍 Str. Industriei 12, București</p>
+        </div>
+      </div>
+      <div class="footer-bottom">© <span class="js-year">2026</span> Acoperiș PRO. Toate drepturile rezervate. Prețurile includ TVA.</div>
+    </div>
+  </footer>
+
+  <script src="assets/js/data.js"></script>
+  <script src="assets/js/cart.js"></script>
+  <script src="assets/js/main.js"></script>
+  <script>
+    const id = new URLSearchParams(location.search).get('id');
+    const p = getProduct(id);
+    const root = document.getElementById('pd-root');
+
+    if (!p) {
+      root.innerHTML = `<div class="empty-state" style="padding:100px 20px">
+        <h2>Produsul nu a fost găsit</h2>
+        <p>Poate a fost mutat sau nu mai există.</p>
+        <a href="produse.html" class="btn btn-primary" style="margin-top:16px">Înapoi la produse</a></div>`;
+    } else {
+      document.title = `${p.name} | Acoperiș PRO`;
+      const specsRows = Object.entries(p.specs).map(([k,v]) =>
+        `<div class="row"><span class="k">${k}</span><span class="v">${v}</span></div>`).join('');
+
+      root.innerHTML = `
+        <div class="breadcrumb"><a href="index.html">Acasă</a><span>/</span><a href="produse.html?cat=${p.cat}">${categoryName(p.cat)}</a><span>/</span> ${p.name}</div>
+        <div class="product-detail">
+          <div class="product-gallery">${p.svg}</div>
+          <div class="pd-info">
+            <span class="cat-tag">${categoryName(p.cat)}</span>
+            <h1>${p.name}</h1>
+            <div class="pd-price">${formatPrice(p.price)} <span class="unit">/ ${p.unit}</span></div>
+            <div class="pd-vat">Preț cu TVA inclus</div>
+            <p class="pd-desc">${p.desc}</p>
+            <div class="pd-specs">${specsRows}</div>
+            <div class="qty-row">
+              <div class="qty-stepper">
+                <button type="button" onclick="chgQty(-1)">−</button>
+                <input id="qty" type="number" value="1" min="1" inputmode="numeric">
+                <button type="button" onclick="chgQty(1)">+</button>
+              </div>
+              <span style="color:var(--muted)">Preț / ${p.unit}</span>
+            </div>
+            <div class="pd-actions">
+              <button class="btn btn-primary btn-lg" onclick="addToCart()">Adaugă în coș</button>
+              <a href="cos.html" class="btn btn-outline btn-lg" onclick="addToCart(true)">Cumpără acum</a>
+            </div>
+            <div class="pd-perks">
+              <div class="perk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg> Livrare în toată țara în 24-72h</div>
+              <div class="perk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 4 5v6c0 5 3.4 8.9 8 11 4.6-2.1 8-6 8-11V5z"/></svg> Garanție și certificate incluse</div>
+              <div class="perk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> Consultanță tehnică gratuită</div>
+            </div>
+          </div>
+        </div>`;
+
+      // Produse similare (aceeași categorie)
+      const related = PRODUCTS.filter(x => x.cat === p.cat && x.id !== p.id).slice(0, 3);
+      const fallback = PRODUCTS.filter(x => x.id !== p.id).slice(0, 3);
+      const list = related.length ? related : fallback;
+      document.getElementById('related').innerHTML = list.map(rp => `
+        <div class="product-card">
+          <a class="media" href="produs.html?id=${rp.id}">${rp.badge ? `<span class="badge">${rp.badge}</span>` : ''}${rp.svg}</a>
+          <div class="info">
+            <span class="cat-tag">${categoryName(rp.cat)}</span>
+            <h3><a href="produs.html?id=${rp.id}">${rp.name}</a></h3>
+            <p class="desc">${rp.desc}</p>
+            <div class="price-row"><span class="price">${formatPrice(rp.price)} <span class="unit">/ ${rp.unit}</span></span></div>
+            <div class="card-actions">
+              <a href="produs.html?id=${rp.id}" class="btn btn-outline">Detalii</a>
+              <button class="btn btn-primary" onclick="Cart.add('${rp.id}');showToast('Adăugat în coș')">În coș</button>
+            </div>
+          </div></div>`).join('');
+    }
+
+    function chgQty(d) {
+      const input = document.getElementById('qty');
+      input.value = Math.max(1, (parseInt(input.value) || 1) + d);
+    }
+    function addToCart(silent) {
+      const qty = Math.max(1, parseInt(document.getElementById('qty').value) || 1);
+      Cart.add(id, qty);
+      if (!silent) showToast(`${qty} × ${p.name} adăugat în coș`);
+    }
+  </script>
+</body>
+</html>

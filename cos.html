@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Coșul meu | Acoperiș PRO</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23e07b39' d='M12 3 2 12h3v8h14v-8h3z'/%3E%3C/svg%3E">
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="container header-inner">
+      <a href="index.html" class="logo">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M12 3 2 12h3v8h14v-8h3z" fill="#e07b39"/><path d="M9 20v-6h6v6" fill="#16324f"/></svg>
+        Acoperiș<b>PRO</b>
+      </a>
+      <nav class="nav">
+        <a href="index.html">Acasă</a>
+        <a href="produse.html">Produse</a>
+        <a href="produse.html#categorii">Categorii</a>
+        <a href="contact.html">Contact</a>
+      </nav>
+      <div class="header-actions">
+        <a href="cos.html" class="cart-btn active">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+          <span>Coș</span><span class="cart-count">0</span>
+        </a>
+        <button class="menu-toggle" aria-label="Meniu">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div class="container breadcrumb"><a href="index.html">Acasă</a><span>/</span> Coșul meu</div>
+
+  <section class="container" style="padding-bottom:56px">
+    <h1 style="margin-bottom:24px">Coșul meu</h1>
+    <div id="cart-root"></div>
+  </section>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-col">
+          <div class="logo">Acoperiș<b>PRO</b></div>
+          <p>Sisteme complete de acoperiș pentru case și clădiri industriale. Calitate de la producător, cu garanție și livrare națională.</p>
+        </div>
+        <div class="footer-col">
+          <h4>Produse</h4>
+          <a href="produse.html?cat=tigla-metalica">Țiglă metalică</a>
+          <a href="produse.html?cat=tabla-faltuita">Tablă fălțuită</a>
+          <a href="produse.html?cat=panouri-sandwich">Panouri sandwich</a>
+          <a href="produse.html?cat=sistem-pluvial">Sistem pluvial</a>
+        </div>
+        <div class="footer-col">
+          <h4>Companie</h4>
+          <a href="produse.html">Catalog</a>
+          <a href="contact.html">Contact</a>
+          <a href="contact.html">Cere ofertă</a>
+        </div>
+        <div class="footer-col">
+          <h4>Contact</h4>
+          <p>📞 0740 000 000</p>
+          <p>✉️ comenzi@acoperispro.ro</p>
+          <p>📍 Str. Industriei 12, București</p>
+        </div>
+      </div>
+      <div class="footer-bottom">© <span class="js-year">2026</span> Acoperiș PRO. Toate drepturile rezervate. Prețurile includ TVA.</div>
+    </div>
+  </footer>
+
+  <script src="assets/js/data.js"></script>
+  <script src="assets/js/cart.js"></script>
+  <script src="assets/js/main.js"></script>
+  <script>
+    const DELIVERY_THRESHOLD = 2000; // livrare gratuită peste această sumă
+    const DELIVERY_FEE = 150;
+    const root = document.getElementById('cart-root');
+    let checkoutMode = false;
+
+    function render() {
+      const items = Cart.items();
+      if (!items.length) {
+        checkoutMode = false;
+        root.innerHTML = `<div class="cart-empty">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+          <h2>Coșul tău este gol</h2>
+          <p>Adaugă produse din catalog pentru a începe comanda.</p>
+          <a href="produse.html" class="btn btn-primary btn-lg">Vezi produsele</a>
+        </div>`;
+        return;
+      }
+
+      const subtotal = Cart.subtotal();
+      const delivery = subtotal >= DELIVERY_THRESHOLD ? 0 : DELIVERY_FEE;
+      const total = subtotal + delivery;
+
+      const rows = items.map(it => {
+        const p = getProduct(it.id);
+        if (!p) return '';
+        return `<div class="cart-item">
+          <a class="ci-media" href="produs.html?id=${p.id}">${p.svg}</a>
+          <div>
+            <h4><a href="produs.html?id=${p.id}">${p.name}</a></h4>
+            <div class="ci-meta">${formatPrice(p.price)} / ${p.unit}</div>
+            <button class="ci-remove" onclick="Cart.remove('${p.id}')">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+              Elimină
+            </button>
+          </div>
+          <div class="ci-controls">
+            <div class="mini-stepper">
+              <button onclick="Cart.setQty('${p.id}', ${it.qty - 1})">−</button>
+              <span>${it.qty}</span>
+              <button onclick="Cart.setQty('${p.id}', ${it.qty + 1})">+</button>
+            </div>
+            <span class="ci-price">${formatPrice(p.price * it.qty)}</span>
+          </div>
+        </div>`;
+      }).join('');
+
+      const deliveryLabel = delivery === 0
+        ? '<span style="color:var(--success);font-weight:600">Gratuită</span>'
+        : formatPrice(delivery);
+      const freeHint = delivery > 0
+        ? `<p class="muted" style="margin-top:8px">Mai adaugă ${formatPrice(DELIVERY_THRESHOLD - subtotal)} pentru livrare gratuită.</p>`
+        : '';
+
+      const summarySide = checkoutMode ? renderCheckout(total) : `
+        <div class="summary">
+          <h3>Sumar comandă</h3>
+          <div class="line"><span>Subtotal</span><span>${formatPrice(subtotal)}</span></div>
+          <div class="line"><span>Livrare</span><span>${deliveryLabel}</span></div>
+          <div class="line total"><span>Total</span><span>${formatPrice(total)}</span></div>
+          ${freeHint}
+          <button class="btn btn-primary btn-block btn-lg" style="margin-top:18px" onclick="goCheckout()">Finalizează comanda</button>
+          <a href="produse.html" class="btn btn-outline btn-block" style="margin-top:10px">Continuă cumpărăturile</a>
+        </div>`;
+
+      root.innerHTML = `<div class="cart-layout">
+        <div class="cart-items">${rows}</div>
+        ${summarySide}
+      </div>`;
+    }
+
+    function renderCheckout(total) {
+      return `<div class="summary">
+        <h3>Date de livrare</h3>
+        <form class="checkout-form" id="checkout-form" onsubmit="placeOrder(event)">
+          <div class="form-row">
+            <div class="field"><label>Nume *</label><input name="nume" required></div>
+            <div class="field"><label>Prenume *</label><input name="prenume" required></div>
+          </div>
+          <div class="field full"><label>Telefon *</label><input name="telefon" type="tel" required placeholder="07xx xxx xxx"></div>
+          <div class="field full"><label>Email *</label><input name="email" type="email" required></div>
+          <div class="field full"><label>Adresă (stradă, număr) *</label><input name="adresa" required></div>
+          <div class="form-row">
+            <div class="field"><label>Localitate *</label><input name="oras" required></div>
+            <div class="field"><label>Județ *</label><input name="judet" required></div>
+          </div>
+          <div class="field full"><label>Observații (opțional)</label><textarea name="obs" rows="2" placeholder="Detalii acoperiș, dimensiuni, program livrare..."></textarea></div>
+          <div class="line total" style="border-top:2px solid var(--line);margin-top:6px;padding-top:14px"><span>Total de plată</span><span>${formatPrice(total)}</span></div>
+          <p class="muted">Plata se face ramburs, la livrare. Te vom contacta pentru confirmare.</p>
+          <button type="submit" class="btn btn-primary btn-block btn-lg" style="margin-top:8px">Trimite comanda</button>
+          <button type="button" class="btn btn-outline btn-block" style="margin-top:10px" onclick="checkoutMode=false;render()">Înapoi la coș</button>
+        </form>
+      </div>`;
+    }
+
+    function goCheckout() { checkoutMode = true; render(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+
+    function placeOrder(e) {
+      e.preventDefault();
+      const fd = new FormData(e.target);
+      const order = Object.fromEntries(fd.entries());
+      const items = Cart.items().map(it => {
+        const p = getProduct(it.id);
+        return { nume: p.name, cant: it.qty, unit: p.unit, pret: p.price };
+      });
+      const nr = 'CMD-' + Date.now().toString().slice(-6);
+      // În producție: aici s-ar face un POST către un API (ex. Cloudflare Worker).
+      console.log('Comandă plasată', { nr, order, items, total: Cart.subtotal() });
+      Cart.clear();
+      root.innerHTML = `<div class="cart-empty">
+        <svg viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M8 12l3 3 5-6"/></svg>
+        <h2>Mulțumim, ${order.prenume}!</h2>
+        <p>Comanda <strong>${nr}</strong> a fost înregistrată. Te contactăm în cel mai scurt timp la <strong>${order.telefon}</strong> pentru confirmare.</p>
+        <a href="produse.html" class="btn btn-primary btn-lg">Continuă cumpărăturile</a>
+      </div>`;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    document.addEventListener('cart:change', () => { if (!document.getElementById('checkout-form')) render(); });
+    render();
+  </script>
+</body>
+</html>
