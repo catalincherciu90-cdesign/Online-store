@@ -177,22 +177,36 @@
 
     function goCheckout() { checkoutMode = true; render(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
 
-    function placeOrder(e) {
+    async function placeOrder(e) {
       e.preventDefault();
-      const fd = new FormData(e.target);
-      const order = Object.fromEntries(fd.entries());
+      const form = e.target;
+      const btn = form.querySelector('button[type="submit"]');
+      const order = Object.fromEntries(new FormData(form).entries());
       const items = Cart.items().map(it => {
         const p = getProduct(it.id);
         return { nume: p.name, optiuni: optionSummary(it.opts), cant: it.qty, unit: p.unit, pret: Cart.unitPrice(it) };
       });
-      const nr = 'CMD-' + Date.now().toString().slice(-6);
-      // În producție: aici s-ar face un POST către un API (ex. Cloudflare Worker).
-      console.log('Comandă plasată', { nr, order, items, total: Cart.subtotal() });
+      const subtotal = Cart.subtotal();
+      const delivery = subtotal >= DELIVERY_THRESHOLD ? 0 : DELIVERY_FEE;
+      const payload = { ...order, items, total: subtotal + delivery };
+
+      btn.disabled = true; btn.textContent = 'Se trimite...';
+      let ref = 'CMD-' + Date.now().toString().slice(-6);
+      try {
+        const res = await fetch('/api/order', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (data && data.ref) ref = data.ref;
+      } catch (err) {
+        // fără backend configurat: comanda rămâne demo (ramburs), continuăm cu ref local
+        console.log('Comandă (offline/demo)', payload);
+      }
       Cart.clear();
       root.innerHTML = `<div class="cart-empty">
         <svg viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M8 12l3 3 5-6"/></svg>
-        <h2>Mulțumim, ${order.prenume}!</h2>
-        <p>Comanda <strong>${nr}</strong> a fost înregistrată. Te contactăm în cel mai scurt timp la <strong>${order.telefon}</strong> pentru confirmare.</p>
+        <h2>Mulțumim, ${order.prenume || ''}!</h2>
+        <p>Comanda <strong>${ref}</strong> a fost înregistrată. Te contactăm în cel mai scurt timp la <strong>${order.telefon || ''}</strong> pentru confirmare.</p>
         <a href="produse.html" class="btn btn-primary btn-lg">Continuă cumpărăturile</a>
       </div>`;
       window.scrollTo({ top: 0, behavior: 'smooth' });

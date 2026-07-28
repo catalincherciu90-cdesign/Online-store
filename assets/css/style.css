@@ -374,6 +374,14 @@ h2 { font-size: clamp(1.6rem, 3vw, 2.35rem); letter-spacing: -0.028em; }
 .swatch.sel span { transform: scale(.86); }
 .ci-opts { font-size: .82rem; color: var(--terra-dark); font-weight: 500; margin-bottom: 2px; }
 
+/* Filtre de culoare/grosime în catalog */
+.filter-swatches { display: flex; flex-wrap: wrap; gap: 8px; }
+.fswatch { width: 30px; height: 30px; border-radius: 50%; border: 0; background: none; padding: 0; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 0 0 2px transparent; transition: box-shadow .15s; }
+.fswatch span { width: 22px; height: 22px; border-radius: 50%; background: var(--sw); box-shadow: 0 0 0 1px rgba(0,0,0,.15) inset; }
+.fswatch.sel { box-shadow: 0 0 0 2px var(--terra); }
+.fsw-all { width: auto; height: 30px; padding: 0 12px; border-radius: 15px; font-size: .82rem; font-weight: 600; color: var(--navy); background: var(--bg); box-shadow: 0 0 0 1px var(--line-strong) inset; }
+.fsw-all.sel { box-shadow: 0 0 0 2px var(--terra); color: var(--terra-dark); background: var(--accent-soft); }
+
 /* ---------- Cart ---------- */
 .cart-layout { display: grid; grid-template-columns: 1fr 360px; gap: 32px; align-items: start; padding-bottom: 40px; }
 .cart-items { background: var(--bg-alt); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }

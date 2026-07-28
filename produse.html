@@ -56,6 +56,14 @@
           <label class="filter-opt"><input type="radio" name="price" value="50-100"> 50 – 100 lei</label>
           <label class="filter-opt"><input type="radio" name="price" value="100-9999"> Peste 100 lei</label>
         </div>
+        <div class="filter-group">
+          <h4>Grosime disponibilă</h4>
+          <div id="thickness-filters"></div>
+        </div>
+        <div class="filter-group">
+          <h4>Culoare disponibilă</h4>
+          <div id="color-filters" class="filter-swatches"></div>
+        </div>
       </aside>
 
       <!-- LISTA -->
@@ -127,6 +135,24 @@
     document.querySelectorAll('input[name="price"]').forEach(r => r.addEventListener('change', e => { activePrice = e.target.value; render(); }));
     document.getElementById('sort').addEventListener('change', e => { activeSort = e.target.value; render(); });
 
+    // Filtre de grosime & culoare (după personalizarea disponibilă)
+    let activeThickness = 'all';
+    let activeColor = 'all';
+    const thFilters = document.getElementById('thickness-filters');
+    thFilters.innerHTML = `<label class="filter-opt"><input type="radio" name="thickness" value="all" checked> Toate</label>` +
+      OPTIONS.grosime.values.map(v => `<label class="filter-opt"><input type="radio" name="thickness" value="${v.id}"> ${v.name}</label>`).join('');
+    thFilters.addEventListener('change', e => { activeThickness = e.target.value; render(); });
+
+    const colFilters = document.getElementById('color-filters');
+    colFilters.innerHTML = `<button type="button" class="fswatch fsw-all sel" data-val="all">Toate</button>` +
+      OPTIONS.culoare.values.map(v => `<button type="button" class="fswatch" data-val="${v.id}" title="${v.name}" style="--sw:${v.hex}"><span></span></button>`).join('');
+    colFilters.addEventListener('click', e => {
+      const btn = e.target.closest('.fswatch'); if (!btn) return;
+      activeColor = btn.dataset.val;
+      colFilters.querySelectorAll('.fswatch').forEach(b => b.classList.toggle('sel', b === btn));
+      render();
+    });
+
     function updateHeader() {
       const c = getCategory(activeCat);
       document.getElementById('catalog-title').textContent = c ? c.name : 'Toate produsele';
@@ -140,6 +166,8 @@
         const [lo, hi] = activePrice.split('-').map(Number);
         list = list.filter(p => p.price >= lo && p.price <= hi);
       }
+      if (activeThickness !== 'all') list = list.filter(p => productOptions(p).includes('grosime'));
+      if (activeColor !== 'all') list = list.filter(p => productOptions(p).includes('culoare'));
       if (activeSort === 'price-asc') list.sort((a,b) => a.price - b.price);
       else if (activeSort === 'price-desc') list.sort((a,b) => b.price - a.price);
       else if (activeSort === 'name') list.sort((a,b) => a.name.localeCompare(b.name, 'ro'));

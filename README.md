@@ -78,6 +78,29 @@ R2 bindings) pentru a arhiva automat planurile încărcate.
 Până când `RESEND_API_KEY` + `QUOTE_TO_EMAIL` sunt setate, cererile sunt
 acceptate și apar în **Functions → Real-time logs**, dar nu se trimite email.
 
+## Produse configurabile (finisaj / grosime / culoare)
+
+Pe pagina produsului, clientul alege opțiuni (definite în `assets/js/data.js` →
+`OPTIONS` + `CATEGORY_OPTIONS`), prețul se actualizează live, iar fiecare
+combinație devine o linie separată în coș. Catalogul (`produse.html`) are filtre
+de grosime și culoare disponibilă.
+
+**Imagine per culoare (opțional):** dacă adaugi un fișier
+`assets/img/products/<id-produs>__<id-culoare>.jpg`
+(ex. `tm-clasic-05__ral7016.jpg`), imaginea produsului se schimbă când clientul
+selectează acea culoare. Dacă nu există, rămâne imaginea de bază. ID-urile de
+culoare: `ral8004, ral7016, ral9005, ral8017, ral3011, ral6005, ral9006, ral9002`.
+
+## Comenzi (checkout)
+
+Finalizarea comenzii din `cos.html` trimite datele + liniile (cu opțiunile
+alese) către **Cloudflare Pages Function** `functions/api/order.js`
+(`POST /api/order`), care trimite un email de comandă prin Resend.
+
+Variabile de mediu: `RESEND_API_KEY`, `ORDER_TO_EMAIL` (fallback
+`QUOTE_TO_EMAIL`), `QUOTE_FROM` (opțional). Fără ele, comanda e acceptată ca
+demo (ramburs) și apare în Functions → Real-time logs.
+
 ## Rulare locală
 
 Nu necesită build. Servește folderul cu orice server static:
