@@ -102,23 +102,26 @@
       const rows = items.map(it => {
         const p = getProduct(it.id);
         if (!p) return '';
+        const unit = Cart.unitPrice(it);
+        const summary = optionSummary(it.opts);
         return `<div class="cart-item">
           <a class="ci-media" href="produs.html?id=${p.id}">${productMedia(p)}</a>
           <div>
             <h4><a href="produs.html?id=${p.id}">${p.name}</a></h4>
-            <div class="ci-meta">${formatPrice(p.price)} / ${p.unit}</div>
-            <button class="ci-remove" onclick="Cart.remove('${p.id}')">
+            ${summary ? `<div class="ci-opts">${summary}</div>` : ''}
+            <div class="ci-meta">${formatPrice(unit)} / ${p.unit}</div>
+            <button class="ci-remove" onclick="Cart.remove('${it.key}')">
               <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
               Elimină
             </button>
           </div>
           <div class="ci-controls">
             <div class="mini-stepper">
-              <button onclick="Cart.setQty('${p.id}', ${it.qty - 1})">−</button>
+              <button onclick="Cart.setQty('${it.key}', ${it.qty - 1})">−</button>
               <span>${it.qty}</span>
-              <button onclick="Cart.setQty('${p.id}', ${it.qty + 1})">+</button>
+              <button onclick="Cart.setQty('${it.key}', ${it.qty + 1})">+</button>
             </div>
-            <span class="ci-price">${formatPrice(p.price * it.qty)}</span>
+            <span class="ci-price">${formatPrice(unit * it.qty)}</span>
           </div>
         </div>`;
       }).join('');
@@ -180,7 +183,7 @@
       const order = Object.fromEntries(fd.entries());
       const items = Cart.items().map(it => {
         const p = getProduct(it.id);
-        return { nume: p.name, cant: it.qty, unit: p.unit, pret: p.price };
+        return { nume: p.name, optiuni: optionSummary(it.opts), cant: it.qty, unit: p.unit, pret: Cart.unitPrice(it) };
       });
       const nr = 'CMD-' + Date.now().toString().slice(-6);
       // În producție: aici s-ar face un POST către un API (ex. Cloudflare Worker).

@@ -261,3 +261,79 @@ const CAT_SVG_COLORS = {
 function formatPrice(v) {
   return new Intl.NumberFormat('ro-RO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v) + ' lei';
 }
+
+/* ── OPȚIUNI PRODUS (finisaj / grosime / culoare) ──────────────────────────
+   Fiecare grup are valori cu un `delta` de preț (lei / unitate). Ce grupuri se
+   aplică unui produs vine din categorie (CATEGORY_OPTIONS), cu posibilitate de
+   override per-produs prin câmpul `options`. */
+const OPTIONS = {
+  finisaj: { label: 'Finisaj', type: 'pill', values: [
+    { id: 'poliester-mat', name: 'Poliester mat', delta: 0 },
+    { id: 'mat-structurat', name: 'Mat structurat', delta: 6 },
+    { id: 'lucios', name: 'Lucios', delta: 0 },
+    { id: 'aspect-lemn', name: 'Aspect lemn', delta: 14 },
+  ]},
+  grosime: { label: 'Grosime', type: 'pill', values: [
+    { id: '040', name: '0.40 mm', delta: -4 },
+    { id: '050', name: '0.50 mm', delta: 0 },
+    { id: '060', name: '0.60 mm', delta: 9 },
+  ]},
+  culoare: { label: 'Culoare', type: 'swatch', values: [
+    { id: 'ral8004', name: 'Cărămiziu · RAL 8004', hex: '#8a3a2a', delta: 0 },
+    { id: 'ral7016', name: 'Antracit · RAL 7016', hex: '#383e42', delta: 0 },
+    { id: 'ral9005', name: 'Negru mat · RAL 9005', hex: '#17181a', delta: 0 },
+    { id: 'ral8017', name: 'Maro · RAL 8017', hex: '#3d2a20', delta: 0 },
+    { id: 'ral3011', name: 'Roșu · RAL 3011', hex: '#7c2225', delta: 0 },
+    { id: 'ral6005', name: 'Verde · RAL 6005', hex: '#1f3d2b', delta: 0 },
+    { id: 'ral9006', name: 'Argintiu · RAL 9006', hex: '#a6a9ac', delta: 8 },
+    { id: 'ral9002', name: 'Alb · RAL 9002', hex: '#eceae3', delta: 0 },
+  ]},
+};
+const CATEGORY_OPTIONS = {
+  'tigla-metalica': ['finisaj', 'grosime', 'culoare'],
+  'tabla-faltuita': ['finisaj', 'grosime', 'culoare'],
+  'panouri-sandwich': ['culoare'],
+  'sistem-pluvial': ['culoare'],
+  'accesorii': ['culoare'],
+  'folii-membrane': [],
+};
+function productOptions(p) {
+  if (!p) return [];
+  if (Array.isArray(p.options)) return p.options;
+  return CATEGORY_OPTIONS[p.cat] || [];
+}
+function defaultOpts(p) {
+  const o = {};
+  for (const g of productOptions(p)) {
+    const def = OPTIONS[g];
+    if (def && def.values.length) {
+      // implicit = valoarea standard (fără delta de preț) ca prețul afișat să
+      // corespundă prețului de catalog; altfel prima valoare
+      const base = def.values.find(v => !v.delta) || def.values[0];
+      o[g] = base.id;
+    }
+  }
+  return o;
+}
+function optionValue(group, id) {
+  const def = OPTIONS[group];
+  return def ? def.values.find(v => v.id === id) : null;
+}
+function optionValueName(group, id) {
+  const v = optionValue(group, id);
+  return v ? v.name : id;
+}
+function optionPrice(p, opts) {
+  let price = p.price;
+  const o = opts || {};
+  for (const g of Object.keys(o)) {
+    const v = optionValue(g, o[g]);
+    if (v && v.delta) price += v.delta;
+  }
+  return price;
+}
+/* Rezumat scurt al opțiunilor pentru coș (ex. „Antracit · 0.50 mm · Poliester mat") */
+function optionSummary(opts) {
+  const o = opts || {};
+  return Object.keys(o).map(g => optionValueName(g, o[g]).split(' · ')[0]).join(' · ');
+}

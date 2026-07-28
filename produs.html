@@ -82,6 +82,7 @@
     const id = new URLSearchParams(location.search).get('id');
     const p = getProduct(id);
     const root = document.getElementById('pd-root');
+    const sel = p ? defaultOpts(p) : {}; // opțiuni selectate (finisaj/grosime/culoare)
 
     if (!p) {
       root.innerHTML = `<div class="empty-state" style="padding:100px 20px">
@@ -100,9 +101,10 @@
           <div class="pd-info">
             <span class="cat-tag">${categoryName(p.cat)}</span>
             <h1>${p.name}</h1>
-            <div class="pd-price">${formatPrice(p.price)} <span class="unit">/ ${p.unit}</span></div>
+            <div class="pd-price"><span id="pd-price-val">${formatPrice(optionPrice(p, sel))}</span> <span class="unit">/ ${p.unit}</span></div>
             <div class="pd-vat">Preț cu TVA inclus</div>
             <p class="pd-desc">${p.desc}</p>
+            ${renderOptions(p)}
             <div class="pd-specs">${specsRows}</div>
             <div class="qty-row">
               <div class="qty-stepper">
@@ -142,6 +144,47 @@
             </div>
           </div></div>`).join('');
       hydrateImages();
+      initOptions();
+    }
+
+    // Construiește selectorii de opțiuni (swatch pt culoare, pastile pt finisaj/grosime)
+    function renderOptions(prod) {
+      const groups = productOptions(prod);
+      if (!groups.length) return '';
+      return `<div class="pd-options">` + groups.map(g => {
+        const def = OPTIONS[g];
+        const cur = optionValueName(g, sel[g]);
+        if (def.type === 'swatch') {
+          return `<div class="opt-group">
+            <div class="opt-label">${def.label}: <b id="cur-${g}">${cur}</b></div>
+            <div class="opt-swatches">${def.values.map(v =>
+              `<button type="button" class="swatch${v.id === sel[g] ? ' sel' : ''}" data-group="${g}" data-val="${v.id}" title="${v.name}" style="--sw:${v.hex}"><span></span></button>`).join('')}</div>
+          </div>`;
+        }
+        return `<div class="opt-group">
+          <div class="opt-label">${def.label}: <b id="cur-${g}">${cur}</b></div>
+          <div class="opt-pills">${def.values.map(v =>
+            `<button type="button" class="opt-pill${v.id === sel[g] ? ' sel' : ''}" data-group="${g}" data-val="${v.id}">${v.name}${v.delta ? ` <em>${v.delta > 0 ? '+' : ''}${v.delta} lei</em>` : ''}</button>`).join('')}</div>
+        </div>`;
+      }).join('') + `</div>`;
+    }
+
+    function updatePrice() {
+      const el = document.getElementById('pd-price-val');
+      if (el) el.textContent = formatPrice(optionPrice(p, sel));
+    }
+
+    function initOptions() {
+      document.querySelectorAll('.pd-options [data-group]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const g = btn.dataset.group, v = btn.dataset.val;
+          sel[g] = v;
+          btn.parentElement.querySelectorAll('[data-group]').forEach(b => b.classList.toggle('sel', b === btn));
+          const cur = document.getElementById('cur-' + g);
+          if (cur) cur.textContent = optionValueName(g, v);
+          updatePrice();
+        });
+      });
     }
 
     function chgQty(d) {
@@ -150,7 +193,7 @@
     }
     function addToCart(silent) {
       const qty = Math.max(1, parseInt(document.getElementById('qty').value) || 1);
-      Cart.add(id, qty);
+      Cart.add(id, qty, { ...sel });
       if (!silent) showToast(`${qty} × ${p.name} adăugat în coș`);
     }
   </script>
