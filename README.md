@@ -15,7 +15,7 @@ GitHub Pages, Netlify sau orice hosting static.
 - 🔍 **Pagină de produs** (`produs.html`) cu specificații, selector de cantitate și produse similare
 - 🛒 **Coș de cumpărături** persistent în `localStorage` (`cos.html`)
 - 💳 **Checkout** cu formular de livrare și confirmare comandă (plată ramburs, demo)
-- ✉️ **Contact / cere ofertă** (`contact.html`)
+- ✉️ **Contact / cere ofertă cu încărcare plan** (`contact.html`) — vezi mai jos
 - 🖼️ **Import imagini** (`import.html`) — panou admin pentru încărcat poze reale din browser (vezi mai jos)
 - 📱 Design **responsive** (desktop / tabletă / mobil)
 
@@ -54,6 +54,29 @@ Online-store/
 ├── _headers            # Headere de securitate pentru Cloudflare Pages
 └── README.md
 ```
+
+## Cerere de ofertă cu încărcare plan
+
+Formularul din `contact.html` permite trimiterea unei cereri de ofertă cu un
+**plan atașat** (PDF / JPG / PNG / DWG / DXF, max. 15 MB). Cererea este procesată
+de o **Cloudflare Pages Function**: `functions/api/quote.js` → ruta `POST /api/quote`.
+
+Funcția validează datele, (opțional) arhivează planul în R2 și trimite un email
+către firmă prin [Resend](https://resend.com), cu planul atașat.
+
+### Configurare (Cloudflare Pages → Settings → Environment variables)
+
+| Variabilă | Rol |
+|---|---|
+| `RESEND_API_KEY` | Cheia API de la resend.com (necesară pentru trimiterea email-ului) |
+| `QUOTE_TO_EMAIL` | Adresa unde primești cererile (ex. `oferte@firma.ro`) |
+| `QUOTE_FROM` | *(opțional)* Expeditor verificat în Resend. Implicit `Acoperis PRO <onboarding@resend.dev>` |
+
+Opțional, poți lega un **bucket R2** cu numele `PLANS` (Settings → Functions →
+R2 bindings) pentru a arhiva automat planurile încărcate.
+
+Până când `RESEND_API_KEY` + `QUOTE_TO_EMAIL` sunt setate, cererile sunt
+acceptate și apar în **Functions → Real-time logs**, dar nu se trimite email.
 
 ## Rulare locală
 

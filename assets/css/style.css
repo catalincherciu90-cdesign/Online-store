@@ -27,6 +27,7 @@
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
+[hidden] { display: none !important; }
 
 html { scroll-behavior: smooth; }
 
@@ -327,6 +328,24 @@ h2 { font-size: clamp(1.5rem, 3vw, 2.1rem); }
 .slot-remove:hover { background: #fdecec; border-color: var(--danger); }
 .dropzone { border: 2px dashed var(--line); border-radius: var(--radius); padding: 28px; text-align: center; color: var(--muted); margin-bottom: 24px; transition: border-color .2s, background .2s; }
 .dropzone.drag { border-color: var(--terra); background: #fff7ef; color: var(--terra); }
+
+/* Upload plan (cerere ofertă) */
+.plan-drop { border: 2px dashed var(--line); border-radius: var(--radius-sm); padding: 22px; text-align: center; color: var(--muted); cursor: pointer; transition: border-color .2s, background .2s; }
+.plan-drop:hover, .plan-drop.drag { border-color: var(--terra); background: #fff7ef; }
+.plan-drop svg { width: 30px; height: 30px; color: var(--terra); margin: 0 auto 8px; }
+.plan-drop p { font-size: .95rem; color: var(--slate); }
+.plan-drop p b { color: var(--terra); }
+.plan-drop small { display: block; margin-top: 4px; font-size: .8rem; color: var(--muted); }
+.file-chip { display: flex; align-items: center; gap: 12px; background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 12px 14px; text-align: left; }
+.file-chip .fc-ic { width: 34px; height: 34px; background: var(--navy); color: #fff; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.file-chip .fc-ic svg { width: 18px; height: 18px; color: #fff; margin: 0; }
+.file-chip .fc-meta { flex: 1; min-width: 0; }
+.file-chip .fc-name { font-weight: 600; font-size: .9rem; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.file-chip .fc-size { font-size: .8rem; color: var(--muted); }
+.file-chip .fc-remove { background: none; border: 0; color: var(--danger); cursor: pointer; font-size: 1.1rem; padding: 4px 8px; flex-shrink: 0; }
+.form-status { margin-top: 14px; padding: 14px; border-radius: 8px; font-weight: 600; font-size: .95rem; display: none; }
+.form-status.ok { display: block; background: #e8f6ee; color: var(--success); }
+.form-status.err { display: block; background: #fdecec; color: var(--danger); }
 
 @media (max-width: 900px) { .slot-grid { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 560px) { .slot-grid { grid-template-columns: 1fr; } }

@@ -83,10 +83,26 @@
           </div>
           <div class="field full"><label>Suprafață aproximativă acoperiș (mp)</label><input name="suprafata" type="number" min="0" placeholder="ex. 120"></div>
           <div class="field full"><label>Mesaj *</label><textarea name="mesaj" rows="4" required placeholder="Descrie proiectul: tip material dorit, culoare, termen etc."></textarea></div>
-          <button type="submit" class="btn btn-primary btn-block btn-lg">Trimite cererea</button>
-          <div id="contact-ok" style="display:none;margin-top:14px;padding:14px;background:#e8f6ee;border-radius:8px;color:var(--success);font-weight:600">
-            ✓ Mulțumim! Cererea ta a fost trimisă. Te contactăm în maxim 24 de ore.
+
+          <div class="field full">
+            <label>Atașează planul acoperișului (opțional)</label>
+            <div class="plan-drop" id="plan-drop">
+              <input type="file" id="plan-input" name="plan" accept=".pdf,.jpg,.jpeg,.png,.webp,.dwg,.dxf,image/*,application/pdf" hidden>
+              <div id="plan-empty">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                <p>Trage fișierul aici sau <b>alege un fișier</b></p>
+                <small>PDF, JPG, PNG, DWG, DXF — max. 15 MB</small>
+              </div>
+              <div class="file-chip" id="plan-chip" hidden>
+                <span class="fc-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span>
+                <span class="fc-meta"><span class="fc-name" id="plan-name"></span><span class="fc-size" id="plan-size"></span></span>
+                <button type="button" class="fc-remove" id="plan-remove" title="Elimină">✕</button>
+              </div>
+            </div>
           </div>
+
+          <button type="submit" class="btn btn-primary btn-block btn-lg" id="quote-submit">Trimite cererea</button>
+          <div class="form-status" id="form-status"></div>
         </form>
       </div>
     </div>
@@ -128,12 +144,77 @@
   <script src="assets/js/main.js"></script>
   <script src="assets/js/data.js"></script>
   <script>
-    function sendContact(e) {
+    const MAX_SIZE = 15 * 1024 * 1024; // 15 MB
+    const drop = document.getElementById('plan-drop');
+    const input = document.getElementById('plan-input');
+    const empty = document.getElementById('plan-empty');
+    const chip = document.getElementById('plan-chip');
+    const statusEl = document.getElementById('form-status');
+    const submitBtn = document.getElementById('quote-submit');
+
+    function fmtSize(b) {
+      if (b < 1024) return b + ' B';
+      if (b < 1048576) return (b / 1024).toFixed(0) + ' KB';
+      return (b / 1048576).toFixed(1) + ' MB';
+    }
+    function showFile(file) {
+      document.getElementById('plan-name').textContent = file.name;
+      document.getElementById('plan-size').textContent = fmtSize(file.size);
+      empty.hidden = true; chip.hidden = false;
+    }
+    function clearFile() {
+      input.value = ''; empty.hidden = false; chip.hidden = true;
+    }
+    function setStatus(msg, type) {
+      statusEl.textContent = msg;
+      statusEl.className = 'form-status ' + type;
+    }
+
+    // Selectare fișier
+    drop.addEventListener('click', e => { if (!e.target.closest('#plan-chip')) input.click(); });
+    input.addEventListener('change', () => {
+      const f = input.files[0];
+      if (!f) return clearFile();
+      if (f.size > MAX_SIZE) { setStatus('Fișierul e prea mare (max. 15 MB).', 'err'); clearFile(); return; }
+      statusEl.className = 'form-status';
+      showFile(f);
+    });
+    document.getElementById('plan-remove').addEventListener('click', clearFile);
+
+    // Drag & drop
+    ['dragenter', 'dragover'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('drag'); }));
+    ['dragleave', 'drop'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove('drag'); }));
+    drop.addEventListener('drop', e => {
+      const f = e.dataTransfer.files[0];
+      if (!f) return;
+      if (f.size > MAX_SIZE) { setStatus('Fișierul e prea mare (max. 15 MB).', 'err'); return; }
+      const dt = new DataTransfer(); dt.items.add(f); input.files = dt.files;
+      showFile(f);
+    });
+
+    // Trimitere cerere
+    async function sendContact(e) {
       e.preventDefault();
-      // În producție: POST către un endpoint (ex. Cloudflare Worker / serviciu email).
-      console.log('Cerere ofertă:', Object.fromEntries(new FormData(e.target).entries()));
-      e.target.querySelectorAll('input,textarea,select,button').forEach(el => { if (el.type !== 'submit') el.value = el.defaultValue || ''; });
-      document.getElementById('contact-ok').style.display = 'block';
+      const form = e.target;
+      const fd = new FormData(form);
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Se trimite...';
+      setStatus('', '');
+      try {
+        const res = await fetch('/api/quote', { method: 'POST', body: fd });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok && data.ok) {
+          setStatus('✓ Mulțumim! Cererea ta' + (data.ref ? ' (' + data.ref + ')' : '') + ' a fost trimisă. Te contactăm în maxim 24 de ore.', 'ok');
+          form.reset(); clearFile();
+        } else {
+          throw new Error(data.error || 'send failed');
+        }
+      } catch (err) {
+        setStatus('Nu am putut trimite cererea online. Sună-ne la 0740 000 000 sau scrie la oferte@acoperispro.ro.', 'err');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Trimite cererea';
+      }
     }
   </script>
 </body>
