@@ -16,7 +16,25 @@ GitHub Pages, Netlify sau orice hosting static.
 - 🛒 **Coș de cumpărături** persistent în `localStorage` (`cos.html`)
 - 💳 **Checkout** cu formular de livrare și confirmare comandă (plată ramburs, demo)
 - ✉️ **Contact / cere ofertă** (`contact.html`)
+- 🖼️ **Import imagini** (`import.html`) — panou admin pentru încărcat poze reale din browser (vezi mai jos)
 - 📱 Design **responsive** (desktop / tabletă / mobil)
+
+## Import imagini (panou admin)
+
+Pagina `import.html` (link în footer: „⚙ Import imagini") permite încărcarea
+pozelor reale direct din browser, fără cod:
+
+1. Deschide `/import.html`.
+2. Pentru fiecare produs/categorie, apasă **„Alege poză"** și selectează imaginea.
+   Poza apare imediat în tot magazinul.
+3. Pozele se salvează local, în **IndexedDB** (browserul curent) — ideal pentru
+   a prezenta macheta unui client de pe acest calculator.
+4. Pentru a face pozele **permanente și vizibile tuturor vizitatorilor**, apasă
+   **„Exportă pozele pentru repo"**: se descarcă fișierele cu numele corecte, pe
+   care le comiți în `assets/img/products/` și `assets/img/categories/`.
+
+Ordinea de afișare a fiecărei imagini: 1) poză din IndexedDB (încărcată în import),
+2) fișier din repo (`assets/img/...`), 3) ilustrație SVG (fallback automat).
 
 ## Structura proiectului
 

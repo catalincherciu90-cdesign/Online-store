@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Import imagini (admin) | Acoperiș PRO</title>
+  <meta name="robots" content="noindex">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23e07b39' d='M12 3 2 12h3v8h14v-8h3z'/%3E%3C/svg%3E">
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="container header-inner">
+      <a href="index.html" class="logo">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M12 3 2 12h3v8h14v-8h3z" fill="#e07b39"/><path d="M9 20v-6h6v6" fill="#16324f"/></svg>
+        Acoperiș<b>PRO</b>
+      </a>
+      <nav class="nav">
+        <a href="index.html">Acasă</a>
+        <a href="produse.html">Produse</a>
+        <a href="contact.html">Contact</a>
+        <a href="import.html" class="active">Import imagini</a>
+      </nav>
+      <div class="header-actions">
+        <a href="produse.html" class="btn btn-outline" style="padding:9px 16px">Vezi magazinul</a>
+        <button class="menu-toggle" aria-label="Meniu">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div class="container breadcrumb"><a href="index.html">Acasă</a><span>/</span> Import imagini</div>
+
+  <section class="container" style="padding-bottom:56px">
+    <div style="margin-bottom:20px">
+      <span class="eyebrow">Panou admin</span>
+      <h1>Import imagini produse</h1>
+    </div>
+
+    <div class="import-intro">
+      <p><strong>Cum funcționează:</strong> alege o poză pentru fiecare produs sau categorie. Poza apare imediat în tot magazinul — pe prima pagină, în catalog și pe pagina produsului.</p>
+      <p>Formate acceptate: JPG, PNG, WEBP. Pozele sunt redimensionate automat (max. 1000px) pentru încărcare rapidă.</p>
+      <div class="import-note">
+        ⚠️ <strong>Important:</strong> pozele încărcate aici se salvează <u>în acest browser</u> (ideal pentru a prezenta macheta clientului de pe acest calculator). Ca să devină <strong>permanente și vizibile pentru toți vizitatorii</strong>, apasă „Exportă pozele pentru repo" și trimite-mi fișierele (sau comite-le în GitHub) — ți le pun în magazin definitiv.
+      </div>
+    </div>
+
+    <div class="import-actions">
+      <button class="btn btn-primary" id="btn-export">⬇ Exportă pozele pentru repo</button>
+      <button class="btn btn-outline" id="btn-clear">Șterge toate pozele</button>
+    </div>
+
+    <h2 class="import-h">Categorii <span style="color:var(--muted);font-weight:400;font-size:.9rem">(apar pe prima pagină)</span></h2>
+    <div class="slot-grid" id="cat-slots"></div>
+
+    <h2 class="import-h">Produse</h2>
+    <div class="slot-grid" id="prod-slots"></div>
+  </section>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-bottom" style="border:0;padding-top:0">© <span class="js-year">2026</span> Acoperiș PRO — panou admin. Pozele includ TVA :)</div>
+    </div>
+  </footer>
+
+  <script src="assets/js/store-img.js"></script>
+  <script src="assets/js/data.js"></script>
+  <script src="assets/js/main.js"></script>
+  <script>
+    // ── Construiește slot-urile ──────────────────────────────────────────────
+    function slotHTML(key, name, fileLabel, mediaHTML) {
+      return `<div class="slot" data-key="${key}">
+        <div class="slot-thumb">${mediaHTML}</div>
+        <div class="slot-body">
+          <div class="slot-name">${name}</div>
+          <div class="slot-file">assets/img/${fileLabel}</div>
+          <div class="slot-btns">
+            <label class="btn btn-outline slot-pick">Alege poză
+              <input type="file" class="slot-input" data-key="${key}" accept="image/*" hidden>
+            </label>
+            <button class="slot-remove" data-key="${key}" title="Elimină poza">✕</button>
+          </div>
+        </div>
+      </div>`;
+    }
+
+    document.getElementById('cat-slots').innerHTML = CATEGORIES.map(c =>
+      slotHTML('c:' + c.id, c.name, 'categories/' + c.id + '.jpg', categoryMedia(c))).join('');
+    document.getElementById('prod-slots').innerHTML = PRODUCTS.map(p =>
+      slotHTML('p:' + p.id, p.name, 'products/' + p.id + '.jpg', productMedia(p))).join('');
+
+    hydrateImages();
+    markUploaded();
+
+    // ── Redimensionare + normalizare la JPEG ─────────────────────────────────
+    function processImage(file, maxW = 1000) {
+      return new Promise(resolve => {
+        const img = new Image();
+        img.onload = () => {
+          const scale = Math.min(1, maxW / img.width);
+          const w = Math.round(img.width * scale), h = Math.round(img.height * scale);
+          const cv = document.createElement('canvas');
+          cv.width = w; cv.height = h;
+          cv.getContext('2d').drawImage(img, 0, 0, w, h);
+          cv.toBlob(b => resolve(b || file), 'image/jpeg', 0.85);
+        };
+        img.onerror = () => resolve(file);
+        img.src = URL.createObjectURL(file);
+      });
+    }
+
+    // ── Reîmprospătează preview-ul unui slot ─────────────────────────────────
+    function refreshSlot(key) {
+      const slot = document.querySelector(`.slot[data-key="${CSS.escape(key)}"]`);
+      if (!slot) return;
+      const [type, id] = key.split(':');
+      const item = type === 'p' ? getProduct(id) : getCategory(id);
+      slot.querySelector('.slot-thumb').innerHTML = type === 'p' ? productMedia(item) : categoryMedia(item);
+      hydrateImages(slot);
+    }
+
+    // ── Marchează slot-urile care au poză încărcată ──────────────────────────
+    async function markUploaded() {
+      let keys = [];
+      try { keys = await ImgStore.keys(); } catch (e) {}
+      const set = new Set(keys);
+      document.querySelectorAll('.slot').forEach(s => {
+        const has = set.has(s.dataset.key);
+        s.classList.toggle('has-img', has);
+        s.querySelector('.slot-remove').style.display = has ? '' : 'none';
+      });
+    }
+
+    // ── Încărcare fișier (delegare) ──────────────────────────────────────────
+    document.addEventListener('change', async e => {
+      const input = e.target.closest('.slot-input');
+      if (!input) return;
+      const file = input.files[0];
+      if (!file) return;
+      try {
+        const blob = await processImage(file);
+        await ImgStore.put(input.dataset.key, blob);
+        refreshSlot(input.dataset.key);
+        markUploaded();
+        showToast('Poză încărcată ✓');
+      } catch (err) {
+        showToast('Eroare la încărcare. Verifică că browserul permite stocarea locală.');
+      }
+      input.value = '';
+    });
+
+    // ── Eliminare poză ───────────────────────────────────────────────────────
+    document.addEventListener('click', async e => {
+      const btn = e.target.closest('.slot-remove');
+      if (!btn) return;
+      await ImgStore.del(btn.dataset.key);
+      refreshSlot(btn.dataset.key);
+      markUploaded();
+      showToast('Poză eliminată');
+    });
+
+    // ── Export pentru repo ───────────────────────────────────────────────────
+    document.getElementById('btn-export').addEventListener('click', async () => {
+      let keys = [];
+      try { keys = await ImgStore.keys(); } catch (e) {}
+      if (!keys.length) { showToast('Nu ai încărcat nicio poză încă.'); return; }
+      showToast(`Descarc ${keys.length} poze... permite descărcările multiple.`);
+      for (const key of keys) {
+        const blob = await ImgStore.get(key);
+        if (!blob) continue;
+        const [, id] = key.split(':');
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = id + '.jpg';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        await new Promise(r => setTimeout(r, 300));
+      }
+      alert('Poze descărcate!\n\nPune fișierele în repo astfel:\n• pozele de CATEGORIE (tigla-metalica.jpg, etc.) → assets/img/categories/\n• pozele de PRODUS (tm-clasic-05.jpg, etc.) → assets/img/products/\n\nSau trimite-mi fișierele în chat și le pun eu.');
+    });
+
+    // ── Șterge tot ───────────────────────────────────────────────────────────
+    document.getElementById('btn-clear').addEventListener('click', async () => {
+      if (!confirm('Sigur ștergi toate pozele încărcate din acest browser?')) return;
+      let keys = [];
+      try { keys = await ImgStore.keys(); } catch (e) {}
+      for (const key of keys) await ImgStore.del(key);
+      keys.forEach(refreshSlot);
+      markUploaded();
+      showToast('Toate pozele au fost șterse.');
+    });
+  </script>
+</body>
+</html>

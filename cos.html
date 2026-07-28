@@ -59,6 +59,7 @@
           <a href="produse.html">Catalog</a>
           <a href="contact.html">Contact</a>
           <a href="contact.html">Cere ofertă</a>
+          <a href="import.html">⚙ Import imagini</a>
         </div>
         <div class="footer-col">
           <h4>Contact</h4>
@@ -71,6 +72,7 @@
     </div>
   </footer>
 
+  <script src="assets/js/store-img.js"></script>
   <script src="assets/js/data.js"></script>
   <script src="assets/js/cart.js"></script>
   <script src="assets/js/main.js"></script>
@@ -143,6 +145,7 @@
         <div class="cart-items">${rows}</div>
         ${summarySide}
       </div>`;
+      hydrateImages(root);
     }
 
     function renderCheckout(total) {

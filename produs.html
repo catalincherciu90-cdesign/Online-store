@@ -61,6 +61,7 @@
           <a href="produse.html">Catalog</a>
           <a href="contact.html">Contact</a>
           <a href="contact.html">Cere ofertă</a>
+          <a href="import.html">⚙ Import imagini</a>
         </div>
         <div class="footer-col">
           <h4>Contact</h4>
@@ -73,6 +74,7 @@
     </div>
   </footer>
 
+  <script src="assets/js/store-img.js"></script>
   <script src="assets/js/data.js"></script>
   <script src="assets/js/cart.js"></script>
   <script src="assets/js/main.js"></script>
@@ -139,6 +141,7 @@
               <button class="btn btn-primary" onclick="Cart.add('${rp.id}');showToast('Adăugat în coș')">În coș</button>
             </div>
           </div></div>`).join('');
+      hydrateImages();
     }
 
     function chgQty(d) {

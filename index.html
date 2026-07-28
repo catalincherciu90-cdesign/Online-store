@@ -172,6 +172,7 @@
           <a href="produse.html">Catalog</a>
           <a href="contact.html">Contact</a>
           <a href="contact.html">Cere ofertă</a>
+          <a href="import.html">⚙ Import imagini</a>
         </div>
         <div class="footer-col">
           <h4>Contact</h4>
@@ -184,6 +185,7 @@
     </div>
   </footer>
 
+  <script src="assets/js/store-img.js"></script>
   <script src="assets/js/data.js"></script>
   <script src="assets/js/cart.js"></script>
   <script src="assets/js/main.js"></script>
@@ -210,6 +212,7 @@
     // Produse recomandate (badge best seller / premium / nou)
     const featured = PRODUCTS.filter(p => p.badge).slice(0, 6);
     document.getElementById('home-featured').innerHTML = featured.map(renderProductCard).join('');
+    hydrateImages();
 
     function renderProductCard(p) {
       return `<div class="product-card">

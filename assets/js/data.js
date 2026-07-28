@@ -201,12 +201,46 @@ function categoryName(id) { const c = getCategory(id); return c ? c.name : id; }
    Dacă fișierul lipsește, se afișează automat ilustrația SVG (onerror fallback).
    Astfel poți adăuga pozele treptat, fără nicio modificare de cod. */
 function productMedia(p) {
-  return `<img class="pmedia" src="assets/img/products/${p.id}.jpg" alt="${p.name}"
-    loading="lazy" onerror="mediaFallback(this,'p','${p.id}')">`;
+  return `<img class="pmedia" alt="${p.name}" data-imgkey="p:${p.id}"
+    data-file="assets/img/products/${p.id}.jpg" loading="lazy">`;
 }
 function categoryMedia(c) {
-  return `<img class="pmedia" src="assets/img/categories/${c.id}.jpg" alt="${c.name}"
-    loading="lazy" onerror="mediaFallback(this,'c','${c.id}')">`;
+  return `<img class="pmedia" alt="${c.name}" data-imgkey="c:${c.id}"
+    data-file="assets/img/categories/${c.id}.jpg" loading="lazy">`;
+}
+/* Rezolvă sursa fiecărei imagini: 1) poză încărcată în browser (IndexedDB),
+   2) fișier din repo (assets/img/...), 3) ilustrație SVG (fallback).
+   A se apela după ce s-a construit HTML-ul unei liste/pagini. */
+// Împiedică blocarea la infinit dacă IndexedDB nu răspunde (ex. origine file://)
+function withTimeout(promise, ms) {
+  return Promise.race([
+    promise,
+    new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), ms)),
+  ]);
+}
+async function hydrateImages(root) {
+  const scope = root || document;
+  const imgs = [...scope.querySelectorAll('img[data-imgkey]:not([data-hydrated])')];
+  // O singură citire a cheilor din IndexedDB (cu timeout); get() se apelează
+  // doar pentru imaginile care chiar au o poză încărcată.
+  let stored = new Set();
+  if (typeof ImgStore !== 'undefined') {
+    try { stored = new Set(await withTimeout(ImgStore.keys(), 1500)); }
+    catch (e) { /* IDB indisponibil/lent — cădem pe fișier/SVG */ }
+  }
+  for (const img of imgs) {
+    img.setAttribute('data-hydrated', '1');
+    const key = img.getAttribute('data-imgkey');
+    const [type, id] = key.split(':');
+    if (stored.has(key)) {
+      try {
+        const blob = await withTimeout(ImgStore.get(key), 1500);
+        if (blob) { img.src = URL.createObjectURL(blob); continue; }
+      } catch (e) { /* cade pe fișier/SVG */ }
+    }
+    img.onerror = () => mediaFallback(img, type, id);
+    img.src = img.getAttribute('data-file');
+  }
 }
 /* Înlocuiește <img> stricat cu ilustrația SVG corespunzătoare */
 function mediaFallback(img, type, id) {
