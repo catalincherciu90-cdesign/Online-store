@@ -94,7 +94,7 @@
       root.innerHTML = `
         <div class="breadcrumb"><a href="index.html">Acasă</a><span>/</span><a href="produse.html?cat=${p.cat}">${categoryName(p.cat)}</a><span>/</span> ${p.name}</div>
         <div class="product-detail">
-          <div class="product-gallery">${p.svg}</div>
+          <div class="product-gallery">${productMedia(p)}</div>
           <div class="pd-info">
             <span class="cat-tag">${categoryName(p.cat)}</span>
             <h1>${p.name}</h1>
@@ -128,7 +128,7 @@
       const list = related.length ? related : fallback;
       document.getElementById('related').innerHTML = list.map(rp => `
         <div class="product-card">
-          <a class="media" href="produs.html?id=${rp.id}">${rp.badge ? `<span class="badge">${rp.badge}</span>` : ''}${rp.svg}</a>
+          <a class="media" href="produs.html?id=${rp.id}">${rp.badge ? `<span class="badge">${rp.badge}</span>` : ''}${productMedia(rp)}</a>
           <div class="info">
             <span class="cat-tag">${categoryName(rp.cat)}</span>
             <h3><a href="produs.html?id=${rp.id}">${rp.name}</a></h3>

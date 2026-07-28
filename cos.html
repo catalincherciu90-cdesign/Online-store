@@ -101,7 +101,7 @@
         const p = getProduct(it.id);
         if (!p) return '';
         return `<div class="cart-item">
-          <a class="ci-media" href="produs.html?id=${p.id}">${p.svg}</a>
+          <a class="ci-media" href="produs.html?id=${p.id}">${productMedia(p)}</a>
           <div>
             <h4><a href="produs.html?id=${p.id}">${p.name}</a></h4>
             <div class="ci-meta">${formatPrice(p.price)} / ${p.unit}</div>

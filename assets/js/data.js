@@ -193,6 +193,37 @@ const PRODUCTS = [
 function getProduct(id) { return PRODUCTS.find(p => p.id === id); }
 function getCategory(id) { return CATEGORIES.find(c => c.id === id); }
 function categoryName(id) { const c = getCategory(id); return c ? c.name : id; }
+
+/* ── MEDIA (poze reale cu fallback pe SVG) ──────────────────────────────────
+   Pentru a folosi poze reale: pune un fișier în
+     assets/img/products/<id-produs>.jpg     (ex. assets/img/products/tm-clasic-05.jpg)
+     assets/img/categories/<id-categorie>.jpg (ex. assets/img/categories/tigla-metalica.jpg)
+   Dacă fișierul lipsește, se afișează automat ilustrația SVG (onerror fallback).
+   Astfel poți adăuga pozele treptat, fără nicio modificare de cod. */
+function productMedia(p) {
+  return `<img class="pmedia" src="assets/img/products/${p.id}.jpg" alt="${p.name}"
+    loading="lazy" onerror="mediaFallback(this,'p','${p.id}')">`;
+}
+function categoryMedia(c) {
+  return `<img class="pmedia" src="assets/img/categories/${c.id}.jpg" alt="${c.name}"
+    loading="lazy" onerror="mediaFallback(this,'c','${c.id}')">`;
+}
+/* Înlocuiește <img> stricat cu ilustrația SVG corespunzătoare */
+function mediaFallback(img, type, id) {
+  const item = type === 'p' ? getProduct(id) : getCategory(id);
+  const svg = type === 'p' ? (item && item.svg) : (item && SVG[item.icon] && SVG[item.icon](...(CAT_SVG_COLORS[id] || ['#16324f', '#0f2438'])));
+  if (!svg) { img.style.visibility = 'hidden'; return; }
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'width:100%;height:100%';
+  wrap.innerHTML = svg;
+  img.replaceWith(wrap.firstElementChild || wrap);
+}
+/* Culori SVG per categorie (folosite la fallback-ul de categorie) */
+const CAT_SVG_COLORS = {
+  'tigla-metalica': ['#8a3a2a', '#5e2318'], 'tabla-faltuita': ['#6b7681', '#454e57'],
+  'panouri-sandwich': ['#c9ccd0', '#9aa0a6'], 'sistem-pluvial': ['#4a5560', '#2c343c'],
+  'accesorii': ['#5a6570', '#363d44'], 'folii-membrane': ['#4a6b7a', '#2c4350'],
+};
 function formatPrice(v) {
   return new Intl.NumberFormat('ro-RO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v) + ' lei';
 }

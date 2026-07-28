@@ -41,6 +41,10 @@ body {
 img { max-width: 100%; display: block; }
 a { color: inherit; text-decoration: none; }
 
+/* Poze reale de produs/categorie: umplu containerul, decupare centrată */
+img.pmedia { width: 100%; height: 100%; object-fit: cover; }
+.product-gallery img.pmedia { object-fit: cover; }
+
 .container {
   width: 100%;
   max-width: var(--container);

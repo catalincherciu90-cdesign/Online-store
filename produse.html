@@ -154,7 +154,7 @@
     function renderProductCard(p) {
       return `<div class="product-card">
         <a class="media" href="produs.html?id=${p.id}" aria-label="${p.name}">
-          ${p.badge ? `<span class="badge">${p.badge}</span>` : ''}${p.svg}
+          ${p.badge ? `<span class="badge">${p.badge}</span>` : ''}${productMedia(p)}
         </a>
         <div class="info">
           <span class="cat-tag">${categoryName(p.cat)}</span>
