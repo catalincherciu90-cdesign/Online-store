@@ -35,7 +35,7 @@
 
   <div class="container" id="pd-root"><!-- injectat de JS --></div>
 
-  <section class="section" style="background:#fff;border-top:1px solid var(--line)">
+  <section class="section section-alt">
     <div class="container">
       <div class="section-head" style="margin-bottom:32px"><h2>Produse similare</h2></div>
       <div class="product-grid" id="related"></div>
@@ -130,7 +130,7 @@
       const list = related.length ? related : fallback;
       document.getElementById('related').innerHTML = list.map(rp => `
         <div class="product-card">
-          <a class="media" href="produs.html?id=${rp.id}">${rp.badge ? `<span class="badge">${rp.badge}</span>` : ''}${productMedia(rp)}</a>
+          <a class="media" href="produs.html?id=${rp.id}">${rp.badge ? `<span class="badge" data-badge="${rp.badge}">${rp.badge}</span>` : ''}${productMedia(rp)}</a>
           <div class="info">
             <span class="cat-tag">${categoryName(rp.cat)}</span>
             <h3><a href="produs.html?id=${rp.id}">${rp.name}</a></h3>
