@@ -132,6 +132,50 @@ async function quotesList(request, env) {
   return json(r.results || []);
 }
 
+// ── Proprietăți globale (finisaje / grosimi / culori) ──
+async function optionsList(env) {
+  if (!env.DB) return json({});
+  const r = await env.DB.prepare('SELECT * FROM option_values ORDER BY grp, sort, rowid').all();
+  const out = {};
+  for (const row of (r.results || [])) {
+    (out[row.grp] = out[row.grp] || []);
+    const v = { id: row.id, name: row.name, delta: row.delta || 0 };
+    if (row.hex) v.hex = row.hex;
+    out[row.grp].push(v);
+  }
+  return json(out);
+}
+async function optionUpsert(request, env) {
+  if (!await requireAdmin(request, env)) return json({ error: 'Neautorizat' }, 401);
+  if (!env.DB) return json({ error: 'Baza de date nu este configurată.' }, 500);
+  const v = await request.json().catch(() => null);
+  if (!v || !v.grp || !v.id || !v.name) return json({ error: 'Date incomplete.' }, 400);
+  await env.DB.prepare('INSERT OR REPLACE INTO option_values (grp,id,name,delta,hex,sort) VALUES (?,?,?,?,?,?)')
+    .bind(v.grp, v.id, v.name, Number(v.delta) || 0, v.hex || null, Number(v.sort) || 0).run();
+  return json({ ok: true });
+}
+async function optionDelete(request, env, grp, id) {
+  if (!await requireAdmin(request, env)) return json({ error: 'Neautorizat' }, 401);
+  if (!env.DB) return json({ error: 'Baza de date nu este configurată.' }, 500);
+  await env.DB.prepare('DELETE FROM option_values WHERE grp=? AND id=?').bind(grp, id).run();
+  return json({ ok: true });
+}
+async function optionsSeed(request, env) {
+  if (!await requireAdmin(request, env)) return json({ error: 'Neautorizat' }, 401);
+  if (!env.DB) return json({ error: 'Baza de date nu este configurată.' }, 500);
+  const { options } = await request.json().catch(() => ({ options: {} }));
+  let n = 0;
+  for (const grp of Object.keys(options || {})) {
+    let sort = 0;
+    for (const v of options[grp]) {
+      await env.DB.prepare('INSERT OR REPLACE INTO option_values (grp,id,name,delta,hex,sort) VALUES (?,?,?,?,?,?)')
+        .bind(grp, v.id, v.name, Number(v.delta) || 0, v.hex || null, sort++).run();
+      n++;
+    }
+  }
+  return json({ ok: true, imported: n });
+}
+
 async function sendEmail(env, payload) {
   if (!env.RESEND_API_KEY) return { delivered: false, error: 'Email neconfigurat.' };
   try {
@@ -204,6 +248,11 @@ async function api(request, env, url) {
   if (pid && m === 'PUT') return productUpdate(request, env, decodeURIComponent(pid[1]));
   if (pid && m === 'DELETE') return productDelete(request, env, decodeURIComponent(pid[1]));
   if (p === '/api/admin/seed' && m === 'POST') return seed(request, env);
+  if (p === '/api/options' && m === 'GET') return optionsList(env);
+  if (p === '/api/options' && m === 'POST') return optionUpsert(request, env);
+  if (p === '/api/options/seed' && m === 'POST') return optionsSeed(request, env);
+  const ov = p.match(/^\/api\/options\/([^/]+)\/(.+)$/);
+  if (ov && m === 'DELETE') return optionDelete(request, env, decodeURIComponent(ov[1]), decodeURIComponent(ov[2]));
   if (p === '/api/orders' && m === 'GET') return ordersList(request, env);
   if (p === '/api/quotes' && m === 'GET') return quotesList(request, env);
   if (p === '/api/order' && m === 'POST') return orderCreate(request, env);

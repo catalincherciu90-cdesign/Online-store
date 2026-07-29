@@ -64,6 +64,7 @@
   <div id="dash-view" class="container" style="display:none;padding-bottom:60px">
     <div class="admin-tabs">
       <button class="active" data-tab="produse" onclick="showTab('produse')">Produse</button>
+      <button data-tab="proprietati" onclick="showTab('proprietati')">Proprietăți</button>
       <button data-tab="comenzi" onclick="showTab('comenzi')">Comenzi</button>
       <button data-tab="cereri" onclick="showTab('cereri')">Cereri ofertă</button>
     </div>
@@ -75,6 +76,15 @@
         <button class="btn btn-primary" style="padding:9px 16px" onclick="openEditor()">+ Produs nou</button>
       </div>
       <div id="products-box"></div>
+    </div>
+
+    <div id="tab-proprietati" style="display:none">
+      <div class="toolbar">
+        <h2 class="grow" style="font-size:1.3rem">Proprietăți (finisaje / grosimi / culori)</h2>
+        <button class="a-btn-sm" onclick="seedOptions()">⭳ Inițializează cu valorile implicite</button>
+      </div>
+      <p class="muted-sm" style="margin-bottom:16px">Valorile de aici apar la toate produsele. Adaugă culori, grosimi sau finisaje noi — se văd imediat în editorul de produs și pe site.</p>
+      <div id="props-box"></div>
     </div>
 
     <div id="tab-comenzi" style="display:none">
@@ -167,14 +177,71 @@
       document.getElementById('dash-view').style.display = 'block';
       document.getElementById('whoami').style.display = 'flex';
       document.getElementById('admin-user').textContent = 'Conectat';
-      loadProducts(); loadOrders(); loadQuotes();
+      loadProps().then(loadProducts); loadOrders(); loadQuotes();
     }
 
     function showTab(t) {
-      ['produse', 'comenzi', 'cereri'].forEach(x => {
+      ['produse', 'proprietati', 'comenzi', 'cereri'].forEach(x => {
         document.getElementById('tab-' + x).style.display = x === t ? 'block' : 'none';
         document.querySelector(`.admin-tabs [data-tab="${x}"]`).classList.toggle('active', x === t);
       });
+    }
+
+    // ── Proprietăți globale (finisaje / grosimi / culori) ──
+    function slug(s) {
+      return s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+        .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || ('v' + Date.now());
+    }
+    async function loadProps() {
+      const box = document.getElementById('props-box');
+      let data = {};
+      try { const res = await api('/options'); data = await res.json(); } catch (e) {}
+      // aplică valorile din DB peste cele implicite (ca editorul + site-ul să le vadă)
+      for (const g of Object.keys(data || {})) if (OPTIONS[g] && data[g] && data[g].length) OPTIONS[g].values = data[g];
+      const empty = !['finisaj', 'grosime', 'culoare'].some(g => data[g] && data[g].length);
+      box.innerHTML = (empty ? `<div class="a-empty">Nicio proprietate în bază încă. Apasă „Inițializează cu valorile implicite" ca să pornești de la finisajele/grosimile/culorile standard, apoi adaugă altele.</div>` : '') +
+        ['finisaj', 'grosime', 'culoare'].map(g => renderPropGroup(g, (data[g] || OPTIONS[g].values))).join('');
+    }
+    function renderPropGroup(g, values) {
+      const isColor = g === 'culoare';
+      const label = { finisaj: 'Finisaje', grosime: 'Grosimi', culoare: 'Culori' }[g];
+      return `<div style="background:#fff;border:1px solid var(--line);border-radius:12px;padding:18px;margin-bottom:16px">
+        <h3 style="font-size:1.05rem;margin-bottom:12px">${label}</h3>
+        <table class="a-table" style="margin-bottom:14px"><tbody>${
+          values.map(v => `<tr>
+            <td>${isColor ? `<span style="display:inline-block;width:16px;height:16px;border-radius:50%;background:${v.hex || '#ccc'};box-shadow:0 0 0 1px rgba(0,0,0,.15) inset;vertical-align:middle;margin-right:8px"></span>` : ''}${esc(v.name)} <span class="muted-sm">(${esc(v.id)})</span></td>
+            <td style="width:130px" class="muted-sm">delta: ${v.delta || 0} lei</td>
+            <td style="width:80px"><button class="a-btn-sm danger" onclick="delOption('${g}','${esc(v.id)}')">Șterge</button></td>
+          </tr>`).join('') || `<tr><td class="muted-sm">Nicio valoare</td></tr>`
+        }</tbody></table>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">
+          <div><label class="muted-sm">Nume</label><br><input id="add-${g}-name" placeholder="ex. ${isColor ? 'Verde mușchi' : g === 'grosime' ? '0.70 mm' : 'Structurat mat'}" style="padding:7px 10px;border:1px solid var(--line-strong);border-radius:6px"></div>
+          <div><label class="muted-sm">Delta (lei)</label><br><input id="add-${g}-delta" type="number" step="0.01" value="0" style="width:90px;padding:7px 10px;border:1px solid var(--line-strong);border-radius:6px"></div>
+          ${isColor ? `<div><label class="muted-sm">Culoare</label><br><input id="add-${g}-hex" type="color" value="#8a3a2a" style="width:52px;height:38px;padding:2px;border:1px solid var(--line-strong);border-radius:6px"></div>` : ''}
+          <button class="btn btn-primary" style="padding:8px 14px" onclick="addOption('${g}')">+ Adaugă</button>
+        </div>
+      </div>`;
+    }
+    async function addOption(g) {
+      const name = document.getElementById('add-' + g + '-name').value.trim();
+      if (!name) return;
+      const delta = Number(document.getElementById('add-' + g + '-delta').value) || 0;
+      const hex = g === 'culoare' ? document.getElementById('add-' + g + '-hex').value : null;
+      try {
+        await api('/options', { method: 'POST', body: JSON.stringify({ grp: g, id: slug(name), name, delta, hex }) });
+        loadProps();
+      } catch (e) { alert('Eroare: ' + e.message); }
+    }
+    async function delOption(g, id) {
+      if (!confirm('Ștergi „' + id + '" din ' + g + '?')) return;
+      try { await api('/options/' + encodeURIComponent(g) + '/' + encodeURIComponent(id), { method: 'DELETE' }); loadProps(); }
+      catch (e) { alert('Eroare: ' + e.message); }
+    }
+    async function seedOptions() {
+      if (!confirm('Inițializezi proprietățile cu valorile standard?')) return;
+      const options = { finisaj: OPTIONS.finisaj.values, grosime: OPTIONS.grosime.values, culoare: OPTIONS.culoare.values };
+      try { const res = await api('/options/seed', { method: 'POST', body: JSON.stringify({ options }) }); const d = await res.json(); alert('Inițializat: ' + d.imported + ' valori.'); loadProps(); }
+      catch (e) { alert('Eroare: ' + e.message); }
     }
 
     // ── Produse ──

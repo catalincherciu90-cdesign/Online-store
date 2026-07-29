@@ -363,10 +363,31 @@ function defaultProductSvg(p) {
   const cols = CAT_SVG_COLORS[p.cat] || ['#16324f', '#0f2438'];
   return (SVG[icon] || SVG.tigla)(cols[0], cols[1]);
 }
+// Încarcă valorile globale de opțiuni din API (finisaje/grosimi/culori) și le
+// aplică peste cele implicite, ca proprietățile adăugate din admin să apară.
+let OPTIONS_READY = null;
+function loadOptions() {
+  if (OPTIONS_READY) return OPTIONS_READY;
+  OPTIONS_READY = (async () => {
+    try {
+      const res = await fetch('/api/options', { headers: { Accept: 'application/json' } });
+      if (res.ok) {
+        const data = await res.json();
+        for (const g of Object.keys(data || {})) {
+          if (OPTIONS[g] && Array.isArray(data[g]) && data[g].length) OPTIONS[g].values = data[g];
+        }
+      }
+    } catch (e) { /* fallback pe valorile implicite */ }
+    return OPTIONS;
+  })();
+  return OPTIONS_READY;
+}
+
 let CATALOG_READY = null;
 function loadCatalog() {
   if (CATALOG_READY) return CATALOG_READY;
   CATALOG_READY = (async () => {
+    await loadOptions();
     try {
       const res = await fetch('/api/products', { headers: { Accept: 'application/json' } });
       if (res.ok) {

@@ -39,6 +39,17 @@ CREATE TABLE IF NOT EXISTS quotes (
   created_at TEXT DEFAULT (datetime('now'))
 );
 
+-- Valori globale de opțiuni (finisaje / grosimi / culori) editabile din admin
+CREATE TABLE IF NOT EXISTS option_values (
+  grp   TEXT NOT NULL,        -- 'finisaj' | 'grosime' | 'culoare'
+  id    TEXT NOT NULL,
+  name  TEXT NOT NULL,
+  delta REAL DEFAULT 0,       -- diferență de preț implicită
+  hex   TEXT,                 -- doar pentru culoare
+  sort  INTEGER DEFAULT 0,
+  PRIMARY KEY (grp, id)
+);
+
 CREATE INDEX IF NOT EXISTS idx_orders_created ON orders(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_quotes_created ON quotes(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_products_cat ON products(cat);
