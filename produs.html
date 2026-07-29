@@ -80,9 +80,13 @@
   <script src="assets/js/main.js"></script>
   <script>
     const id = new URLSearchParams(location.search).get('id');
-    const p = getProduct(id);
     const root = document.getElementById('pd-root');
-    const sel = p ? defaultOpts(p) : {}; // opțiuni selectate (finisaj/grosime/culoare)
+    let p = null;
+    let sel = {}; // opțiuni selectate (finisaj/grosime/culoare)
+
+    loadCatalog().then(() => {
+    p = getProduct(id);
+    sel = p ? defaultOpts(p) : {};
 
     if (!p) {
       root.innerHTML = `<div class="empty-state" style="padding:100px 20px">
@@ -146,6 +150,7 @@
       hydrateImages();
       initOptions();
     }
+    }); // loadCatalog
 
     // Construiește selectorii de opțiuni (swatch pt culoare, pastile pt finisaj/grosime)
     function renderOptions(prod) {

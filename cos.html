@@ -213,7 +213,7 @@
     }
 
     document.addEventListener('cart:change', () => { if (!document.getElementById('checkout-form')) render(); });
-    render();
+    loadCatalog().then(render);
   </script>
 </body>
 </html>

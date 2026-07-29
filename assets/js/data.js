@@ -90,7 +90,7 @@ const CATEGORIES = [
     desc: 'Folii anticondens și membrane difuzie pentru protecția șarpantei.' },
 ];
 
-const PRODUCTS = [
+let PRODUCTS = [
   // ── Țiglă metalică ──
   { id: 'tm-clasic-05', cat: 'tigla-metalica', name: 'Țiglă metalică Clasic 0.5mm',
     price: 42.90, unit: 'mp', badge: 'Best seller',
@@ -336,4 +336,36 @@ function optionPrice(p, opts) {
 function optionSummary(opts) {
   const o = opts || {};
   return Object.keys(o).map(g => optionValueName(g, o[g]).split(' · ')[0]).join(' · ');
+}
+
+/* ── ÎNCĂRCARE CATALOG DIN API (D1), cu fallback pe catalogul static ─────────
+   Dacă /api/products întoarce produse (baza D1 e configurată și populată),
+   acestea înlocuiesc catalogul static, ca editările din admin să apară pe site.
+   Dacă API-ul lipsește sau întoarce listă goală, rămâne catalogul static. */
+function defaultProductSvg(p) {
+  const cat = getCategory(p.cat);
+  const icon = cat ? cat.icon : 'tigla';
+  const cols = CAT_SVG_COLORS[p.cat] || ['#16324f', '#0f2438'];
+  return (SVG[icon] || SVG.tigla)(cols[0], cols[1]);
+}
+let CATALOG_READY = null;
+function loadCatalog() {
+  if (CATALOG_READY) return CATALOG_READY;
+  CATALOG_READY = (async () => {
+    try {
+      const res = await fetch('/api/products', { headers: { Accept: 'application/json' } });
+      if (res.ok) {
+        const list = await res.json();
+        if (Array.isArray(list) && list.length) {
+          // păstrează ilustrațiile SVG (nu vin din DB): din catalogul static sau default
+          const staticSvg = {};
+          PRODUCTS.forEach(p => { staticSvg[p.id] = p.svg; });
+          list.forEach(p => { if (!p.svg) p.svg = staticSvg[p.id] || defaultProductSvg(p); });
+          PRODUCTS = list;
+        }
+      }
+    } catch (e) { /* fără API / offline → rămâne catalogul static */ }
+    return PRODUCTS;
+  })();
+  return CATALOG_READY;
 }
