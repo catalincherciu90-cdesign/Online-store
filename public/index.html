@@ -207,14 +207,14 @@
     const arrow = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg>';
 
     document.getElementById('home-categories').innerHTML = CATEGORIES.map(c => {
-      const [c1,c2] = catColors[c.id];
-      return `<a class="cat-card" href="produse.html?cat=${c.id}">
-        <div class="thumb">${categoryMedia(c)}</div>
-        <div class="body">
-          <h3>${c.name}</h3><p>${c.desc}</p>
-          <span class="link">Vezi produse ${arrow}</span>
+      return `<a class="cat-tile" href="produse.html?cat=${c.id}">
+        <div class="cat-tile-media">${categoryMedia(c)}</div>
+        <div class="cat-tile-overlay">
+          <div class="cat-tile-name">${c.name}</div>
+          ${c.tag ? `<div class="cat-tile-tag">${c.tag}</div>` : ''}
         </div></a>`;
     }).join('');
+    hydrateImages();
 
     // Produse recomandate (badge best seller / premium / nou)
     loadCatalog().then(() => {

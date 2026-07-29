@@ -269,6 +269,31 @@ h2 { font-size: clamp(1.6rem, 3vw, 2.35rem); letter-spacing: -0.028em; }
 .cat-card .link svg { width: 16px; height: 16px; transition: transform .2s; }
 .cat-card:hover .link svg { transform: translateX(4px); }
 
+/* Categorii tip „tile" cu imagine + nume suprapus (stil showroom) */
+.cat-tile {
+  position: relative; display: block; aspect-ratio: 4 / 3; border-radius: var(--radius);
+  overflow: hidden; box-shadow: var(--shadow-sm); transition: box-shadow .25s, transform .2s;
+}
+.cat-tile:hover { box-shadow: var(--shadow-lg); transform: translateY(-3px); }
+.cat-tile-media { position: absolute; inset: 0; }
+.cat-tile-media img, .cat-tile-media svg { width: 100%; height: 100%; object-fit: cover; transition: transform .45s ease; }
+.cat-tile:hover .cat-tile-media img, .cat-tile:hover .cat-tile-media svg { transform: scale(1.06); }
+.cat-tile-overlay {
+  position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center;
+  justify-content: center; gap: 12px; text-align: center; padding: 18px;
+  background: linear-gradient(180deg, rgba(11,22,38,.12) 0%, rgba(11,22,38,.58) 100%);
+  transition: background .25s;
+}
+.cat-tile:hover .cat-tile-overlay { background: linear-gradient(180deg, rgba(11,22,38,.28) 0%, rgba(11,22,38,.66) 100%); }
+.cat-tile-name {
+  color: #fff; font-weight: 800; font-size: clamp(1rem, 1.5vw, 1.3rem); letter-spacing: .04em;
+  text-transform: uppercase; text-shadow: 0 2px 14px rgba(0,0,0,.55); line-height: 1.15;
+}
+.cat-tile-tag {
+  background: rgba(255,255,255,.94); color: var(--navy); font-size: .74rem; font-weight: 700;
+  letter-spacing: .05em; text-transform: uppercase; padding: 6px 13px; border-radius: 6px;
+}
+
 /* ---------- Product grid ---------- */
 .products-layout { display: grid; grid-template-columns: 250px 1fr; gap: 32px; align-items: start; }
 .filters {
@@ -412,6 +437,23 @@ h2 { font-size: clamp(1.6rem, 3vw, 2.35rem); letter-spacing: -0.028em; }
 .cart-empty svg { width: 90px; height: 90px; color: var(--line); margin: 0 auto 20px; }
 .cart-empty h2 { margin-bottom: 10px; }
 .cart-empty p { color: var(--muted); margin-bottom: 24px; }
+
+/* ---------- Checkout (2 coloane: formular + rezumat) ---------- */
+.checkout-back { display: inline-block; margin-bottom: 16px; color: var(--slate); font-weight: 600; }
+.checkout-back:hover { color: var(--terra); }
+.checkout-grid { display: grid; grid-template-columns: 1.5fr 1fr; gap: 32px; align-items: start; padding-bottom: 40px; }
+.checkout-form-card { background: var(--bg-alt); border: 1px solid var(--line); border-radius: var(--radius); padding: 28px; }
+.co-items { margin-bottom: 14px; }
+.co-line { display: flex; gap: 12px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.co-line:last-child { border-bottom: 0; }
+.co-media { width: 50px; height: 42px; border-radius: 6px; overflow: hidden; flex-shrink: 0; background: var(--bg); }
+.co-media img, .co-media svg { width: 100%; height: 100%; object-fit: cover; }
+.co-info { flex: 1; min-width: 0; }
+.co-name { font-weight: 600; font-size: .9rem; line-height: 1.2; }
+.co-opts { font-size: .78rem; color: var(--terra-dark); }
+.co-qty { font-size: .8rem; color: var(--muted); }
+.co-price { font-weight: 700; color: var(--navy); font-size: .9rem; white-space: nowrap; }
+@media (max-width: 860px) { .checkout-grid { grid-template-columns: 1fr; } }
 
 /* ---------- Checkout form ---------- */
 .checkout-form { display: grid; gap: 16px; }

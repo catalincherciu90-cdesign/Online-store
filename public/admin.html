@@ -142,6 +142,16 @@
     </div>
   </div>
 
+  <!-- DETALII COMANDĂ -->
+  <div class="overlay" id="order-view">
+    <div class="modal" style="max-width:640px">
+      <div id="order-view-body"></div>
+      <div style="text-align:right;margin-top:20px">
+        <button type="button" class="btn btn-outline" onclick="closeOrderView()">Închide</button>
+      </div>
+    </div>
+  </div>
+
   <script src="assets/js/data.js"></script>
   <script>
     const TKEY = 'acoperispro_admin_token';
@@ -434,22 +444,46 @@
     }
 
     // ── Comenzi ──
+    let ordersData = [];
     async function loadOrders() {
       const box = document.getElementById('orders-box');
       try {
-        const res = await api('/orders'); const list = await res.json();
-        if (!list.length) { box.innerHTML = `<div class="a-empty">Nicio comandă încă.</div>`; return; }
-        box.innerHTML = `<table class="a-table"><thead><tr><th>Ref</th><th>Client</th><th>Contact</th><th>Produse</th><th>Total</th><th>Data</th></tr></thead><tbody>${
-          list.map(o => `<tr>
+        const res = await api('/orders'); ordersData = await res.json();
+        if (!ordersData.length) { box.innerHTML = `<div class="a-empty">Nicio comandă încă.</div>`; return; }
+        box.innerHTML = `<table class="a-table"><thead><tr><th>Ref</th><th>Client</th><th>Contact</th><th>Total</th><th>Data</th><th></th></tr></thead><tbody>${
+          ordersData.map((o, i) => `<tr style="cursor:pointer" onclick="openOrder(${i})">
             <td><b>${esc(o.ref)}</b></td>
-            <td>${esc(o.prenume)} ${esc(o.nume)}<br><span class="muted-sm">${esc(o.adresa)}, ${esc(o.oras)}</span></td>
+            <td>${esc(o.prenume)} ${esc(o.nume)}<br><span class="muted-sm">${esc(o.oras)}</span></td>
             <td>${esc(o.telefon)}<br><span class="muted-sm">${esc(o.email)}</span></td>
-            <td class="muted-sm">${(o.items || []).map(i => `${esc(i.cant)}× ${esc(i.nume)}${i.optiuni ? ` <em>(${esc(i.optiuni)})</em>` : ''}`).join('<br>')}</td>
             <td><b>${fmt(o.total)}</b></td>
-            <td class="muted-sm">${esc((o.created_at || '').replace('T', ' ').slice(0, 16))}</td></tr>`).join('')
+            <td class="muted-sm">${esc((o.created_at || '').replace('T', ' ').slice(0, 16))}</td>
+            <td><button class="a-btn-sm" onclick="event.stopPropagation();openOrder(${i})">Deschide</button></td></tr>`).join('')
         }</tbody></table>`;
       } catch (e) { box.innerHTML = `<div class="a-empty">Eroare la încărcare.</div>`; }
     }
+    function openOrder(i) {
+      const o = ordersData[i]; if (!o) return;
+      const items = (o.items || []).map(it => `<tr>
+        <td>${esc(it.nume)}${it.optiuni ? `<br><span class="muted-sm">${esc(it.optiuni)}</span>` : ''}</td>
+        <td style="text-align:center">${esc(it.cant)} ${esc(it.unit || '')}</td>
+        <td style="text-align:right">${fmt(it.pret)}</td>
+        <td style="text-align:right">${fmt((Number(it.pret) || 0) * (Number(it.cant) || 0))}</td></tr>`).join('');
+      document.getElementById('order-view-body').innerHTML = `
+        <h3 style="margin-bottom:2px">Comandă ${esc(o.ref)}</h3>
+        <p class="muted-sm" style="margin-bottom:18px">${esc((o.created_at || '').replace('T', ' ').slice(0, 16))} · status: ${esc(o.status || 'nou')}</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px 20px;margin-bottom:20px">
+          <div><div class="muted-sm">Client</div><b>${esc(o.prenume)} ${esc(o.nume)}</b></div>
+          <div><div class="muted-sm">Telefon</div><b>${esc(o.telefon)}</b></div>
+          <div><div class="muted-sm">Email</div>${esc(o.email)}</div>
+          <div><div class="muted-sm">Adresă</div>${esc(o.adresa)}, ${esc(o.oras)}, ${esc(o.judet)}</div>
+          ${o.obs ? `<div style="grid-column:1/-1"><div class="muted-sm">Observații</div>${esc(o.obs)}</div>` : ''}
+        </div>
+        <table class="a-table"><thead><tr><th>Produs</th><th style="text-align:center">Cant.</th><th style="text-align:right">Preț</th><th style="text-align:right">Total</th></tr></thead><tbody>${items}</tbody></table>
+        <div style="text-align:right;font-size:1.25rem;font-weight:800;color:var(--navy);margin-top:16px">Total: ${fmt(o.total)}</div>
+        <p class="muted-sm" style="text-align:right;margin-top:2px">Plată ramburs</p>`;
+      document.getElementById('order-view').classList.add('open');
+    }
+    function closeOrderView() { document.getElementById('order-view').classList.remove('open'); }
 
     // ── Cereri ──
     async function loadQuotes() {

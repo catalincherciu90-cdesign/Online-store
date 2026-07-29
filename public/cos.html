@@ -133,7 +133,14 @@
         ? `<p class="muted" style="margin-top:8px">Mai adaugă ${formatPrice(DELIVERY_THRESHOLD - subtotal)} pentru livrare gratuită.</p>`
         : '';
 
-      const summarySide = checkoutMode ? renderCheckout(total) : `
+      if (checkoutMode) {
+        root.innerHTML = renderCheckout(items, subtotal, deliveryLabel, total);
+        hydrateImages(root);
+        return;
+      }
+
+      root.innerHTML = `<div class="cart-layout">
+        <div class="cart-items">${rows}</div>
         <div class="summary">
           <h3>Sumar comandă</h3>
           <div class="line"><span>Subtotal</span><span>${formatPrice(subtotal)}</span></div>
@@ -142,37 +149,63 @@
           ${freeHint}
           <button class="btn btn-primary btn-block btn-lg" style="margin-top:18px" onclick="goCheckout()">Finalizează comanda</button>
           <a href="produse.html" class="btn btn-outline btn-block" style="margin-top:10px">Continuă cumpărăturile</a>
-        </div>`;
-
-      root.innerHTML = `<div class="cart-layout">
-        <div class="cart-items">${rows}</div>
-        ${summarySide}
+        </div>
       </div>`;
       hydrateImages(root);
     }
 
-    function renderCheckout(total) {
-      return `<div class="summary">
-        <h3>Date de livrare</h3>
-        <form class="checkout-form" id="checkout-form" onsubmit="placeOrder(event)">
-          <div class="form-row">
-            <div class="field"><label>Nume *</label><input name="nume" required></div>
-            <div class="field"><label>Prenume *</label><input name="prenume" required></div>
+    // Vedere de checkout pe 2 coloane: formular (stânga) + rezumat comandă (dreapta)
+    function renderCheckout(items, subtotal, deliveryLabel, total) {
+      const recap = items.map(it => {
+        const p = getProduct(it.id);
+        if (!p) return '';
+        const unit = Cart.unitPrice(it);
+        const summary = optionSummary(it.opts);
+        return `<div class="co-line">
+          <div class="co-media">${productMedia(p)}</div>
+          <div class="co-info">
+            <div class="co-name">${p.name}</div>
+            ${summary ? `<div class="co-opts">${summary}</div>` : ''}
+            <div class="co-qty">${it.qty} × ${formatPrice(unit)}</div>
           </div>
-          <div class="field full"><label>Telefon *</label><input name="telefon" type="tel" required placeholder="07xx xxx xxx"></div>
-          <div class="field full"><label>Email *</label><input name="email" type="email" required></div>
-          <div class="field full"><label>Adresă (stradă, număr) *</label><input name="adresa" required></div>
-          <div class="form-row">
-            <div class="field"><label>Localitate *</label><input name="oras" required></div>
-            <div class="field"><label>Județ *</label><input name="judet" required></div>
+          <div class="co-price">${formatPrice(unit * it.qty)}</div>
+        </div>`;
+      }).join('');
+
+      return `
+        <a href="#" class="checkout-back" onclick="event.preventDefault();checkoutMode=false;render()">← Înapoi la coș</a>
+        <div class="checkout-grid">
+          <div class="checkout-form-card">
+            <h3 style="margin-bottom:4px">Date de livrare</h3>
+            <p class="muted" style="margin-bottom:22px">Completează datele pentru livrare. Plata se face ramburs.</p>
+            <form class="checkout-form" id="checkout-form" onsubmit="placeOrder(event)">
+              <div class="form-row">
+                <div class="field"><label>Nume *</label><input name="nume" required></div>
+                <div class="field"><label>Prenume *</label><input name="prenume" required></div>
+              </div>
+              <div class="form-row">
+                <div class="field"><label>Telefon *</label><input name="telefon" type="tel" required placeholder="07xx xxx xxx"></div>
+                <div class="field"><label>Email *</label><input name="email" type="email" required></div>
+              </div>
+              <div class="field full"><label>Adresă (stradă, număr) *</label><input name="adresa" required></div>
+              <div class="form-row">
+                <div class="field"><label>Localitate *</label><input name="oras" required></div>
+                <div class="field"><label>Județ *</label><input name="judet" required></div>
+              </div>
+              <div class="field full"><label>Observații (opțional)</label><textarea name="obs" rows="3" placeholder="Detalii acoperiș, dimensiuni, program livrare..."></textarea></div>
+              <button type="submit" class="btn btn-primary btn-block btn-lg" style="margin-top:6px">Trimite comanda</button>
+              <div class="form-status" id="order-status"></div>
+            </form>
           </div>
-          <div class="field full"><label>Observații (opțional)</label><textarea name="obs" rows="2" placeholder="Detalii acoperiș, dimensiuni, program livrare..."></textarea></div>
-          <div class="line total" style="border-top:2px solid var(--line);margin-top:6px;padding-top:14px"><span>Total de plată</span><span>${formatPrice(total)}</span></div>
-          <p class="muted">Plata se face ramburs, la livrare. Te vom contacta pentru confirmare.</p>
-          <button type="submit" class="btn btn-primary btn-block btn-lg" style="margin-top:8px">Trimite comanda</button>
-          <button type="button" class="btn btn-outline btn-block" style="margin-top:10px" onclick="checkoutMode=false;render()">Înapoi la coș</button>
-        </form>
-      </div>`;
+          <aside class="summary">
+            <h3>Comanda ta</h3>
+            <div class="co-items">${recap}</div>
+            <div class="line"><span>Subtotal</span><span>${formatPrice(subtotal)}</span></div>
+            <div class="line"><span>Livrare</span><span>${deliveryLabel}</span></div>
+            <div class="line total"><span>Total de plată</span><span>${formatPrice(total)}</span></div>
+            <p class="muted" style="margin-top:10px">Plata se face ramburs, la livrare. Te contactăm pentru confirmare.</p>
+          </aside>
+        </div>`;
     }
 
     function goCheckout() { checkoutMode = true; render(); window.scrollTo({ top: 0, behavior: 'smooth' }); }

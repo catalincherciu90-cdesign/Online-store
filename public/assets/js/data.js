@@ -76,17 +76,17 @@ const SVG = {
 };
 
 const CATEGORIES = [
-  { id: 'tigla-metalica', name: 'Țiglă metalică', icon: 'tigla',
+  { id: 'tigla-metalica', name: 'Țiglă metalică', icon: 'tigla', tag: 'clasic, modular',
     desc: 'Panouri de țiglă metalică cu aspect clasic, ușoare și rezistente la intemperii.' },
-  { id: 'tabla-faltuita', name: 'Tablă fălțuită', icon: 'falt',
+  { id: 'tabla-faltuita', name: 'Tablă fălțuită', icon: 'falt', tag: 'standing seam, click',
     desc: 'Sistem de tablă prefălțuită tip standing seam pentru un look modern, elegant.' },
-  { id: 'panouri-sandwich', name: 'Panouri sandwich', icon: 'panou',
+  { id: 'panouri-sandwich', name: 'Panouri sandwich', icon: 'panou', tag: 'PUR, PIR',
     desc: 'Panouri termoizolante pentru acoperiș, montaj rapid, izolare superioară.' },
-  { id: 'sistem-pluvial', name: 'Sistem pluvial', icon: 'pluvial',
+  { id: 'sistem-pluvial', name: 'Sistem pluvial', icon: 'pluvial', tag: 'jgheaburi, burlane',
     desc: 'Jgheaburi, burlane și accesorii pentru un drenaj eficient al apei.' },
-  { id: 'accesorii', name: 'Accesorii montaj', icon: 'accesoriu',
+  { id: 'accesorii', name: 'Accesorii montaj', icon: 'accesoriu', tag: 'coame, parazăpezi',
     desc: 'Coame, parazăpezi, șuruburi autoforante și elemente de finisaj.' },
-  { id: 'folii-membrane', name: 'Folii & membrane', icon: 'folie',
+  { id: 'folii-membrane', name: 'Folii & membrane', icon: 'folie', tag: 'anticondens, difuzie',
     desc: 'Folii anticondens și membrane difuzie pentru protecția șarpantei.' },
 ];
 
