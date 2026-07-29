@@ -160,10 +160,10 @@
         const def = OPTIONS[g];
         const cur = optionValueName(g, sel[g]);
         if (def.type === 'swatch') {
+          // culorile se populează dinamic (depind de finisajul ales) în renderColors()
           return `<div class="opt-group">
             <div class="opt-label">${def.label}: <b id="cur-${g}">${cur}</b></div>
-            <div class="opt-swatches">${def.values.map(v =>
-              `<button type="button" class="swatch${v.id === sel[g] ? ' sel' : ''}" data-group="${g}" data-val="${v.id}" title="${v.name}" style="--sw:${v.hex}"><span></span></button>`).join('')}</div>
+            <div class="opt-swatches" id="color-swatches"></div>
           </div>`;
         }
         return `<div class="opt-group">
@@ -181,17 +181,38 @@
       if (el) el.textContent = formatPrice(optionPrice(p, sel));
     }
 
+    // Populează culorile disponibile pentru finisajul curent (sel.finisaj).
+    // Dacă culoarea aleasă nu e validă pentru noul finisaj, o resetează.
+    function renderColors() {
+      const box = document.getElementById('color-swatches');
+      if (!box) return;
+      const colors = finishColorsFor(p, sel.finisaj);
+      if (colors.length && !colors.some(c => c.id === sel.culoare)) {
+        sel.culoare = colors[0].id;
+        const cur = document.getElementById('cur-culoare');
+        if (cur) cur.textContent = optionValueName('culoare', sel.culoare);
+        updateGallery(sel.culoare);
+      }
+      box.innerHTML = colors.map(v =>
+        `<button type="button" class="swatch${v.id === sel.culoare ? ' sel' : ''}" data-group="culoare" data-val="${v.id}" title="${v.name}" style="--sw:${v.hex}"><span></span></button>`).join('');
+    }
+
     function initOptions() {
-      document.querySelectorAll('.pd-options [data-group]').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const g = btn.dataset.group, v = btn.dataset.val;
-          sel[g] = v;
-          btn.parentElement.querySelectorAll('[data-group]').forEach(b => b.classList.toggle('sel', b === btn));
-          const cur = document.getElementById('cur-' + g);
-          if (cur) cur.textContent = optionValueName(g, v);
-          updatePrice();
-          if (g === 'culoare') updateGallery(v);
-        });
+      const cont = document.querySelector('.pd-options');
+      if (!cont) return;
+      renderColors(); // culorile inițiale pentru finisajul implicit
+      // delegare — funcționează și pentru swatch-urile re-randate la schimbarea finisajului
+      cont.addEventListener('click', e => {
+        const btn = e.target.closest('[data-group]');
+        if (!btn) return;
+        const g = btn.dataset.group, v = btn.dataset.val;
+        sel[g] = v;
+        btn.parentElement.querySelectorAll('[data-group]').forEach(b => b.classList.toggle('sel', b === btn));
+        const cur = document.getElementById('cur-' + g);
+        if (cur) cur.textContent = optionValueName(g, v);
+        updatePrice();
+        if (g === 'culoare') updateGallery(v);
+        if (g === 'finisaj') renderColors();
       });
     }
 

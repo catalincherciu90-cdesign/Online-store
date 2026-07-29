@@ -221,8 +221,9 @@
       renderOptionPrices();
     }
 
-    // ── Prețuri per opțiune (finisaj/grosime/culoare), per produs ──
+    // ── Prețuri per opțiune (finisaj/grosime/culoare) + culori per finisaj ──
     let editingPrices = {};
+    let editingFinishColors = {};
     function capturePrices() {
       document.querySelectorAll('#opt-prices input[data-key]').forEach(i => {
         const v = i.value.trim();
@@ -236,8 +237,19 @@
       if (mode === 'custom') return [...f.querySelectorAll('#opt-checks input:checked')].map(c => c.value);
       return CATEGORY_OPTIONS[f.cat.value] || [];
     }
+    function captureFinishColors() {
+      const map = {};
+      document.querySelectorAll('#opt-prices input[data-finish]').forEach(cb => {
+        (map[cb.dataset.finish] = map[cb.dataset.finish] || []);
+        if (cb.checked) map[cb.dataset.finish].push(cb.value);
+      });
+      if (Object.keys(map).length) {
+        for (const f in map) editingFinishColors[f] = map[f];
+      }
+    }
     function renderOptionPrices() {
       capturePrices();
+      captureFinishColors();
       const groups = activeGroups();
       const wrap = document.getElementById('opt-prices-wrap');
       const box = document.getElementById('opt-prices');
@@ -245,6 +257,25 @@
       wrap.style.display = 'block';
       box.innerHTML = groups.map(g => {
         const def = OPTIONS[g];
+        if (g === 'finisaj') {
+          return `<div style="margin:6px 0 12px"><div class="muted-sm" style="font-weight:700;color:var(--navy);margin-bottom:6px">Finisaje (preț + culori disponibile)</div>` +
+            def.values.map(v => {
+              const key = 'finisaj:' + v.id;
+              const price = (key in editingPrices) ? editingPrices[key] : (v.delta || 0);
+              const selC = editingFinishColors[v.id];
+              return `<div style="border:1px solid var(--line);border-radius:8px;padding:10px;margin-bottom:8px">
+                <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px">
+                  <b>${v.name}</b>
+                  <label class="muted-sm" style="display:inline-flex;align-items:center;gap:6px">preț +<input type="number" step="0.01" data-key="${key}" value="${price}" style="width:90px;padding:5px 8px;border:1px solid var(--line-strong);border-radius:6px"> lei</label>
+                </div>
+                <div style="display:flex;flex-wrap:wrap;gap:6px 14px">${OPTIONS.culoare.values.map(c => {
+                  const checked = !Array.isArray(selC) || selC.includes(c.id);
+                  return `<label class="muted-sm" style="display:inline-flex;align-items:center;gap:5px"><input type="checkbox" data-finish="${v.id}" value="${c.id}" ${checked ? 'checked' : ''}><span style="width:14px;height:14px;border-radius:50%;background:${c.hex};box-shadow:0 0 0 1px rgba(0,0,0,.15) inset;display:inline-block"></span>${c.name.split(' · ')[0]}</label>`;
+                }).join('')}</div>
+              </div>`;
+            }).join('') + `</div>`;
+        }
+        // grosime / culoare standalone: doar preț per valoare
         return `<div style="margin:6px 0 10px"><div class="muted-sm" style="font-weight:700;color:var(--navy);margin-bottom:4px">${def.label}</div>
           <div style="display:grid;grid-template-columns:1fr 120px;gap:6px 12px;align-items:center">${
           def.values.map(v => {
@@ -262,6 +293,20 @@
       });
       return o;
     }
+    function collectFinishColors() {
+      const total = OPTIONS.culoare.values.length;
+      const byFinish = {};
+      document.querySelectorAll('#opt-prices input[data-finish]').forEach(cb => {
+        (byFinish[cb.dataset.finish] = byFinish[cb.dataset.finish] || []);
+        if (cb.checked) byFinish[cb.dataset.finish].push(cb.value);
+      });
+      const map = {};
+      for (const f in byFinish) {
+        const s = byFinish[f];
+        if (s.length && s.length < total) map[f] = s; // doar restricțiile reale
+      }
+      return map;
+    }
     // re-randează prețurile când se schimbă categoria sau grupurile bifate
     document.getElementById('prod-form').addEventListener('change', e => {
       if (e.target.id === 'f-cat' || e.target.closest('#opt-checks')) renderOptionPrices();
@@ -275,6 +320,7 @@
       document.getElementById('editor-title').textContent = p ? 'Editează produs' : 'Produs nou';
       f.id.readOnly = !!p;
       editingPrices = p && p.optionPrices ? { ...p.optionPrices } : {};
+      editingFinishColors = p && p.finishColors ? { ...p.finishColors } : {};
       if (p) {
         f.id.value = p.id; f.cat.value = p.cat; f.name.value = p.name; f.price.value = p.price;
         f.unit.value = p.unit || 'mp'; f.badge.value = p.badge || ''; f.desc.value = p.desc || '';
@@ -302,6 +348,7 @@
         badge: f.badge.value.trim() || null, desc: f.desc.value.trim(),
         specs: textToSpecs(f.specs.value), options,
         optionPrices: (options === undefined || (options && options.length)) ? collectOptionPrices() : {},
+        finishColors: collectFinishColors(),
       };
       const isEdit = f.id.readOnly;
       try {

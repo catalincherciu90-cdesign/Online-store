@@ -339,6 +339,14 @@ function optionPrice(p, opts) {
   for (const g of Object.keys(o)) price += optionDelta(p, g, o[g]);
   return price;
 }
+// Culorile disponibile pentru un finisaj: dacă produsul definește finishColors
+// pentru acel finisaj, doar acelea; altfel toate culorile globale.
+function finishColorsFor(p, finishId) {
+  const fc = p && p.finishColors && p.finishColors[finishId];
+  const all = OPTIONS.culoare.values;
+  if (Array.isArray(fc) && fc.length) return all.filter(v => fc.includes(v.id));
+  return all;
+}
 /* Rezumat scurt al opțiunilor pentru coș (ex. „Antracit · 0.50 mm · Poliester mat") */
 function optionSummary(opts) {
   const o = opts || {};

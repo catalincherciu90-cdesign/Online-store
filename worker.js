@@ -50,17 +50,19 @@ function rowToProduct(r) {
     specs: r.specs ? JSON.parse(r.specs) : {},
     options: r.options ? JSON.parse(r.options) : undefined,
     optionPrices: r.option_prices ? JSON.parse(r.option_prices) : undefined,
+    finishColors: r.finish_colors ? JSON.parse(r.finish_colors) : undefined,
     active: !!r.active,
   };
 }
+const jstr = o => (o && Object.keys(o).length ? JSON.stringify(o) : null);
 async function upsertProduct(env, p) {
   await env.DB.prepare(
-    `INSERT OR REPLACE INTO products (id,cat,name,price,unit,badge,descr,specs,options,option_prices,active)
-     VALUES (?,?,?,?,?,?,?,?,?,?,1)`
+    `INSERT OR REPLACE INTO products (id,cat,name,price,unit,badge,descr,specs,options,option_prices,finish_colors,active)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,1)`
   ).bind(
     p.id, p.cat, p.name, Number(p.price) || 0, p.unit || 'buc', p.badge || null,
     p.desc || '', JSON.stringify(p.specs || {}), p.options ? JSON.stringify(p.options) : null,
-    p.optionPrices && Object.keys(p.optionPrices).length ? JSON.stringify(p.optionPrices) : null
+    jstr(p.optionPrices), jstr(p.finishColors)
   ).run();
 }
 
@@ -94,11 +96,11 @@ async function productUpdate(request, env, id) {
   const p = await request.json().catch(() => null);
   if (!p) return json({ error: 'Date invalide.' }, 400);
   await env.DB.prepare(
-    `UPDATE products SET cat=?,name=?,price=?,unit=?,badge=?,descr=?,specs=?,options=?,option_prices=? WHERE id=?`
+    `UPDATE products SET cat=?,name=?,price=?,unit=?,badge=?,descr=?,specs=?,options=?,option_prices=?,finish_colors=? WHERE id=?`
   ).bind(
     p.cat, p.name, Number(p.price) || 0, p.unit || 'buc', p.badge || null,
     p.desc || '', JSON.stringify(p.specs || {}), p.options ? JSON.stringify(p.options) : null,
-    p.optionPrices && Object.keys(p.optionPrices).length ? JSON.stringify(p.optionPrices) : null, id
+    jstr(p.optionPrices), jstr(p.finishColors), id
   ).run();
   return json({ ok: true });
 }
