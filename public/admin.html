@@ -72,7 +72,11 @@
     <div id="tab-produse">
       <div class="toolbar">
         <h2 class="grow" style="font-size:1.3rem">Produse</h2>
-        <button class="a-btn-sm" onclick="seedFromCatalog()">⭳ Importă din catalog</button>
+        <a class="a-btn-sm" href="template-import-produse.xlsx" download>⭳ Descarcă template Excel</a>
+        <label class="a-btn-sm" style="cursor:pointer">⭱ Import Excel/CSV
+          <input type="file" accept=".xlsx,.csv" hidden onchange="importFile(this.files[0]); this.value='';">
+        </label>
+        <button class="a-btn-sm" onclick="seedFromCatalog()">Importă din catalog</button>
         <button class="btn btn-primary" style="padding:9px 16px" onclick="openEditor()">+ Produs nou</button>
       </div>
       <div id="products-box"></div>
@@ -283,6 +287,121 @@
         const res = await api('/admin/seed', { method: 'POST', body: JSON.stringify({ products: PRODUCTS }) });
         const d = await res.json();
         alert(d.ok ? `Importate: ${d.imported} produse.` : (d.error || 'Eroare.'));
+        loadProducts();
+      } catch (e) { alert('Eroare: ' + e.message); }
+    }
+
+    // ── Import Excel/CSV ──
+    async function inflateRaw(bytes) {
+      const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
+      return new Uint8Array(await new Response(stream).arrayBuffer());
+    }
+    function xmlDecode(s) {
+      return s.replace(/&#x([0-9a-fA-F]+);/g, (_, h) => String.fromCodePoint(parseInt(h, 16)))
+        .replace(/&#(\d+);/g, (_, d) => String.fromCodePoint(+d))
+        .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&amp;/g, '&');
+    }
+    function colIdx(ref) { const m = ref.match(/^([A-Z]+)/); let n = 0; for (const ch of m[1]) n = n * 26 + (ch.charCodeAt(0) - 64); return n - 1; }
+    async function parseXlsx(buf) {
+      const u = new Uint8Array(buf); const dv = new DataView(u.buffer, u.byteOffset, u.byteLength);
+      let eocd = -1; for (let i = u.length - 22; i >= 0; i--) { if (dv.getUint32(i, true) === 0x06054b50) { eocd = i; break; } }
+      if (eocd < 0) throw new Error('Fișier .xlsx invalid.');
+      const cnt = dv.getUint16(eocd + 10, true); let p = dv.getUint32(eocd + 16, true);
+      const files = {};
+      for (let i = 0; i < cnt; i++) {
+        if (dv.getUint32(p, true) !== 0x02014b50) break;
+        const method = dv.getUint16(p + 10, true), compSize = dv.getUint32(p + 20, true);
+        const fnLen = dv.getUint16(p + 28, true), exLen = dv.getUint16(p + 30, true), cmLen = dv.getUint16(p + 32, true);
+        const localOff = dv.getUint32(p + 42, true);
+        files[new TextDecoder().decode(u.subarray(p + 46, p + 46 + fnLen))] = { method, compSize, localOff };
+        p += 46 + fnLen + exLen + cmLen;
+      }
+      async function read(name) {
+        const f = files[name]; if (!f) return '';
+        const s = f.localOff + 30 + dv.getUint16(f.localOff + 26, true) + dv.getUint16(f.localOff + 28, true);
+        const data = u.subarray(s, s + f.compSize);
+        return new TextDecoder().decode(f.method === 0 ? data : await inflateRaw(data));
+      }
+      const shared = [];
+      for (const si of (await read('xl/sharedStrings.xml')).match(/<si>[\s\S]*?<\/si>/g) || [])
+        shared.push([...si.matchAll(/<t[^>]*>([\s\S]*?)<\/t>/g)].map(m => xmlDecode(m[1])).join(''));
+      const sheetXml = await read('xl/worksheets/sheet1.xml');
+      const rows = [];
+      for (const rowXml of sheetXml.match(/<row[^>]*>[\s\S]*?<\/row>/g) || []) {
+        const cells = [];
+        for (const cm of rowXml.matchAll(/<c r="([A-Z]+\d+)"([^>]*?)(?:\/>|>([\s\S]*?)<\/c>)/g)) {
+          const idx = colIdx(cm[1]), attrs = cm[2], inner = cm[3] || '';
+          const vm = inner.match(/<v>([\s\S]*?)<\/v>/);
+          if (/t="s"/.test(attrs)) cells[idx] = vm ? (shared[+vm[1]] || '') : '';
+          else if (/t="inlineStr"/.test(attrs)) { const im = inner.match(/<t[^>]*>([\s\S]*?)<\/t>/); cells[idx] = im ? xmlDecode(im[1]) : ''; }
+          else cells[idx] = vm ? xmlDecode(vm[1]) : '';
+        }
+        rows.push(cells);
+      }
+      return rows;
+    }
+    function parseCSV(text) {
+      const rows = []; let row = [], cur = '', q = false;
+      text = text.replace(/^﻿/, '');
+      for (let i = 0; i < text.length; i++) {
+        const c = text[i];
+        if (q) { if (c === '"') { if (text[i + 1] === '"') { cur += '"'; i++; } else q = false; } else cur += c; }
+        else if (c === '"') q = true;
+        else if (c === ',') { row.push(cur); cur = ''; }
+        else if (c === '\n') { row.push(cur); rows.push(row); row = []; cur = ''; }
+        else if (c === '\r') { /* skip */ }
+        else cur += c;
+      }
+      if (cur !== '' || row.length) { row.push(cur); rows.push(row); }
+      return rows;
+    }
+    function colorIdByName(nm) {
+      nm = nm.trim().toLowerCase(); if (!nm) return null;
+      const v = OPTIONS.culoare.values.find(c => {
+        const base = c.name.toLowerCase().split(' · ')[0];
+        return base === nm || c.name.toLowerCase().includes(nm) || c.id === nm;
+      });
+      return v ? v.id : null;
+    }
+    async function importFile(file) {
+      if (!file) return;
+      let rows;
+      try {
+        rows = file.name.toLowerCase().endsWith('.csv') ? parseCSV(await file.text()) : await parseXlsx(await file.arrayBuffer());
+      } catch (e) { alert('Nu am putut citi fișierul: ' + e.message); return; }
+      const norm = r => (r || []).map(x => (x == null ? '' : x).toString().trim());
+      const hIdx = rows.findIndex(r => { const n = norm(r).map(x => x.toLowerCase()); return n.includes('cod') && n.includes('denumire'); });
+      if (hIdx < 0) { alert('Nu am găsit antetul (coloanele cod, denumire...). Verifică fișierul.'); return; }
+      const header = norm(rows[hIdx]).map(x => x.toLowerCase());
+      const col = n => header.indexOf(n);
+      const catIds = new Set(CATEGORIES.map(c => c.id));
+      const catByName = {}; CATEGORIES.forEach(c => catByName[c.name.toLowerCase()] = c.id);
+      const products = [];
+      for (let i = hIdx + 1; i < rows.length; i++) {
+        const r = norm(rows[i]); if (!r.length) continue;
+        const get = n => { const idx = col(n); return idx >= 0 ? (r[idx] || '') : ''; };
+        const cod = get('cod'); if (!cod) continue;
+        let cat = get('categorie'); if (!catIds.has(cat)) cat = catByName[cat.toLowerCase()] || cat;
+        if (!catIds.has(cat)) continue; // sare peste sub-antet / rânduri fără categorie validă
+        const specs = {};
+        get('specificatii').split(';').forEach(part => { const j = part.indexOf(':'); if (j > 0) specs[part.slice(0, j).trim()] = part.slice(j + 1).trim(); });
+        const colorIds = get('culori').split(',').map(colorIdByName).filter(Boolean);
+        let finishColors;
+        if (colorIds.length && (CATEGORY_OPTIONS[cat] || []).includes('finisaj')) {
+          finishColors = {}; OPTIONS.finisaj.values.forEach(f => finishColors[f.id] = colorIds);
+        }
+        products.push({
+          id: cod, cat, name: get('denumire'), desc: get('descriere'),
+          price: parseFloat((get('pret') || '0').replace(',', '.')) || 0,
+          unit: get('unitate') || 'buc', badge: get('badge') || null, specs, finishColors,
+        });
+      }
+      if (!products.length) { alert('Niciun produs valid găsit (verifică coloana „categorie”).'); return; }
+      if (!confirm('Se importă ' + products.length + ' produse. Cele cu același cod se suprascriu. Continui?')) return;
+      try {
+        const res = await api('/admin/seed', { method: 'POST', body: JSON.stringify({ products }) });
+        const d = await res.json();
+        alert(d.ok ? ('✓ Importate: ' + d.imported + ' produse.') : (d.error || 'Eroare la import.'));
         loadProducts();
       } catch (e) { alert('Eroare: ' + e.message); }
     }
