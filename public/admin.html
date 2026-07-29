@@ -343,13 +343,19 @@
       if (cur !== '' || row.length) { row.push(cur); rows.push(row); }
       return rows;
     }
-    function colorIdByName(nm) {
-      nm = nm.trim().toLowerCase(); if (!nm) return null;
-      const v = OPTIONS.culoare.values.find(c => {
-        const base = c.name.toLowerCase().split(' · ')[0];
-        return base === nm || c.name.toLowerCase().includes(nm) || c.id === nm;
+    // Rezolvă un nume (finisaj/grosime/culoare) la id-ul din Proprietăți; dacă nu
+    // există, generează un slug și îl notează în `unknown` ca să avertizăm userul.
+    function optIdByName(grp, nm, unknown) {
+      nm = (nm || '').trim(); if (!nm) return '';
+      const low = nm.toLowerCase();
+      const vals = (OPTIONS[grp] && OPTIONS[grp].values) || [];
+      const v = vals.find(o => {
+        const base = o.name.toLowerCase().split(' · ')[0];
+        return o.id === low || base === low || o.name.toLowerCase() === low || o.name.toLowerCase().includes(low);
       });
-      return v ? v.id : null;
+      if (v) return v.id;
+      if (unknown) unknown.add((OPTIONS[grp] ? OPTIONS[grp].label : grp) + ': „' + nm + '”');
+      return slug(nm);
     }
     async function importFile(file) {
       if (!file) return;
@@ -364,37 +370,79 @@
       const col = n => header.indexOf(n);
       const catIds = new Set(CATEGORIES.map(c => c.id));
       const catByName = {}; CATEGORIES.forEach(c => catByName[c.name.toLowerCase()] = c.id);
-      const products = [];
-      for (let i = hIdx + 1; i < rows.length; i++) {
-        const r = norm(rows[i]); if (!r.length) continue;
-        const get = n => { const idx = col(n); return idx >= 0 ? (r[idx] || '') : ''; };
-        const cod = get('cod'); if (!cod) continue;
-        let cat = get('categorie'); if (!catIds.has(cat)) cat = catByName[cat.toLowerCase()] || cat;
-        if (!catIds.has(cat)) continue; // sare peste sub-antet / rânduri fără categorie validă
-        const specs = {};
-        get('specificatii').split(';').forEach(part => { const j = part.indexOf(':'); if (j > 0) specs[part.slice(0, j).trim()] = part.slice(j + 1).trim(); });
-        const colorIds = get('culori').split(',').map(colorIdByName).filter(Boolean);
-        let finishColors;
-        if (colorIds.length && (CATEGORY_OPTIONS[cat] || []).includes('finisaj')) {
-          finishColors = {}; OPTIONS.finisaj.values.forEach(f => finishColors[f.id] = colorIds);
+      const cell = (r, n) => { const idx = col(n); return idx >= 0 ? (r[idx] || '') : ''; };
+      const resolveCat = raw => { let cat = raw; if (!catIds.has(cat)) cat = catByName[cat.toLowerCase()] || cat; return cat; };
+      const dataRows = [];
+      for (let i = hIdx + 1; i < rows.length; i++) { const r = norm(rows[i]); if (r.some(x => x)) dataRows.push(r); }
+      const unknown = new Set();
+      let products;
+
+      if (header.includes('finisaj')) {
+        // FORMAT LUNG (matrice de finisaje): un rând per combinație finisaj/culoare/grosime + preț.
+        // Rândurile cu același „cod” se adună într-un singur produs cu matricea completă.
+        const byCod = {};
+        for (const r of dataRows) {
+          const cod = cell(r, 'cod'); if (!cod) continue;
+          let prod = byCod[cod];
+          if (!prod) {
+            const cat = resolveCat(cell(r, 'categorie'));
+            if (!catIds.has(cat)) continue; // primul rând al unui produs are nevoie de categorie validă
+            prod = byCod[cod] = { id: cod, cat, name: cell(r, 'denumire'), desc: cell(r, 'descriere'),
+              unit: cell(r, 'unitate') || 'buc', badge: cell(r, 'badge') || null, specs: {}, _fin: {}, _prices: [] };
+            cell(r, 'specificatii').split(';').forEach(part => { const j = part.indexOf(':'); if (j > 0) prod.specs[part.slice(0, j).trim()] = part.slice(j + 1).trim(); });
+          } else {
+            if (!prod.name) prod.name = cell(r, 'denumire');
+            if (!prod.desc) prod.desc = cell(r, 'descriere');
+          }
+          const finName = cell(r, 'finisaj'); if (!finName) continue;
+          const fid = optIdByName('finisaj', finName, unknown);
+          const colName = cell(r, 'culoare'); const cid = colName ? optIdByName('culoare', colName, unknown) : '';
+          const thName = cell(r, 'grosime'); const tid = thName ? optIdByName('grosime', thName, unknown) : '';
+          const pr = parseFloat((cell(r, 'pret') || '').replace(',', '.'));
+          const f = prod._fin[fid] = prod._fin[fid] || { id: fid, colors: new Set(), thicknesses: new Set(), prices: {} };
+          if (cid) f.colors.add(cid);
+          if (tid) f.thicknesses.add(tid);
+          if (!isNaN(pr)) { f.prices[cid + '|' + tid] = pr; prod._prices.push(pr); }
         }
-        // preț pe culoare: „Culoare: preț; ...”
-        const colorPrices = {};
-        get('pret_culori').split(';').forEach(part => {
-          const j = part.indexOf(':'); if (j < 0) return;
-          const cid = colorIdByName(part.slice(0, j));
-          const pr = parseFloat(part.slice(j + 1).replace(',', '.'));
-          if (cid && !isNaN(pr)) colorPrices[cid] = pr;
+        products = Object.values(byCod).map(p => {
+          p.finishes = Object.values(p._fin).map(f => ({ id: f.id, colors: [...f.colors], thicknesses: [...f.thicknesses], prices: f.prices }));
+          p.price = p._prices.length ? Math.min(...p._prices) : 0; // preț „de la” = cea mai mică combinație
+          delete p._fin; delete p._prices; return p;
         });
-        products.push({
-          id: cod, cat, name: get('denumire'), desc: get('descriere'),
-          price: parseFloat((get('pret') || '0').replace(',', '.')) || 0,
-          unit: get('unitate') || 'buc', badge: get('badge') || null, specs, finishColors,
-          colorPrices: Object.keys(colorPrices).length ? colorPrices : undefined,
-        });
+      } else {
+        // FORMAT SIMPLU (compatibilitate): un rând per produs, cu preț unic și culori opționale.
+        products = [];
+        for (const r of dataRows) {
+          const cod = cell(r, 'cod'); if (!cod) continue;
+          const cat = resolveCat(cell(r, 'categorie'));
+          if (!catIds.has(cat)) continue;
+          const specs = {};
+          cell(r, 'specificatii').split(';').forEach(part => { const j = part.indexOf(':'); if (j > 0) specs[part.slice(0, j).trim()] = part.slice(j + 1).trim(); });
+          const colorIds = cell(r, 'culori').split(',').map(x => optIdByName('culoare', x, unknown)).filter(Boolean);
+          let finishColors;
+          if (colorIds.length && (CATEGORY_OPTIONS[cat] || []).includes('finisaj')) {
+            finishColors = {}; OPTIONS.finisaj.values.forEach(f => finishColors[f.id] = colorIds);
+          }
+          const colorPrices = {};
+          cell(r, 'pret_culori').split(';').forEach(part => {
+            const j = part.indexOf(':'); if (j < 0) return;
+            const cid = optIdByName('culoare', part.slice(0, j), unknown);
+            const pr = parseFloat(part.slice(j + 1).replace(',', '.'));
+            if (cid && !isNaN(pr)) colorPrices[cid] = pr;
+          });
+          products.push({
+            id: cod, cat, name: cell(r, 'denumire'), desc: cell(r, 'descriere'),
+            price: parseFloat((cell(r, 'pret') || '0').replace(',', '.')) || 0,
+            unit: cell(r, 'unitate') || 'buc', badge: cell(r, 'badge') || null, specs, finishColors,
+            colorPrices: Object.keys(colorPrices).length ? colorPrices : undefined,
+          });
+        }
       }
+
       if (!products.length) { alert('Niciun produs valid găsit (verifică coloana „categorie”).'); return; }
-      if (!confirm('Se importă ' + products.length + ' produse. Cele cu același cod se suprascriu. Continui?')) return;
+      let msg = 'Se importă ' + products.length + ' produse. Cele cu același cod se suprascriu. Continui?';
+      if (unknown.size) msg = '⚠ Valori care nu există încă în Proprietăți (le import oricum, dar adaugă-le în tabul Proprietăți ca să apară numele/culoarea corect):\n  • ' + [...unknown].join('\n  • ') + '\n\n' + msg;
+      if (!confirm(msg)) return;
       try {
         const res = await api('/admin/seed', { method: 'POST', body: JSON.stringify({ products }) });
         const d = await res.json();
