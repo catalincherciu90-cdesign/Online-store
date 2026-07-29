@@ -1,9 +1,14 @@
-# Configurație Cloudflare (config-as-code) pentru proiectul online-store.
-# Leagă baza D1 ca `DB` — se aplică automat la deploy, fără dashboard.
+# Acoperiș PRO — configurație Worker (deploy: npx wrangler deploy)
 name = "online-store"
-pages_build_output_dir = "."
+main = "worker.js"
 compatibility_date = "2024-11-01"
 
+# Site static din public/ (servit prin binding-ul ASSETS din worker.js)
+[assets]
+directory = "./public"
+binding = "ASSETS"
+
+# Bază de date D1
 [[d1_databases]]
 binding = "DB"
 database_name = "acoperispro-db"

@@ -115,31 +115,30 @@ API (Pages Functions în `functions/api/`):
 
 Comenzile (`/api/order`) și cererile (`/api/quote`) se salvează automat în D1.
 
+### Arhitectură
+
+Proiectul e un **Cloudflare Worker** (`worker.js`): servește site-ul static din
+`public/` (binding `ASSETS`) și rutează `/api/*` către logica de backend, cu D1.
+Binding-ul D1 e declarat în `wrangler.toml` (nu trebuie configurat din dashboard).
+
 ### Setup (o singură dată)
 
-1. **Creează baza D1:**
-   ```bash
-   wrangler d1 create acoperispro-db
-   ```
-2. **Rulează schema:**
+1. **Rulează schema** (baza `acoperispro-db` e deja creată):
    ```bash
    wrangler d1 execute acoperispro-db --remote --file=schema.sql
    ```
-3. **Leagă baza** de proiectul Pages: Dashboard → Pages → proiect → **Settings →
-   Functions → D1 database bindings** → Variable name **`DB`** → selectează
-   `acoperispro-db`.
-4. **Setează variabilele** (Settings → Environment variables):
+2. **Setează secretele** în dashboard (proiect → Settings → Variables and Secrets,
+   tip **Secret**, pe Production):
    | Variabilă | Rol |
    |---|---|
    | `JWT_SECRET` | șir secret lung, aleatoriu (semnare token) |
-   | `ADMIN_USER` | utilizator admin (opțional, implicit `admin`) |
    | `ADMIN_PASSWORD` | parola de admin (secret) |
-5. **Redeploy**, apoi intră pe `/admin.html`, autentifică-te și apasă
-   **„Importă din catalog"** pentru a popula produsele din `data.js`.
+   | `ADMIN_USER` | opțional, implicit `admin` |
+   | `RESEND_API_KEY`, `QUOTE_TO_EMAIL`, `ORDER_TO_EMAIL` | opțional, pentru email |
+3. **Redeploy**, apoi intră pe `/admin.html`, autentifică-te și apasă
+   **„Importă din catalog"** pentru a popula produsele.
 
-> Notă: magazinul public citește deocamdată produsele din `data.js` (static).
-> Conectarea storefront-ului la produsele din D1 (ca editările din admin să
-> apară pe site) este pasul următor.
+> Binding-ul `DB` este în `wrangler.toml` — se aplică automat la deploy.
 
 ## Rulare locală
 
