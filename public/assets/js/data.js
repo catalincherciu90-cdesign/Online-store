@@ -323,13 +323,20 @@ function optionValueName(group, id) {
   const v = optionValue(group, id);
   return v ? v.name : id;
 }
+// Delta de preț pentru o valoare de opțiune: întâi prețul specific produsului
+// (p.optionPrices["grup:valoare"]), altfel delta globală din OPTIONS.
+function optionDelta(p, group, id) {
+  if (p && p.optionPrices) {
+    const v = p.optionPrices[group + ':' + id];
+    if (typeof v === 'number') return v;
+  }
+  const gv = optionValue(group, id);
+  return gv && typeof gv.delta === 'number' ? gv.delta : 0;
+}
 function optionPrice(p, opts) {
   let price = p.price;
   const o = opts || {};
-  for (const g of Object.keys(o)) {
-    const v = optionValue(g, o[g]);
-    if (v && v.delta) price += v.delta;
-  }
+  for (const g of Object.keys(o)) price += optionDelta(p, g, o[g]);
   return price;
 }
 /* Rezumat scurt al opțiunilor pentru coș (ex. „Antracit · 0.50 mm · Poliester mat") */

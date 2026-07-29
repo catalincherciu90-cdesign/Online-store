@@ -168,8 +168,10 @@
         }
         return `<div class="opt-group">
           <div class="opt-label">${def.label}: <b id="cur-${g}">${cur}</b></div>
-          <div class="opt-pills">${def.values.map(v =>
-            `<button type="button" class="opt-pill${v.id === sel[g] ? ' sel' : ''}" data-group="${g}" data-val="${v.id}">${v.name}${v.delta ? ` <em>${v.delta > 0 ? '+' : ''}${v.delta} lei</em>` : ''}</button>`).join('')}</div>
+          <div class="opt-pills">${def.values.map(v => {
+            const d = optionDelta(prod, g, v.id);
+            return `<button type="button" class="opt-pill${v.id === sel[g] ? ' sel' : ''}" data-group="${g}" data-val="${v.id}">${v.name}${d ? ` <em>${d > 0 ? '+' : ''}${d} lei</em>` : ''}</button>`;
+          }).join('')}</div>
         </div>`;
       }).join('') + `</div>`;
     }

@@ -10,9 +10,10 @@ CREATE TABLE IF NOT EXISTS products (
   unit       TEXT NOT NULL DEFAULT 'buc',
   badge      TEXT,
   descr      TEXT,
-  specs      TEXT,            -- JSON { cheie: valoare }
-  options    TEXT,            -- JSON array de grupuri, sau NULL = implicit pe categorie
-  active     INTEGER NOT NULL DEFAULT 1,
+  specs         TEXT,         -- JSON { cheie: valoare }
+  options       TEXT,         -- JSON array de grupuri, sau NULL = implicit pe categorie
+  option_prices TEXT,         -- JSON { "grup:valoare": delta } prețuri per opțiune
+  active        INTEGER NOT NULL DEFAULT 1,
   created_at TEXT DEFAULT (datetime('now'))
 );
 
