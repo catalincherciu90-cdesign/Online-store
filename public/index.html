@@ -233,7 +233,7 @@
           <h3><a href="produs.html?id=${p.id}">${p.name}</a></h3>
           <p class="desc">${p.desc}</p>
           <div class="price-row">
-            <span class="price">${formatPrice(p.price)} <span class="unit">/ ${p.unit}</span></span>
+            <span class="price">${formatPrice(displayPrice(p))} <span class="unit">/ ${p.unit}</span></span>
           </div>
           <div class="card-actions">
             <a href="produs.html?id=${p.id}" class="btn btn-outline">Detalii</a>

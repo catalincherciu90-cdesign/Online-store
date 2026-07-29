@@ -113,29 +113,20 @@
         </div>
         <div class="field full"><label>Nume *</label><input name="name" required></div>
         <div class="form-row">
-          <div class="field"><label>Preț *</label><input name="price" type="number" step="0.01" required></div>
+          <div class="field"><label>Preț de bază *</label><input name="price" type="number" step="0.01" required></div>
           <div class="field"><label>Unitate</label><input name="unit" value="mp"></div>
         </div>
         <div class="field full"><label>Badge (opțional)</label><input name="badge" placeholder="Best seller / Premium / Nou"></div>
         <div class="field full"><label>Descriere</label><textarea name="desc" rows="2"></textarea></div>
         <div class="field full"><label>Specificații (câte una pe linie: „Cheie: valoare")</label><textarea name="specs" rows="4" placeholder="Grosime: 0.5 mm&#10;Garanție: 15 ani"></textarea></div>
         <div class="field full">
-          <label>Opțiuni de personalizare</label>
-          <select name="optmode" id="f-optmode" onchange="toggleOptChecks()">
-            <option value="default">Implicit (după categorie)</option>
-            <option value="custom">Personalizat</option>
-            <option value="none">Fără opțiuni</option>
-          </select>
-          <div id="opt-checks" style="display:none;gap:14px;margin-top:8px">
-            <label class="filter-opt"><input type="checkbox" value="finisaj"> Finisaj</label>
-            <label class="filter-opt"><input type="checkbox" value="grosime"> Grosime</label>
-            <label class="filter-opt"><input type="checkbox" value="culoare"> Culoare</label>
+          <label style="display:flex;align-items:center;gap:8px;font-weight:600;cursor:pointer">
+            <input type="checkbox" id="f-hasfin" onchange="toggleFinishes()"> Produs configurabil pe finisaje (finisaj → culorile și grosimile lui, cu preț pe combinație)
+          </label>
+          <div id="finishes-wrap" style="display:none;margin-top:12px">
+            <p class="muted-sm" style="margin-bottom:10px">Bifează finisajele oferite; pentru fiecare, alege grosimile și culorile disponibile și completează prețul (lei) pentru fiecare combinație. Prețul de bază de mai sus e folosit doar ca fallback.</p>
+            <div id="finishes-box"></div>
           </div>
-        </div>
-        <div class="field full" id="opt-prices-wrap" style="display:none">
-          <label>Prețuri pe opțiuni (diferență în lei față de prețul de bază)</label>
-          <div id="opt-prices"></div>
-          <span class="muted-sm">Ex: dacă „Mat structurat" costă +8 lei/mp, scrie 8. Poți pune și 0 sau valori negative.</span>
         </div>
         <div style="display:flex;gap:10px;margin-top:8px">
           <button class="btn btn-primary" style="flex:1">Salvează</button>
@@ -390,10 +381,19 @@
         if (colorIds.length && (CATEGORY_OPTIONS[cat] || []).includes('finisaj')) {
           finishColors = {}; OPTIONS.finisaj.values.forEach(f => finishColors[f.id] = colorIds);
         }
+        // preț pe culoare: „Culoare: preț; ...”
+        const colorPrices = {};
+        get('pret_culori').split(';').forEach(part => {
+          const j = part.indexOf(':'); if (j < 0) return;
+          const cid = colorIdByName(part.slice(0, j));
+          const pr = parseFloat(part.slice(j + 1).replace(',', '.'));
+          if (cid && !isNaN(pr)) colorPrices[cid] = pr;
+        });
         products.push({
           id: cod, cat, name: get('denumire'), desc: get('descriere'),
           price: parseFloat((get('pret') || '0').replace(',', '.')) || 0,
           unit: get('unitate') || 'buc', badge: get('badge') || null, specs, finishColors,
+          colorPrices: Object.keys(colorPrices).length ? colorPrices : undefined,
         });
       }
       if (!products.length) { alert('Niciun produs valid găsit (verifică coloana „categorie”).'); return; }
@@ -420,6 +420,19 @@
     // ── Prețuri per opțiune (finisaj/grosime/culoare) + culori per finisaj ──
     let editingPrices = {};
     let editingFinishColors = {};
+    let editingColorPrices = {};
+    function captureColorPrices() {
+      document.querySelectorAll('#opt-prices input[data-color]').forEach(i => {
+        const v = i.value.trim(); editingColorPrices[i.dataset.color] = v === '' ? 0 : Number(v);
+      });
+    }
+    function collectColorPrices() {
+      const o = {};
+      document.querySelectorAll('#opt-prices input[data-color]').forEach(i => {
+        const v = i.value.trim(); o[i.dataset.color] = v === '' ? 0 : Number(v);
+      });
+      return o;
+    }
     function capturePrices() {
       document.querySelectorAll('#opt-prices input[data-key]').forEach(i => {
         const v = i.value.trim();
@@ -446,6 +459,7 @@
     function renderOptionPrices() {
       capturePrices();
       captureFinishColors();
+      captureColorPrices();
       const groups = activeGroups();
       const wrap = document.getElementById('opt-prices-wrap');
       const box = document.getElementById('opt-prices');
@@ -471,7 +485,16 @@
               </div>`;
             }).join('') + `</div>`;
         }
-        // grosime / culoare standalone: doar preț per valoare
+        if (g === 'culoare') {
+          const basePrice = Number(document.getElementById('prod-form').price.value) || 0;
+          return `<div style="margin:6px 0 10px"><div class="muted-sm" style="font-weight:700;color:var(--navy);margin-bottom:4px">Preț pe culoare (lei / ${document.getElementById('prod-form').unit.value || 'buc'})</div>
+            <div style="display:grid;grid-template-columns:1fr 120px;gap:6px 12px;align-items:center">${
+            def.values.map(c => {
+              const cur = (c.id in editingColorPrices) ? editingColorPrices[c.id] : basePrice;
+              return `<span class="muted-sm"><span style="display:inline-block;width:13px;height:13px;border-radius:50%;background:${c.hex || '#ccc'};box-shadow:0 0 0 1px rgba(0,0,0,.15) inset;vertical-align:middle;margin-right:7px"></span>${c.name}</span><input type="number" step="0.01" data-color="${c.id}" value="${cur}" style="padding:6px 8px;border:1px solid var(--line-strong);border-radius:6px">`;
+            }).join('')}</div></div>`;
+        }
+        // grosime: delte de preț
         return `<div style="margin:6px 0 10px"><div class="muted-sm" style="font-weight:700;color:var(--navy);margin-bottom:4px">${def.label}</div>
           <div style="display:grid;grid-template-columns:1fr 120px;gap:6px 12px;align-items:center">${
           def.values.map(v => {
@@ -503,9 +526,78 @@
       }
       return map;
     }
-    // re-randează prețurile când se schimbă categoria sau grupurile bifate
-    document.getElementById('prod-form').addEventListener('change', e => {
-      if (e.target.id === 'f-cat' || e.target.closest('#opt-checks')) renderOptionPrices();
+    // ── Configurator finisaje (matrice de prețuri absolute) ──
+    let editingFinishes = {};
+    function toggleFinishes() {
+      const on = document.getElementById('f-hasfin').checked;
+      document.getElementById('finishes-wrap').style.display = on ? 'block' : 'none';
+      if (on) renderFinishes();
+    }
+    function colorDot(id) {
+      const c = OPTIONS.culoare.values.find(x => x.id === id);
+      return `<span style="display:inline-block;width:13px;height:13px;border-radius:50%;background:${(c && c.hex) || '#ccc'};box-shadow:0 0 0 1px rgba(0,0,0,.15) inset;vertical-align:middle;margin-right:5px"></span>`;
+    }
+    function captureFinishes() {
+      document.querySelectorAll('#finishes-box .fin-card').forEach(card => {
+        const fid = card.dataset.fin;
+        const st = editingFinishes[fid] = editingFinishes[fid] || { colors: [], thicknesses: [], prices: {} };
+        st.on = card.querySelector('.fin-on').checked;
+        st.thicknesses = [...card.querySelectorAll('.fin-th:checked')].map(c => c.value);
+        st.colors = [...card.querySelectorAll('.fin-col:checked')].map(c => c.value);
+        st.prices = st.prices || {};
+        card.querySelectorAll('input[data-pk]').forEach(inp => {
+          const v = inp.value.trim();
+          if (v === '') delete st.prices[inp.dataset.pk]; else st.prices[inp.dataset.pk] = Number(v);
+        });
+      });
+    }
+    function renderFinishes() {
+      captureFinishes();
+      const box = document.getElementById('finishes-box');
+      box.innerHTML = OPTIONS.finisaj.values.map(f => {
+        const st = editingFinishes[f.id] || {};
+        const on = !!st.on, ths = st.thicknesses || [], cols = st.colors || [];
+        const thCols = ths.length ? ths : [''];
+        let grid = '';
+        if (on && cols.length) {
+          grid = `<div style="overflow-x:auto"><table style="border-collapse:collapse;margin-top:6px"><thead><tr><th></th>${
+            (ths.length ? ths.map(t => `<th class="muted-sm" style="padding:2px 8px">${optionValueName('grosime', t)}</th>`).join('') : '<th class="muted-sm" style="padding:2px 8px">Preț</th>')
+          }</tr></thead><tbody>${
+            cols.map(c => `<tr><td class="muted-sm" style="padding:2px 10px 2px 0;white-space:nowrap">${colorDot(c)}${optionValueName('culoare', c).split(' · ')[0]}</td>${
+              thCols.map(t => { const pk = c + '|' + t; const val = (st.prices && st.prices[pk] != null) ? st.prices[pk] : ''; return `<td style="padding:2px 4px"><input type="number" step="0.01" data-pk="${pk}" value="${val}" placeholder="lei" style="width:84px;padding:5px;border:1px solid var(--line-strong);border-radius:6px"></td>`; }).join('')
+            }</tr>`).join('')
+          }</tbody></table></div>`;
+        }
+        return `<div class="fin-card" data-fin="${f.id}" style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:12px">
+          <label style="font-weight:700;display:inline-flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" class="fin-on" ${on ? 'checked' : ''}> ${f.name}</label>
+          ${on ? `
+            <div style="margin-top:10px"><div class="muted-sm" style="margin-bottom:4px;font-weight:600">Grosimi disponibile</div>
+              <div style="display:flex;flex-wrap:wrap;gap:6px 16px">${OPTIONS.grosime.values.map(t => `<label class="muted-sm" style="cursor:pointer"><input type="checkbox" class="fin-th" value="${t.id}" ${ths.includes(t.id) ? 'checked' : ''}> ${t.name}</label>`).join('')}</div></div>
+            <div style="margin-top:8px"><div class="muted-sm" style="margin-bottom:4px;font-weight:600">Culori disponibile</div>
+              <div style="display:flex;flex-wrap:wrap;gap:6px 16px">${OPTIONS.culoare.values.map(c => `<label class="muted-sm" style="cursor:pointer">${colorDot(c.id)}<input type="checkbox" class="fin-col" value="${c.id}" ${cols.includes(c.id) ? 'checked' : ''}> ${c.name.split(' · ')[0]}</label>`).join('')}</div></div>
+            ${cols.length ? `<div class="muted-sm" style="margin-top:10px;margin-bottom:2px;font-weight:600">Prețuri (lei) pe combinație</div>${grid}` : `<p class="muted-sm" style="margin-top:8px">Bifează culori (și grosimi) ca să apară câmpurile de preț.</p>`}
+          ` : ''}
+        </div>`;
+      }).join('');
+    }
+    function collectFinishes() {
+      captureFinishes();
+      const out = [];
+      for (const f of OPTIONS.finisaj.values) {
+        const st = editingFinishes[f.id];
+        if (st && st.on && (st.colors || []).length) {
+          const ths = st.thicknesses || [], prices = {};
+          for (const c of st.colors) for (const t of (ths.length ? ths : [''])) {
+            const pk = c + '|' + t;
+            if (st.prices && st.prices[pk] != null && st.prices[pk] !== '') prices[pk] = Number(st.prices[pk]);
+          }
+          out.push({ id: f.id, colors: st.colors, thicknesses: ths, prices });
+        }
+      }
+      return out;
+    }
+    document.getElementById('finishes-box').addEventListener('change', e => {
+      if (e.target.matches('.fin-on, .fin-th, .fin-col')) renderFinishes();
     });
 
     function openEditor(p) {
@@ -515,17 +607,17 @@
       document.getElementById('f-cat').innerHTML = CATEGORIES.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
       document.getElementById('editor-title').textContent = p ? 'Editează produs' : 'Produs nou';
       f.id.readOnly = !!p;
-      editingPrices = p && p.optionPrices ? { ...p.optionPrices } : {};
-      editingFinishColors = p && p.finishColors ? { ...p.finishColors } : {};
+      editingFinishes = {};
+      if (p && Array.isArray(p.finishes)) p.finishes.forEach(fin => {
+        editingFinishes[fin.id] = { on: true, colors: fin.colors || [], thicknesses: fin.thicknesses || [], prices: { ...(fin.prices || {}) } };
+      });
       if (p) {
         f.id.value = p.id; f.cat.value = p.cat; f.name.value = p.name; f.price.value = p.price;
         f.unit.value = p.unit || 'mp'; f.badge.value = p.badge || ''; f.desc.value = p.desc || '';
         f.specs.value = specsToText(p.specs);
-        if (p.options === undefined) f.optmode.value = 'default';
-        else if (p.options.length === 0) f.optmode.value = 'none';
-        else { f.optmode.value = 'custom'; p.options.forEach(g => { const c = f.querySelector(`#opt-checks input[value="${g}"]`); if (c) c.checked = true; }); }
-      } else { f.optmode.value = 'default'; }
-      toggleOptChecks();
+        document.getElementById('f-hasfin').checked = !!(p.finishes && p.finishes.length);
+      } else { document.getElementById('f-hasfin').checked = false; }
+      toggleFinishes();
       document.getElementById('editor').classList.add('open');
     }
     function closeEditor() { document.getElementById('editor').classList.remove('open'); }
@@ -533,18 +625,15 @@
     async function saveProduct(e) {
       e.preventDefault();
       const f = e.target;
-      const mode = f.optmode.value;
-      let options;
-      if (mode === 'none') options = [];
-      else if (mode === 'custom') options = [...f.querySelectorAll('#opt-checks input:checked')].map(c => c.value);
-      else options = undefined;
+      const hasFin = document.getElementById('f-hasfin').checked;
+      const finishes = hasFin ? collectFinishes() : [];
       const body = {
         id: f.id.value.trim(), cat: f.cat.value, name: f.name.value.trim(),
-        price: parseFloat(f.price.value), unit: f.unit.value.trim() || 'mp',
+        price: parseFloat(f.price.value) || 0, unit: f.unit.value.trim() || 'mp',
         badge: f.badge.value.trim() || null, desc: f.desc.value.trim(),
-        specs: textToSpecs(f.specs.value), options,
-        optionPrices: (options === undefined || (options && options.length)) ? collectOptionPrices() : {},
-        finishColors: collectFinishColors(),
+        specs: textToSpecs(f.specs.value),
+        options: hasFin ? undefined : [], // fără finisaje = doar preț de bază
+        finishes,
       };
       const isEdit = f.id.readOnly;
       try {

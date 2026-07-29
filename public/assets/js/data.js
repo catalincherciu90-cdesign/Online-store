@@ -297,55 +297,81 @@ const CATEGORY_OPTIONS = {
   'accesorii': ['culoare'],
   'folii-membrane': [],
 };
+// ── Model cu FINISAJE (finisajul e principal; fiecare are culorile și grosimile
+//    lui, cu preț ABSOLUT pe combinație). p.finishes = [{ id, colors:[ids],
+//    thicknesses:[ids], prices:{ "culoare|grosime": pret } }]. ──────────────────
+function usesFinishes(p) { return !!(p && Array.isArray(p.finishes) && p.finishes.length); }
+function finishById(p, id) { return usesFinishes(p) ? (p.finishes.find(f => f.id === id) || p.finishes[0]) : null; }
+function priceKey(opts) { const o = opts || {}; return (o.culoare || '') + '|' + (o.grosime || ''); }
+
 function productOptions(p) {
   if (!p) return [];
+  if (usesFinishes(p)) {
+    const g = ['finisaj'];
+    if (p.finishes.some(f => (f.colors || []).length)) g.push('culoare');
+    if (p.finishes.some(f => (f.thicknesses || []).length)) g.push('grosime');
+    return g;
+  }
   if (Array.isArray(p.options)) return p.options;
   return CATEGORY_OPTIONS[p.cat] || [];
 }
 function defaultOpts(p) {
+  if (usesFinishes(p)) {
+    const f = p.finishes[0]; const o = { finisaj: f.id };
+    if ((f.colors || []).length) o.culoare = f.colors[0];
+    if ((f.thicknesses || []).length) o.grosime = f.thicknesses[0];
+    return o;
+  }
   const o = {};
   for (const g of productOptions(p)) {
     const def = OPTIONS[g];
-    if (def && def.values.length) {
-      // implicit = valoarea standard (fără delta de preț) ca prețul afișat să
-      // corespundă prețului de catalog; altfel prima valoare
-      const base = def.values.find(v => !v.delta) || def.values[0];
-      o[g] = base.id;
-    }
+    if (def && def.values.length) { const base = def.values.find(v => !v.delta) || def.values[0]; o[g] = base.id; }
   }
   return o;
 }
-function optionValue(group, id) {
-  const def = OPTIONS[group];
-  return def ? def.values.find(v => v.id === id) : null;
-}
-function optionValueName(group, id) {
-  const v = optionValue(group, id);
-  return v ? v.name : id;
-}
-// Delta de preț pentru o valoare de opțiune: întâi prețul specific produsului
-// (p.optionPrices["grup:valoare"]), altfel delta globală din OPTIONS.
+function optionValue(group, id) { const def = OPTIONS[group]; return def ? def.values.find(v => v.id === id) : null; }
+function optionValueName(group, id) { const v = optionValue(group, id); return v ? v.name : id; }
 function optionDelta(p, group, id) {
-  if (p && p.optionPrices) {
-    const v = p.optionPrices[group + ':' + id];
-    if (typeof v === 'number') return v;
-  }
-  const gv = optionValue(group, id);
-  return gv && typeof gv.delta === 'number' ? gv.delta : 0;
+  if (p && p.optionPrices) { const v = p.optionPrices[group + ':' + id]; if (typeof v === 'number') return v; }
+  const gv = optionValue(group, id); return gv && typeof gv.delta === 'number' ? gv.delta : 0;
 }
+
+// Prețul variantei. Cu finisaje: preț ABSOLUT din matricea finisajului.
 function optionPrice(p, opts) {
-  let price = p.price;
   const o = opts || {};
-  for (const g of Object.keys(o)) price += optionDelta(p, g, o[g]);
+  if (usesFinishes(p)) {
+    const f = finishById(p, o.finisaj);
+    const v = f && f.prices ? f.prices[priceKey(o)] : undefined;
+    return typeof v === 'number' ? v : (Number(p.price) || 0);
+  }
+  let price = (o.culoare && p.colorPrices && typeof p.colorPrices[o.culoare] === 'number') ? p.colorPrices[o.culoare] : p.price;
+  for (const g of Object.keys(o)) { if (g === 'culoare') continue; price += optionDelta(p, g, o[g]); }
   return price;
 }
-// Culorile disponibile pentru un finisaj: dacă produsul definește finishColors
-// pentru acel finisaj, doar acelea; altfel toate culorile globale.
-function finishColorsFor(p, finishId) {
+function displayPrice(p) { return optionPrice(p, defaultOpts(p)); }
+
+// Finisajele produsului (obiecte {id,name}) pentru pagina produsului
+function finishList(p) {
+  if (usesFinishes(p)) return p.finishes.map(f => ({ id: f.id, name: optionValueName('finisaj', f.id) }));
+  return OPTIONS.finisaj.values;
+}
+// Culorile disponibile pentru un finisaj (obiecte {id,name,hex})
+function finishColorValues(p, finishId) {
+  if (usesFinishes(p)) {
+    const f = finishById(p, finishId); if (!f) return [];
+    return (f.colors || []).map(id => optionValue('culoare', id) || { id, name: id, hex: '#ccc' });
+  }
   const fc = p && p.finishColors && p.finishColors[finishId];
   const all = OPTIONS.culoare.values;
-  if (Array.isArray(fc) && fc.length) return all.filter(v => fc.includes(v.id));
-  return all;
+  return (Array.isArray(fc) && fc.length) ? all.filter(v => fc.includes(v.id)) : all;
+}
+// Grosimile disponibile pentru un finisaj (obiecte {id,name})
+function finishThicknessValues(p, finishId) {
+  if (usesFinishes(p)) {
+    const f = finishById(p, finishId); if (!f) return [];
+    return (f.thicknesses || []).map(id => optionValue('grosime', id) || { id, name: id });
+  }
+  return OPTIONS.grosime.values;
 }
 /* Rezumat scurt al opțiunilor pentru coș (ex. „Antracit · 0.50 mm · Poliester mat") */
 function optionSummary(opts) {

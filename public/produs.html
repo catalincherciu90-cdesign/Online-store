@@ -141,7 +141,7 @@
             <span class="cat-tag">${categoryName(rp.cat)}</span>
             <h3><a href="produs.html?id=${rp.id}">${rp.name}</a></h3>
             <p class="desc">${rp.desc}</p>
-            <div class="price-row"><span class="price">${formatPrice(rp.price)} <span class="unit">/ ${rp.unit}</span></span></div>
+            <div class="price-row"><span class="price">${formatPrice(displayPrice(rp))} <span class="unit">/ ${rp.unit}</span></span></div>
             <div class="card-actions">
               <a href="produs.html?id=${rp.id}" class="btn btn-outline">Detalii</a>
               <button class="btn btn-primary" onclick="Cart.add('${rp.id}');showToast('Adăugat în coș')">În coș</button>
@@ -152,26 +152,27 @@
     }
     }); // loadCatalog
 
-    // Construiește selectorii de opțiuni (swatch pt culoare, pastile pt finisaj/grosime)
+    // Selectori: finisaj (pastile) → culorile lui (swatch) + grosimile lui (pastile)
     function renderOptions(prod) {
       const groups = productOptions(prod);
       if (!groups.length) return '';
       return `<div class="pd-options">` + groups.map(g => {
-        const def = OPTIONS[g];
-        const cur = optionValueName(g, sel[g]);
-        if (def.type === 'swatch') {
-          // culorile se populează dinamic (depind de finisajul ales) în renderColors()
+        if (g === 'finisaj') {
           return `<div class="opt-group">
-            <div class="opt-label">${def.label}: <b id="cur-${g}">${cur}</b></div>
+            <div class="opt-label">Finisaj: <b id="cur-finisaj">${optionValueName('finisaj', sel.finisaj)}</b></div>
+            <div class="opt-pills">${finishList(prod).map(f =>
+              `<button type="button" class="opt-pill${f.id === sel.finisaj ? ' sel' : ''}" data-group="finisaj" data-val="${f.id}">${f.name}</button>`).join('')}</div>
+          </div>`;
+        }
+        if (g === 'culoare') {
+          return `<div class="opt-group">
+            <div class="opt-label">Culoare: <b id="cur-culoare">${optionValueName('culoare', sel.culoare)}</b></div>
             <div class="opt-swatches" id="color-swatches"></div>
           </div>`;
         }
         return `<div class="opt-group">
-          <div class="opt-label">${def.label}: <b id="cur-${g}">${cur}</b></div>
-          <div class="opt-pills">${def.values.map(v => {
-            const d = optionDelta(prod, g, v.id);
-            return `<button type="button" class="opt-pill${v.id === sel[g] ? ' sel' : ''}" data-group="${g}" data-val="${v.id}">${v.name}${d ? ` <em>${d > 0 ? '+' : ''}${d} lei</em>` : ''}</button>`;
-          }).join('')}</div>
+          <div class="opt-label">Grosime: <b id="cur-grosime">${optionValueName('grosime', sel.grosime)}</b></div>
+          <div class="opt-pills" id="thickness-pills"></div>
         </div>`;
       }).join('') + `</div>`;
     }
@@ -181,38 +182,46 @@
       if (el) el.textContent = formatPrice(optionPrice(p, sel));
     }
 
-    // Populează culorile disponibile pentru finisajul curent (sel.finisaj).
-    // Dacă culoarea aleasă nu e validă pentru noul finisaj, o resetează.
+    // Culorile disponibile pentru finisajul curent; resetează culoarea dacă nu e validă.
     function renderColors() {
       const box = document.getElementById('color-swatches');
       if (!box) return;
-      const colors = finishColorsFor(p, sel.finisaj);
+      const colors = finishColorValues(p, sel.finisaj);
       if (colors.length && !colors.some(c => c.id === sel.culoare)) {
         sel.culoare = colors[0].id;
-        const cur = document.getElementById('cur-culoare');
-        if (cur) cur.textContent = optionValueName('culoare', sel.culoare);
+        const cur = document.getElementById('cur-culoare'); if (cur) cur.textContent = optionValueName('culoare', sel.culoare);
         updateGallery(sel.culoare);
       }
       box.innerHTML = colors.map(v =>
         `<button type="button" class="swatch${v.id === sel.culoare ? ' sel' : ''}" data-group="culoare" data-val="${v.id}" title="${v.name}" style="--sw:${v.hex}"><span></span></button>`).join('');
     }
+    // Grosimile disponibile pentru finisajul curent; resetează grosimea dacă nu e validă.
+    function renderThickness() {
+      const box = document.getElementById('thickness-pills');
+      if (!box) return;
+      const ths = finishThicknessValues(p, sel.finisaj);
+      if (ths.length && !ths.some(t => t.id === sel.grosime)) {
+        sel.grosime = ths[0].id;
+        const cur = document.getElementById('cur-grosime'); if (cur) cur.textContent = optionValueName('grosime', sel.grosime);
+      }
+      box.innerHTML = ths.map(v =>
+        `<button type="button" class="opt-pill${v.id === sel.grosime ? ' sel' : ''}" data-group="grosime" data-val="${v.id}">${v.name}</button>`).join('');
+    }
 
     function initOptions() {
       const cont = document.querySelector('.pd-options');
       if (!cont) return;
-      renderColors(); // culorile inițiale pentru finisajul implicit
-      // delegare — funcționează și pentru swatch-urile re-randate la schimbarea finisajului
+      renderColors(); renderThickness();
       cont.addEventListener('click', e => {
         const btn = e.target.closest('[data-group]');
         if (!btn) return;
         const g = btn.dataset.group, v = btn.dataset.val;
         sel[g] = v;
         btn.parentElement.querySelectorAll('[data-group]').forEach(b => b.classList.toggle('sel', b === btn));
-        const cur = document.getElementById('cur-' + g);
-        if (cur) cur.textContent = optionValueName(g, v);
-        updatePrice();
+        const cur = document.getElementById('cur-' + g); if (cur) cur.textContent = optionValueName(g, v);
+        if (g === 'finisaj') { renderColors(); renderThickness(); }
         if (g === 'culoare') updateGallery(v);
-        if (g === 'finisaj') renderColors();
+        updatePrice();
       });
     }
 

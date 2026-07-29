@@ -12,8 +12,10 @@ CREATE TABLE IF NOT EXISTS products (
   descr      TEXT,
   specs         TEXT,         -- JSON { cheie: valoare }
   options       TEXT,         -- JSON array de grupuri, sau NULL = implicit pe categorie
-  option_prices TEXT,         -- JSON { "grup:valoare": delta } prețuri per opțiune
+  option_prices TEXT,         -- JSON { "grup:valoare": delta } delte finisaj/grosime
   finish_colors TEXT,         -- JSON { "finisaj": ["culoare",...] } culori per finisaj
+  color_prices  TEXT,         -- (vechi) JSON { "culoare": pret }
+  finishes      TEXT,         -- JSON [{ id, colors:[..], thicknesses:[..], prices:{"cul|gros":pret} }]
   active        INTEGER NOT NULL DEFAULT 1,
   created_at TEXT DEFAULT (datetime('now'))
 );
