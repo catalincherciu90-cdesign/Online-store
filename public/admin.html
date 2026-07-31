@@ -144,6 +144,11 @@
             <div class="field"><label>Facebook (link)</label><input name="facebook" placeholder="https://facebook.com/..."></div>
             <div class="field"><label>Instagram (link)</label><input name="instagram" placeholder="https://instagram.com/..."></div>
           </div>
+          <div class="form-row">
+            <div class="field"><label>TikTok (link)</label><input name="tiktok" placeholder="https://tiktok.com/@..."></div>
+            <div class="field"><label>YouTube (link)</label><input name="youtube" placeholder="https://youtube.com/@..."></div>
+          </div>
+          <div class="field full"><label>WhatsApp (link)</label><input name="whatsapp" placeholder="https://wa.me/407xxxxxxxx"></div>
           <div style="margin-top:10px"><button class="btn btn-primary" style="padding:9px 20px">Salvează setările</button></div>
           <div class="form-status" id="settings-status"></div>
         </form>
@@ -404,7 +409,7 @@
       try {
         const res = await api('/settings'); const s = await res.json();
         const f = document.getElementById('settings-form');
-        ['phone', 'email', 'email2', 'schedule', 'address', 'facebook', 'instagram'].forEach(k => { if (f[k]) f[k].value = s[k] || ''; });
+        ['phone', 'email', 'email2', 'schedule', 'address', 'facebook', 'instagram', 'tiktok', 'youtube', 'whatsapp'].forEach(k => { if (f[k]) f[k].value = s[k] || ''; });
         siteLogo = s.logo || '';
         document.getElementById('logo-preview').innerHTML = siteLogo
           ? `<img src="${siteLogo}" style="height:56px;background:#0c1a30;padding:8px 12px;border-radius:8px">` : '';
@@ -422,7 +427,7 @@
       e.preventDefault();
       const f = e.target;
       const body = { logo: siteLogo };
-      ['phone', 'email', 'email2', 'schedule', 'address', 'facebook', 'instagram'].forEach(k => { body[k] = f[k] ? f[k].value.trim() : ''; });
+      ['phone', 'email', 'email2', 'schedule', 'address', 'facebook', 'instagram', 'tiktok', 'youtube', 'whatsapp'].forEach(k => { body[k] = f[k] ? f[k].value.trim() : ''; });
       const st = document.getElementById('settings-status');
       try {
         const res = await api('/settings', { method: 'POST', body: JSON.stringify(body) });
