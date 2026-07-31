@@ -83,7 +83,7 @@ async function ensureSchema(env) {
       for (const col of ['producator TEXT']) {
         try { await env.DB.prepare(`ALTER TABLE products ADD COLUMN ${col}`).run(); } catch (e) { /* există deja */ }
       }
-      for (const col of ['align TEXT', 'height TEXT']) {
+      for (const col of ['align TEXT', 'height TEXT', 'image_mobile TEXT']) {
         try { await env.DB.prepare(`ALTER TABLE banners ADD COLUMN ${col}`).run(); } catch (e) { /* există deja */ }
       }
       try { await env.DB.prepare('ALTER TABLE orders ADD COLUMN status_log TEXT').run(); } catch (e) { /* există deja */ }
@@ -438,7 +438,7 @@ async function postDelete(request, env, id) {
 
 // ── Bannere hero (editabile din admin) ──
 function rowToBanner(r) {
-  return { id: r.id, title: r.title || '', subtitle: r.subtitle || '', ctaLabel: r.cta_label || '', ctaHref: r.cta_href || '', image: r.image || '', align: r.align || 'left', height: r.height || 'md', sort: r.sort || 0, active: !!r.active };
+  return { id: r.id, title: r.title || '', subtitle: r.subtitle || '', ctaLabel: r.cta_label || '', ctaHref: r.cta_href || '', image: r.image || '', imageMobile: r.image_mobile || '', align: r.align || 'left', height: r.height || 'md', sort: r.sort || 0, active: !!r.active };
 }
 async function bannersList(request, env, url) {
   if (!env.DB) return json([]);
@@ -456,16 +456,18 @@ async function bannerUpsert(request, env) {
   const v = await request.json().catch(() => null);
   if (!v || !v.image) return json({ error: 'Adaugă o imagine pentru banner.' }, 400);
   if (typeof v.image === 'string' && v.image.length > 3000000) return json({ error: 'Imaginea e prea mare. Folosește una mai mică (max ~2 MB).' }, 413);
+  if (typeof v.imageMobile === 'string' && v.imageMobile.length > 3000000) return json({ error: 'Imaginea pentru mobil e prea mare.' }, 413);
   const active = v.active === false ? 0 : 1;
   const align = ['left', 'center', 'right'].includes(v.align) ? v.align : 'left';
   const height = ['sm', 'md', 'lg'].includes(v.height) ? v.height : 'md';
+  const imageMobile = v.imageMobile || '';
   if (v.id) {
-    await env.DB.prepare('UPDATE banners SET title=?,subtitle=?,cta_label=?,cta_href=?,image=?,align=?,height=?,sort=?,active=? WHERE id=?')
-      .bind(v.title || '', v.subtitle || '', v.ctaLabel || '', v.ctaHref || '', v.image, align, height, Number(v.sort) || 0, active, v.id).run();
+    await env.DB.prepare('UPDATE banners SET title=?,subtitle=?,cta_label=?,cta_href=?,image=?,image_mobile=?,align=?,height=?,sort=?,active=? WHERE id=?')
+      .bind(v.title || '', v.subtitle || '', v.ctaLabel || '', v.ctaHref || '', v.image, imageMobile, align, height, Number(v.sort) || 0, active, v.id).run();
     return json({ ok: true, id: v.id });
   }
-  const res = await env.DB.prepare('INSERT INTO banners (title,subtitle,cta_label,cta_href,image,align,height,sort,active) VALUES (?,?,?,?,?,?,?,?,?)')
-    .bind(v.title || '', v.subtitle || '', v.ctaLabel || '', v.ctaHref || '', v.image, align, height, Number(v.sort) || 0, active).run();
+  const res = await env.DB.prepare('INSERT INTO banners (title,subtitle,cta_label,cta_href,image,image_mobile,align,height,sort,active) VALUES (?,?,?,?,?,?,?,?,?,?)')
+    .bind(v.title || '', v.subtitle || '', v.ctaLabel || '', v.ctaHref || '', v.image, imageMobile, align, height, Number(v.sort) || 0, active).run();
   return json({ ok: true, id: res.meta ? res.meta.last_row_id : undefined });
 }
 async function bannerDelete(request, env, id) {

@@ -211,7 +211,8 @@
             ${b.subtitle ? `<p>${escB(b.subtitle)}</p>` : ''}
             ${b.ctaLabel && b.ctaHref ? `<a class="btn btn-primary btn-lg" href="${escB(b.ctaHref)}">${escB(b.ctaLabel)}</a>` : ''}
           </div></div>` : '';
-          return `<div class="hb-slide"><img class="hb-img" src="${escB(b.image)}" alt="${escB(b.title || 'Banner')}">${overlay}</div>`;
+          const mobImg = b.imageMobile ? `<img class="hb-img hb-img-m" src="${escB(b.imageMobile)}" alt="${escB(b.title || 'Banner')}">` : '';
+          return `<div class="hb-slide${b.imageMobile ? ' hb-has-mobile' : ''}"><img class="hb-img hb-img-d" src="${escB(b.image)}" alt="${escB(b.title || 'Banner')}">${mobImg}${overlay}</div>`;
         }).join('');
         document.getElementById('hero-banners').style.display = 'block';
         const hd = document.getElementById('hero-default'); if (hd) hd.style.display = 'none';

@@ -194,8 +194,13 @@ h2 { font-size: clamp(1.6rem, 3vw, 2.35rem); letter-spacing: -0.028em; }
 .hb-overlay.hb-a-right { justify-content: flex-end; text-align: right; background: linear-gradient(270deg, rgba(11,22,38,.68) 0%, rgba(11,22,38,.35) 45%, rgba(11,22,38,.05) 100%); }
 .hb-overlay.hb-a-right h1, .hb-overlay.hb-a-right p { margin-left: auto; }
 /* Pe ecrane mici raportul 8:3 devine prea scund pentru text — asigurăm o înălțime minimă */
+.hb-img-m { display: none; }
 @media (max-width: 640px) {
   .hb-slide { aspect-ratio: auto; height: 340px; }
+  /* Banner cu imagine dedicată pentru mobil: afișează varianta verticală */
+  .hb-slide.hb-has-mobile { aspect-ratio: 4 / 5; height: auto; max-height: 78vh; }
+  .hb-slide.hb-has-mobile .hb-img-d { display: none; }
+  .hb-slide.hb-has-mobile .hb-img-m { display: block; }
 }
 .hb-dots { position: absolute; bottom: 16px; left: 0; right: 0; display: flex; justify-content: center; gap: 8px; z-index: 2; }
 .hb-dot { width: 10px; height: 10px; padding: 0; border-radius: 50%; background: rgba(255,255,255,.5); border: 0; cursor: pointer; transition: background .15s, transform .15s; }
@@ -342,6 +347,8 @@ h2 { font-size: clamp(1.6rem, 3vw, 2.35rem); letter-spacing: -0.028em; }
   background: var(--bg-alt); border: 1px solid var(--line); border-radius: var(--radius);
   padding: 22px; position: sticky; top: 94px; box-shadow: var(--shadow-sm);
 }
+.filters-toggle { display: none; align-items: center; gap: 8px; padding: 11px 16px; border: 1px solid var(--line-strong); background: #fff; border-radius: var(--radius-sm); font-weight: 700; color: var(--navy); cursor: pointer; }
+.filters-toggle svg { width: 18px; height: 18px; }
 .filters h4 { font-size: .8rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin-bottom: 14px; }
 .filter-group { margin-bottom: 24px; padding-bottom: 20px; border-bottom: 1px solid var(--line); }
 .filter-group:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: 0; }
@@ -734,6 +741,13 @@ h2 { font-size: clamp(1.6rem, 3vw, 2.35rem); letter-spacing: -0.028em; }
   .menu-toggle { display: block; }
   .cat-grid, .product-grid { grid-template-columns: 1fr 1fr; }
   .summary { position: static; }
+  /* Filtre pliabile pe telefon */
+  .filters-toggle { display: inline-flex; }
+  .filters { display: none; position: static; margin-bottom: 18px; }
+  .filters.open { display: block; }
+  /* Coș mai compact (fără total, ca să încapă în antet) */
+  .cart-total { display: none !important; }
+  .cart-btn { padding: 10px 14px; }
 }
 @media (max-width: 540px) {
   .cat-grid, .product-grid, .feature-grid, .footer-grid { grid-template-columns: 1fr; }

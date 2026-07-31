@@ -276,11 +276,18 @@
       <form class="checkout-form" id="banner-form" onsubmit="saveBanner(event)">
         <input type="hidden" name="id">
         <input type="hidden" name="image">
+        <input type="hidden" name="imageMobile">
         <div class="field full">
-          <label>Imagine banner *</label>
+          <label>Imagine banner (desktop) *</label>
           <input type="file" accept="image/*" id="banner-file" onchange="onBannerFile(this.files[0])">
           <div class="muted-sm" style="margin-top:6px">Se încadrează automat la formatul 1920×720 px (decupare centrată). Ideal: încarcă o imagine deja 1920×720.</div>
           <div id="banner-preview" style="margin-top:10px"></div>
+        </div>
+        <div class="field full">
+          <label>Imagine pentru mobil (opțional, verticală)</label>
+          <input type="file" accept="image/*" id="banner-file-m" onchange="onBannerFileMobile(this.files[0])">
+          <div class="muted-sm" style="margin-top:6px">Dacă o adaugi, pe telefon se afișează aceasta (format vertical, ex. 1080×1350). Dacă o lași goală, se folosește imaginea desktop.</div>
+          <div id="banner-preview-m" style="margin-top:10px"></div>
         </div>
         <div class="field full"><label>Titlu (opțional, apare peste imagine)</label><input name="title" placeholder="ex: Reduceri de sezon la țiglă metalică"></div>
         <div class="field full"><label>Subtitlu (opțional)</label><input name="subtitle" placeholder="ex: Transport gratuit peste 100 mp"></div>
@@ -557,7 +564,8 @@
 
     // ── Bannere hero ──
     let bannersData = [];
-    let bannerImage = ''; // data URL curent din editor
+    let bannerImage = ''; // data URL desktop
+    let bannerImageMobile = ''; // data URL mobil (opțional)
     async function loadBanners() {
       const box = document.getElementById('banners-box');
       try {
@@ -603,6 +611,27 @@
       };
       reader.readAsDataURL(file);
     }
+    // Imagine pentru mobil (verticală) — redimensionată la max 1080px lățime, fără decupare forțată
+    function onBannerFileMobile(file) {
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        const img = new Image();
+        img.onload = () => {
+          const maxW = 1080, scale = Math.min(1, maxW / img.width);
+          const w = Math.round(img.width * scale), h = Math.round(img.height * scale);
+          const c = document.createElement('canvas'); c.width = w; c.height = h;
+          c.getContext('2d').drawImage(img, 0, 0, w, h);
+          bannerImageMobile = c.toDataURL('image/jpeg', 0.82);
+          document.getElementById('banner-form').imageMobile.value = bannerImageMobile;
+          document.getElementById('banner-preview-m').innerHTML =
+            `<img src="${bannerImageMobile}" style="max-width:180px;border-radius:8px;border:1px solid var(--line)">
+             <div class="muted-sm" style="margin-top:4px">Imagine mobil · ~${Math.round(bannerImageMobile.length / 1024)} KB</div>`;
+        };
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    }
     function openBanner(i) {
       const f = document.getElementById('banner-form');
       f.reset();
@@ -623,6 +652,12 @@
       document.getElementById('banner-preview').innerHTML = bannerImage
         ? `<img src="${bannerImage}" style="width:100%;max-height:200px;object-fit:cover;border-radius:8px;border:1px solid var(--line)">`
         : '';
+      bannerImageMobile = ed ? (ed.imageMobile || '') : '';
+      f.imageMobile.value = bannerImageMobile;
+      document.getElementById('banner-file-m').value = '';
+      document.getElementById('banner-preview-m').innerHTML = bannerImageMobile
+        ? `<img src="${bannerImageMobile}" style="max-width:180px;border-radius:8px;border:1px solid var(--line)">`
+        : '';
       document.getElementById('banner-view').classList.add('open');
     }
     function closeBanner() { document.getElementById('banner-view').classList.remove('open'); }
@@ -631,7 +666,7 @@
       const f = e.target;
       if (!bannerImage) { const st = document.getElementById('banner-status'); st.className = 'form-status err'; st.textContent = 'Încarcă o imagine pentru banner.'; return; }
       const body = {
-        image: bannerImage, title: f.title.value.trim(), subtitle: f.subtitle.value.trim(),
+        image: bannerImage, imageMobile: bannerImageMobile, title: f.title.value.trim(), subtitle: f.subtitle.value.trim(),
         ctaLabel: f.ctaLabel.value.trim(), ctaHref: f.ctaHref.value.trim(),
         align: f.align.value, height: 'md',
         sort: Number(f.sort.value) || 0, active: f.active.checked,
