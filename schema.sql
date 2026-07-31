@@ -50,6 +50,8 @@ CREATE TABLE IF NOT EXISTS banners (
   cta_label  TEXT,            -- textul butonului
   cta_href   TEXT,            -- linkul butonului
   image      TEXT,            -- data URL (base64) al imaginii
+  align      TEXT DEFAULT 'left',  -- poziția textului: left | center | right
+  height     TEXT DEFAULT 'md',    -- înălțime: sm | md | lg
   sort       INTEGER DEFAULT 0,
   active     INTEGER NOT NULL DEFAULT 1,
   created_at TEXT DEFAULT (datetime('now'))
