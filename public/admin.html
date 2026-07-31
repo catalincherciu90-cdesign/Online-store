@@ -341,7 +341,7 @@
     <div id="tab-setari" style="display:none">
       <h2 style="font-size:1.3rem;margin-bottom:16px">Setări site</h2>
 
-      <div style="background:#fff;border:1px solid var(--line);border-radius:12px;padding:20px;margin-bottom:20px">
+      <div style="background:var(--em-card);border:1px solid var(--em-border);border-radius:12px;padding:20px;margin-bottom:20px">
         <h3 style="font-size:1.05rem;margin-bottom:14px">Logo magazin & date de contact</h3>
         <form id="settings-form" class="checkout-form" onsubmit="saveSettings(event)">
           <div class="field full">
@@ -384,14 +384,14 @@
         </form>
       </div>
 
-      <div style="background:#fff;border:1px solid var(--line);border-radius:12px;padding:20px">
+      <div style="background:var(--em-card);border:1px solid var(--em-border);border-radius:12px;padding:20px">
         <div class="toolbar"><h3 class="grow" style="font-size:1.05rem">Producători (logo)</h3>
           <button class="btn btn-primary" style="padding:8px 14px" onclick="openProducer()">+ Producător</button></div>
         <p class="muted-sm" style="margin-bottom:14px">Adaugă producătorii cu logo. Numele trebuie scris identic cu cel din produse ca logo-ul să apară pe banda de branduri și pe pagini.</p>
         <div id="producers-box"></div>
       </div>
 
-      <div style="background:#fff;border:1px solid var(--line);border-radius:12px;padding:20px;margin-top:20px">
+      <div style="background:var(--em-card);border:1px solid var(--em-border);border-radius:12px;padding:20px;margin-top:20px">
         <h3 style="font-size:1.05rem;margin-bottom:6px">Administratori</h3>
         <p class="muted-sm" style="margin-bottom:14px">Adaugă conturi de administrator suplimentare. Contul principal (din configurarea serverului) rămâne mereu activ, nu apare aici și nu poate fi șters — așa nu rămâi niciodată blocat.</p>
         <div id="admins-box" style="margin-bottom:16px"></div>
@@ -976,7 +976,7 @@
     function renderNav() {
       const box = document.getElementById('nav-box'); if (!box) return;
       box.innerHTML = navItems.map((it, i) => `
-        <div style="display:flex;gap:8px;align-items:center;background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:8px">
+        <div style="display:flex;gap:8px;align-items:center;background:var(--em-card);border:1px solid var(--em-border);border-radius:10px;padding:10px;margin-bottom:8px">
           <div style="display:flex;flex-direction:column;gap:3px">
             <button class="a-btn-sm" onclick="moveNav(${i},-1)" ${i === 0 ? 'disabled' : ''}>↑</button>
             <button class="a-btn-sm" onclick="moveNav(${i},1)" ${i === navItems.length - 1 ? 'disabled' : ''}>↓</button>
@@ -1279,7 +1279,7 @@
     function renderPropGroup(g, values) {
       const isColor = g === 'culoare';
       const label = { finisaj: 'Finisaje', grosime: 'Grosimi', culoare: 'Culori' }[g];
-      return `<div style="background:#fff;border:1px solid var(--line);border-radius:12px;padding:18px;margin-bottom:16px">
+      return `<div style="background:var(--em-card);border:1px solid var(--em-border);border-radius:12px;padding:18px;margin-bottom:16px">
         <h3 style="font-size:1.05rem;margin-bottom:12px">${label}</h3>
         <table class="a-table" style="margin-bottom:14px"><tbody>${
           values.map(v => `<tr>
@@ -1585,7 +1585,7 @@
       box.innerHTML = groups.map(g => {
         const def = OPTIONS[g];
         if (g === 'finisaj') {
-          return `<div style="margin:6px 0 12px"><div class="muted-sm" style="font-weight:700;color:var(--navy);margin-bottom:6px">Finisaje (preț + culori disponibile)</div>` +
+          return `<div style="margin:6px 0 12px"><div class="muted-sm" style="font-weight:700;color:#e9f1ec;margin-bottom:6px">Finisaje (preț + culori disponibile)</div>` +
             def.values.map(v => {
               const key = 'finisaj:' + v.id;
               const price = (key in editingPrices) ? editingPrices[key] : (v.delta || 0);
@@ -1604,7 +1604,7 @@
         }
         if (g === 'culoare') {
           const basePrice = Number(document.getElementById('prod-form').price.value) || 0;
-          return `<div style="margin:6px 0 10px"><div class="muted-sm" style="font-weight:700;color:var(--navy);margin-bottom:4px">Preț pe culoare (lei / ${document.getElementById('prod-form').unit.value || 'buc'})</div>
+          return `<div style="margin:6px 0 10px"><div class="muted-sm" style="font-weight:700;color:#e9f1ec;margin-bottom:4px">Preț pe culoare (lei / ${document.getElementById('prod-form').unit.value || 'buc'})</div>
             <div style="display:grid;grid-template-columns:1fr 120px;gap:6px 12px;align-items:center">${
             def.values.map(c => {
               const cur = (c.id in editingColorPrices) ? editingColorPrices[c.id] : basePrice;
@@ -1612,7 +1612,7 @@
             }).join('')}</div></div>`;
         }
         // grosime: delte de preț
-        return `<div style="margin:6px 0 10px"><div class="muted-sm" style="font-weight:700;color:var(--navy);margin-bottom:4px">${def.label}</div>
+        return `<div style="margin:6px 0 10px"><div class="muted-sm" style="font-weight:700;color:#e9f1ec;margin-bottom:4px">${def.label}</div>
           <div style="display:grid;grid-template-columns:1fr 120px;gap:6px 12px;align-items:center">${
           def.values.map(v => {
             const key = g + ':' + v.id;
@@ -1835,7 +1835,7 @@
       document.getElementById('order-view-body').innerHTML = `
         <h3 style="margin-bottom:2px">Comandă ${esc(o.ref)}</h3>
         <p class="muted-sm" style="margin-bottom:12px">${esc((o.created_at || '').replace('T', ' ').slice(0, 16))}</p>
-        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:18px;padding:12px;background:var(--bg);border-radius:10px">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:18px;padding:12px;background:rgba(255,255,255,.05);border-radius:10px">
           <span style="font-weight:600">Status:</span>
           <select id="order-status-sel" style="padding:7px 10px;border:1px solid var(--line-strong);border-radius:8px">
             ${Object.keys(ORDER_ST).map(k => `<option value="${k}" ${(o.status || 'nou') === k ? 'selected' : ''}>${ORDER_ST[k].label}</option>`).join('')}
@@ -1854,7 +1854,7 @@
           ${o.obs ? `<div style="grid-column:1/-1"><div class="muted-sm">Observații</div>${esc(o.obs)}</div>` : ''}
         </div>
         <table class="a-table"><thead><tr><th>Produs</th><th style="text-align:center">Cant.</th><th style="text-align:right">Preț</th><th style="text-align:right">Total</th></tr></thead><tbody>${items}</tbody></table>
-        <div style="text-align:right;font-size:1.25rem;font-weight:800;color:var(--navy);margin-top:16px">Total: ${fmt(o.total)}</div>
+        <div style="text-align:right;font-size:1.25rem;font-weight:800;color:#e9f1ec;margin-top:16px">Total: ${fmt(o.total)}</div>
         <p class="muted-sm" style="text-align:right;margin-top:2px">Plată ramburs</p>
         ${(o.statusLog && o.statusLog.length) ? `<div style="margin-top:22px;border-top:1px solid var(--line);padding-top:14px">
           <div class="muted-sm" style="font-weight:700;margin-bottom:8px">Istoric status</div>
