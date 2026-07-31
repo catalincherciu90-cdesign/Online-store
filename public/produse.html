@@ -124,6 +124,7 @@
   <script src="assets/js/main.js"></script>
   <script>
     const params = new URLSearchParams(location.search);
+    const paramProducer = params.get('producator');
     let activeCat = params.get('cat') || 'all';
     let activePrice = 'all';
     let activeSort = 'default';
@@ -154,7 +155,7 @@
     }
     document.getElementById('brand-filters').addEventListener('change', e => {
       activeProducer = e.target.value === 'all' ? 'all' : brandList[+e.target.value];
-      render();
+      updateHeader(); render();
     });
 
     // Filtre de grosime & culoare (după personalizarea disponibilă)
@@ -176,6 +177,11 @@
     });
 
     function updateHeader() {
+      if (activeProducer !== 'all') {
+        document.getElementById('catalog-title').textContent = activeProducer;
+        document.getElementById('catalog-sub').textContent = 'Toate produsele de la ' + activeProducer + '.';
+        return;
+      }
       const c = getCategory(activeCat);
       document.getElementById('catalog-title').textContent = c ? c.name : 'Toate produsele';
       document.getElementById('catalog-sub').textContent = c ? c.desc : 'Sisteme complete de acoperiș, direct de la producător.';
@@ -225,7 +231,19 @@
     }
 
     updateHeader();
-    loadCatalog().then(() => { buildBrandFilters(); render(); });
+    loadCatalog().then(() => {
+      buildBrandFilters();
+      if (paramProducer) {
+        const match = brandList.find(b => b.toLowerCase() === paramProducer.trim().toLowerCase());
+        if (match) {
+          activeProducer = match;
+          const radio = document.querySelector('#brand-filters input[value="' + brandList.indexOf(match) + '"]');
+          if (radio) radio.checked = true;
+        }
+      }
+      updateHeader();
+      render();
+    });
   </script>
 </body>
 </html>

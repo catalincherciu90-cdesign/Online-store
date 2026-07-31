@@ -118,6 +118,18 @@
     </div>
   </section>
 
+  <!-- PRODUCĂTORI -->
+  <section class="section" id="brands" style="display:none">
+    <div class="container">
+      <div class="section-head">
+        <span class="eyebrow">Producători</span>
+        <h2>Branduri de încredere</h2>
+        <p>Lucrăm doar cu producători verificați, cu garanție și calitate certificată.</p>
+      </div>
+      <div class="brands-strip" id="home-brands"></div>
+    </div>
+  </section>
+
   <!-- DE CE NOI -->
   <section class="section">
     <div class="container">
@@ -233,6 +245,14 @@
       const featured = PRODUCTS.filter(p => p.badge).slice(0, 6);
       document.getElementById('home-featured').innerHTML = featured.map(renderProductCard).join('');
       hydrateImages();
+
+      // Producători (branduri) — construiți din catalog, fiecare linkează la lista filtrată
+      const brands = [...new Set(PRODUCTS.map(p => (p.producator || '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'ro'));
+      if (brands.length) {
+        document.getElementById('brands').style.display = '';
+        document.getElementById('home-brands').innerHTML = brands.map(b =>
+          `<a class="brand-logo" href="produse.html?producator=${encodeURIComponent(b)}"><span>${escHtml(b)}</span></a>`).join('');
+      }
     });
 
     // ── Recenzii ──
