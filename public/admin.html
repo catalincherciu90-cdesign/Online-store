@@ -32,6 +32,12 @@
     .toolbar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; align-items: center; }
     .toolbar .grow { flex: 1; }
     .a-empty { padding: 40px; text-align: center; color: var(--muted); }
+    .ord-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+    .ord-tab { padding: 7px 14px; border: 1px solid var(--line-strong); background: #fff; border-radius: 100px; font-size: .88rem; font-weight: 600; color: var(--slate); cursor: pointer; display: inline-flex; align-items: center; gap: 7px; }
+    .ord-tab:hover { border-color: var(--navy); color: var(--navy); }
+    .ord-tab.active { background: var(--navy); border-color: var(--navy); color: #fff; }
+    .ord-tab-n { background: rgba(0,0,0,.08); border-radius: 100px; padding: 0 7px; font-size: .78rem; min-width: 18px; text-align: center; }
+    .ord-tab.active .ord-tab-n { background: rgba(255,255,255,.22); }
   </style>
 </head>
 <body>
@@ -1144,22 +1150,36 @@
         loadOrders();
       } catch (e) { msg.textContent = 'Eroare: ' + e.message; msg.style.color = '#cf3d3d'; }
     }
+    let orderFilter = 'all';
     async function loadOrders() {
       const box = document.getElementById('orders-box');
       try {
         const res = await api('/orders'); ordersData = await res.json();
-        if (!ordersData.length) { box.innerHTML = `<div class="a-empty">Nicio comandă încă.</div>`; return; }
-        box.innerHTML = `<table class="a-table"><thead><tr><th>Ref</th><th>Client</th><th>Contact</th><th>Total</th><th>Status</th><th>Data</th><th></th></tr></thead><tbody>${
-          ordersData.map((o, i) => `<tr style="cursor:pointer" onclick="openOrder(${i})">
-            <td><b>${esc(o.ref)}</b></td>
-            <td>${esc(o.prenume)} ${esc(o.nume)}<br><span class="muted-sm">${esc(o.oras)}</span></td>
-            <td>${esc(o.telefon)}<br><span class="muted-sm">${esc(o.email)}</span></td>
-            <td><b>${fmt(o.total)}</b></td>
-            <td>${statusBadge(o.status || 'nou')}</td>
-            <td class="muted-sm">${esc((o.created_at || '').replace('T', ' ').slice(0, 16))}</td>
-            <td><button class="a-btn-sm" onclick="event.stopPropagation();openOrder(${i})">Deschide</button></td></tr>`).join('')
-        }</tbody></table>`;
-      } catch (e) { box.innerHTML = `<div class="a-empty">Eroare la încărcare.</div>`; }
+      } catch (e) { box.innerHTML = `<div class="a-empty">Eroare la încărcare.</div>`; return; }
+      renderOrders();
+    }
+    function setOrderFilter(f) { orderFilter = f; renderOrders(); }
+    function renderOrders() {
+      const box = document.getElementById('orders-box');
+      if (!ordersData.length) { box.innerHTML = `<div class="a-empty">Nicio comandă încă.</div>`; return; }
+      const norm = o => o.status || 'nou';
+      const counts = { all: ordersData.length };
+      Object.keys(ORDER_ST).forEach(k => counts[k] = ordersData.filter(o => norm(o) === k).length);
+      const tab = (f, label) => `<button class="ord-tab${orderFilter === f ? ' active' : ''}" onclick="setOrderFilter('${f}')">${label} <span class="ord-tab-n">${counts[f] || 0}</span></button>`;
+      const tabs = `<div class="ord-tabs">${tab('all', 'Toate')}${Object.keys(ORDER_ST).map(k => tab(k, ORDER_ST[k].label)).join('')}</div>`;
+      const list = orderFilter === 'all' ? ordersData : ordersData.filter(o => norm(o) === orderFilter);
+      const rows = list.length ? list.map(o => {
+        const i = ordersData.indexOf(o);
+        return `<tr style="cursor:pointer" onclick="openOrder(${i})">
+          <td><b>${esc(o.ref)}</b></td>
+          <td>${esc(o.prenume)} ${esc(o.nume)}<br><span class="muted-sm">${esc(o.oras)}</span></td>
+          <td>${esc(o.telefon)}<br><span class="muted-sm">${esc(o.email)}</span></td>
+          <td><b>${fmt(o.total)}</b></td>
+          <td>${statusBadge(norm(o))}</td>
+          <td class="muted-sm">${esc((o.created_at || '').replace('T', ' ').slice(0, 16))}</td>
+          <td><button class="a-btn-sm" onclick="event.stopPropagation();openOrder(${i})">Deschide</button></td></tr>`;
+      }).join('') : `<tr><td colspan="7" class="muted-sm" style="text-align:center;padding:24px">Nicio comandă cu acest status.</td></tr>`;
+      box.innerHTML = tabs + `<table class="a-table"><thead><tr><th>Ref</th><th>Client</th><th>Contact</th><th>Total</th><th>Status</th><th>Data</th><th></th></tr></thead><tbody>${rows}</tbody></table>`;
     }
     function openOrder(i) {
       const o = ordersData[i]; if (!o) return;
@@ -1188,7 +1208,11 @@
         </div>
         <table class="a-table"><thead><tr><th>Produs</th><th style="text-align:center">Cant.</th><th style="text-align:right">Preț</th><th style="text-align:right">Total</th></tr></thead><tbody>${items}</tbody></table>
         <div style="text-align:right;font-size:1.25rem;font-weight:800;color:var(--navy);margin-top:16px">Total: ${fmt(o.total)}</div>
-        <p class="muted-sm" style="text-align:right;margin-top:2px">Plată ramburs</p>`;
+        <p class="muted-sm" style="text-align:right;margin-top:2px">Plată ramburs</p>
+        ${(o.statusLog && o.statusLog.length) ? `<div style="margin-top:22px;border-top:1px solid var(--line);padding-top:14px">
+          <div class="muted-sm" style="font-weight:700;margin-bottom:8px">Istoric status</div>
+          ${o.statusLog.slice().reverse().map(h => `<div style="display:flex;align-items:center;gap:8px;padding:3px 0;font-size:.85rem">${statusBadge(h.status)}<span class="muted-sm">${esc((h.at || '').replace('T', ' ').slice(0, 16))} · ${esc(h.by || '')}</span></div>`).join('')}
+        </div>` : ''}`;
       document.getElementById('order-view').classList.add('open');
     }
     function closeOrderView() { document.getElementById('order-view').classList.remove('open'); }

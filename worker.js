@@ -75,6 +75,7 @@ async function ensureSchema(env) {
       for (const col of ['align TEXT', 'height TEXT']) {
         try { await env.DB.prepare(`ALTER TABLE banners ADD COLUMN ${col}`).run(); } catch (e) { /* există deja */ }
       }
+      try { await env.DB.prepare('ALTER TABLE orders ADD COLUMN status_log TEXT').run(); } catch (e) { /* există deja */ }
     })();
   }
   return SCHEMA_READY;
@@ -166,16 +167,40 @@ async function ordersList(request, env) {
   if (!await requireAdmin(request, env)) return json({ error: 'Neautorizat' }, 401);
   if (!env.DB) return json([]);
   const r = await env.DB.prepare('SELECT * FROM orders ORDER BY id DESC LIMIT 200').all();
-  return json((r.results || []).map(o => ({ ...o, items: o.items ? JSON.parse(o.items) : [] })));
+  return json((r.results || []).map(o => ({ ...o, items: o.items ? JSON.parse(o.items) : [], statusLog: o.status_log ? JSON.parse(o.status_log) : [] })));
 }
 const ORDER_STATUSES = ['nou', 'confirmata', 'in-livrare', 'livrata', 'anulata'];
+const STATUS_LABEL = { nou: 'Nou', confirmata: 'Confirmată', 'in-livrare': 'În livrare', livrata: 'Livrată', anulata: 'Anulată' };
+// Mesaj trimis clientului la schimbarea statusului (nu și pentru „nou")
+const STATUS_CLIENT_MSG = {
+  confirmata: 'Comanda ta a fost <b>confirmată</b>. O pregătim pentru livrare și te ținem la curent.',
+  'in-livrare': 'Comanda ta este <b>în livrare</b> — pornește spre tine. Plata se face ramburs, la primire.',
+  livrata: 'Comanda ta a fost <b>livrată</b>. Îți mulțumim că ai ales Acoperiș PRO!',
+  anulata: 'Comanda ta a fost <b>anulată</b>. Dacă e o greșeală sau ai întrebări, te rugăm contactează-ne.',
+};
 async function orderStatusUpdate(request, env, id) {
-  if (!await requireAdmin(request, env)) return json({ error: 'Neautorizat' }, 401);
+  const admin = await requireAdmin(request, env);
+  if (!admin) return json({ error: 'Neautorizat' }, 401);
   if (!env.DB) return json({ error: 'Baza de date nu este configurată.' }, 500);
   const { status } = await request.json().catch(() => ({}));
   if (!ORDER_STATUSES.includes(status)) return json({ error: 'Status invalid.' }, 400);
-  await env.DB.prepare('UPDATE orders SET status=? WHERE id=?').bind(status, id).run();
-  return json({ ok: true, status });
+  const o = await env.DB.prepare('SELECT * FROM orders WHERE id=?').bind(id).first();
+  if (!o) return json({ error: 'Comanda nu există.' }, 404);
+  // Adaugă în istoricul de status
+  let log = [];
+  try { log = o.status_log ? JSON.parse(o.status_log) : []; } catch (e) { log = []; }
+  log.push({ status, at: new Date().toISOString(), by: admin.user || 'admin' });
+  await env.DB.prepare('UPDATE orders SET status=?, status_log=? WHERE id=?').bind(status, JSON.stringify(log), id).run();
+  // Email către client (best-effort; necesită RESEND_API_KEY + emailul clientului)
+  let delivered = false;
+  if (o.email && env.RESEND_API_KEY && STATUS_CLIENT_MSG[status]) {
+    const res = await sendEmail(env, { to: [o.email], subject: `Comanda ${esc(o.ref)} — ${STATUS_LABEL[status]}`,
+      html: `<h2>Salut, ${esc(o.prenume || o.nume)}!</h2><p>${STATUS_CLIENT_MSG[status]}</p>
+        <p>Comanda: <b>${esc(o.ref)}</b> · Total: <b>${fmtLei(o.total)}</b> (ramburs)</p>
+        <p>Ai întrebări? Răspunde la acest email.<br>— Echipa Acoperiș PRO</p>` });
+    delivered = res.delivered;
+  }
+  return json({ ok: true, status, emailSent: delivered });
 }
 async function quotesList(request, env) {
   if (!await requireAdmin(request, env)) return json({ error: 'Neautorizat' }, 401);
