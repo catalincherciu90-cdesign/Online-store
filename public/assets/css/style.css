@@ -269,8 +269,8 @@ h2 { font-size: clamp(1.6rem, 3vw, 2.35rem); letter-spacing: -0.028em; }
   .hero-float-card { position: static; transform: none; margin: 18px auto 0; width: max-content; max-width: 100%; }
 }
 
-.trust-bar { background: rgba(11,22,38,.55); border-top: 1px solid rgba(255,255,255,.08); color: #c4d2e2; }
-.trust-bar .container { display: flex; flex-wrap: wrap; justify-content: center; gap: 14px 44px; padding: 17px 20px; }
+.trust-strip { background: var(--navy); }
+.trust-bar { display: flex; flex-wrap: wrap; justify-content: center; gap: 14px 44px; padding: 17px 20px; color: #d4e3ee; }
 .trust-item { display: flex; align-items: center; gap: 10px; font-size: .9rem; font-weight: 500; }
 .trust-item svg { width: 19px; height: 19px; color: var(--terra); }
 
