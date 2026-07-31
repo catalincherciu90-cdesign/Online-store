@@ -38,6 +38,22 @@
     .ord-tab.active { background: var(--navy); border-color: var(--navy); color: #fff; }
     .ord-tab-n { background: rgba(0,0,0,.08); border-radius: 100px; padding: 0 7px; font-size: .78rem; min-width: 18px; text-align: center; }
     .ord-tab.active .ord-tab-n { background: rgba(255,255,255,.22); }
+    /* Dashboard */
+    .dash-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; margin-bottom: 20px; }
+    .dash-kpi { background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 18px 20px; }
+    .dash-kpi.clickable { cursor: pointer; }
+    .dash-kpi.clickable:hover { border-color: var(--navy); box-shadow: 0 2px 10px rgba(0,0,0,.05); }
+    .dash-kpi-val { font-size: 1.9rem; font-weight: 800; color: var(--navy); line-height: 1.1; }
+    .dash-kpi-lbl { font-size: .82rem; color: var(--muted); margin-top: 4px; }
+    .dash-kpi.danger .dash-kpi-val { color: #cf3d3d; }
+    .dash-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-bottom: 24px; }
+    .dash-card { background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 18px 20px; }
+    .dash-card-t { font-size: .78rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin-bottom: 8px; }
+    .dash-card-v { font-size: 1.25rem; font-weight: 700; color: var(--navy); }
+    .dash-card-s { font-size: .85rem; color: var(--muted); margin-top: 3px; }
+    .dash-card-empty { font-size: .95rem; color: var(--muted); }
+    .dash-section-t { font-size: 1rem; font-weight: 700; margin: 8px 0 12px; }
+    .danger-txt { color: #cf3d3d; font-weight: 700; }
   </style>
 </head>
 <body>
@@ -69,7 +85,8 @@
   <!-- DASHBOARD -->
   <div id="dash-view" class="container" style="display:none;padding-bottom:60px">
     <div class="admin-tabs">
-      <button class="active" data-tab="produse" onclick="showTab('produse')">Produse</button>
+      <button class="active" data-tab="dashboard" onclick="showTab('dashboard')">Dashboard</button>
+      <button data-tab="produse" onclick="showTab('produse')">Produse</button>
       <button data-tab="proprietati" onclick="showTab('proprietati')">Proprietăți</button>
       <button data-tab="bannere" onclick="showTab('bannere')">Banner</button>
       <button data-tab="recenzii" onclick="showTab('recenzii')">Recenzii</button>
@@ -80,7 +97,12 @@
       <button data-tab="setari" onclick="showTab('setari')">Setări</button>
     </div>
 
-    <div id="tab-produse">
+    <div id="tab-dashboard">
+      <h2 style="font-size:1.3rem;margin-bottom:16px">Panou general</h2>
+      <div id="dash-box"><div class="a-empty">Se încarcă…</div></div>
+    </div>
+
+    <div id="tab-produse" style="display:none">
       <div class="toolbar">
         <h2 class="grow" style="font-size:1.3rem">Produse</h2>
         <a class="a-btn-sm" href="template-import-produse.xlsx" download>⭳ Descarcă template Excel</a>
@@ -423,14 +445,93 @@
       document.getElementById('dash-view').style.display = 'block';
       document.getElementById('whoami').style.display = 'flex';
       document.getElementById('admin-user').textContent = 'Conectat';
-      loadProps().then(loadProducts); loadOrders(); loadQuotes(); loadReviews(); loadBanners(); loadSettings(); loadPosts(); loadNav();
+      loadProps().then(loadProducts); loadOrders(); loadQuotes(); loadReviews(); loadBanners(); loadSettings(); loadPosts(); loadNav(); loadDashboard();
     }
 
     function showTab(t) {
-      ['produse', 'proprietati', 'bannere', 'recenzii', 'blog', 'meniu', 'comenzi', 'cereri', 'setari'].forEach(x => {
+      ['dashboard', 'produse', 'proprietati', 'bannere', 'recenzii', 'blog', 'meniu', 'comenzi', 'cereri', 'setari'].forEach(x => {
         document.getElementById('tab-' + x).style.display = x === t ? 'block' : 'none';
         document.querySelector(`.admin-tabs [data-tab="${x}"]`).classList.toggle('active', x === t);
       });
+    }
+
+    // ── Dashboard (privire de ansamblu) ──
+    async function loadDashboard() {
+      const box = document.getElementById('dash-box');
+      if (!box) return;
+      box.innerHTML = `<div class="a-empty">Se încarcă…</div>`;
+      let orders = [], products = [];
+      try {
+        const [ro, rp] = await Promise.all([api('/orders'), api('/products')]);
+        orders = await ro.json(); products = await rp.json();
+      } catch (e) { box.innerHTML = `<div class="a-empty">Eroare la încărcare.</div>`; return; }
+      if (!Array.isArray(orders)) orders = [];
+      if (!Array.isArray(products)) products = [];
+      ordersData = orders; // pentru openOrder() din tabelul de mai jos
+
+      // Nume produs → producător (pentru „cel mai vândut brand")
+      const prodBrand = {};
+      products.forEach(p => { if (p && p.name) prodBrand[p.name] = p.producator || ''; });
+
+      const st = o => o.status || 'nou';
+      const isActive = o => st(o) !== 'livrata' && st(o) !== 'anulata';
+      const now = Date.now();
+      const ageDays = o => {
+        const t = Date.parse(o.created_at || '');
+        return isNaN(t) ? 0 : (now - t) / 86400000;
+      };
+      // Comenzi întârziate: încă în lucru (nefinalizate/neanulate) și mai vechi de 3 zile
+      const delayed = orders.filter(o => isActive(o) && ageDays(o) > 3)
+        .sort((a, b) => ageDays(b) - ageDays(a));
+      const nou = orders.filter(o => st(o) === 'nou').length;
+      const venit = orders.filter(o => st(o) === 'livrata')
+        .reduce((s, o) => s + (Number(o.total) || 0), 0);
+
+      // Cantități pe produs / brand din comenzile ne-anulate
+      const prodQty = {}, brandQty = {};
+      orders.filter(o => st(o) !== 'anulata').forEach(o => {
+        (o.items || []).forEach(it => {
+          const q = Number(it.cant) || 0;
+          if (it.nume) prodQty[it.nume] = (prodQty[it.nume] || 0) + q;
+          const b = prodBrand[it.nume];
+          if (b) brandQty[b] = (brandQty[b] || 0) + q;
+        });
+      });
+      const top = obj => Object.entries(obj).sort((a, b) => b[1] - a[1])[0];
+      const topProd = top(prodQty), topBrand = top(brandQty);
+
+      const kpi = (label, val, opts = {}) => `<div class="dash-kpi${opts.danger && val > 0 ? ' danger' : ''}${opts.onclick ? ' clickable' : ''}"${opts.onclick ? ` onclick="${opts.onclick}"` : ''}>
+        <div class="dash-kpi-val">${val}</div><div class="dash-kpi-lbl">${label}</div></div>`;
+
+      const kpis = `<div class="dash-kpis">
+        ${kpi('Comenzi noi', nou, { onclick: "showTab('comenzi');setOrderFilter('nou')" })}
+        ${kpi('Comenzi întârziate', delayed.length, { danger: true })}
+        ${kpi('Total comenzi', orders.length, { onclick: "showTab('comenzi');setOrderFilter('all')" })}
+        ${kpi('Venit livrat', fmt(venit))}
+      </div>`;
+
+      const bestCard = (title, entry, sub) => `<div class="dash-card">
+        <div class="dash-card-t">${title}</div>
+        ${entry ? `<div class="dash-card-v">${esc(entry[0])}</div><div class="dash-card-s">${entry[1]} ${sub}</div>`
+                : `<div class="dash-card-empty">Nicio vânzare încă</div>`}</div>`;
+      const best = `<div class="dash-cards">
+        ${bestCard('Cel mai vândut produs', topProd, 'buc. comandate')}
+        ${bestCard('Cel mai vândut brand', topBrand, 'buc. comandate')}
+      </div>`;
+
+      let delayedTbl = '';
+      if (delayed.length) {
+        const rows = delayed.map(o => `<tr style="cursor:pointer" onclick="openOrder(${orders.indexOf(o)})">
+          <td><b>${esc(o.ref)}</b></td>
+          <td>${esc(o.prenume)} ${esc(o.nume)}</td>
+          <td>${statusBadge(st(o))}</td>
+          <td class="danger-txt">${Math.floor(ageDays(o))} zile</td>
+          <td class="muted-sm">${esc((o.created_at || '').replace('T', ' ').slice(0, 16))}</td></tr>`).join('');
+        delayedTbl = `<div class="dash-section-t">Comenzi întârziate (peste 3 zile, în lucru)</div>
+          <table class="a-table"><thead><tr><th>Ref</th><th>Client</th><th>Status</th><th>Vechime</th><th>Data</th></tr></thead><tbody>${rows}</tbody></table>`;
+      }
+
+      box.innerHTML = kpis + best + delayedTbl;
     }
 
     // ── Setări site (logo + contact) ──
