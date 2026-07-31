@@ -158,7 +158,7 @@
         <h2>Ce spun clienții noștri</h2>
         <p>Sute de proiecte livrate în toată țara. Iată câteva păreri reale.</p>
       </div>
-      <div class="reviews-grid" id="home-reviews"></div>
+      <div class="reviews-marquee"><div class="reviews-track" id="home-reviews"></div></div>
     </div>
   </section>
 
@@ -259,7 +259,11 @@
     }
     function paintReviews(list) {
       const box = document.getElementById('home-reviews');
-      if (box) box.innerHTML = (list && list.length ? list : REVIEW_FALLBACK).map(renderReview).join('');
+      if (!box) return;
+      const data = (list && list.length ? list : REVIEW_FALLBACK);
+      const cards = data.map(renderReview).join('');
+      // Două copii identice → animația translateX(-50%) buclează fără salt.
+      box.innerHTML = cards + cards;
     }
     paintReviews(REVIEW_FALLBACK);
     fetch('/api/reviews').then(r => r.ok ? r.json() : []).then(list => { if (Array.isArray(list) && list.length) paintReviews(list); }).catch(() => {});

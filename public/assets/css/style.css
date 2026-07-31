@@ -477,8 +477,25 @@ h2 { font-size: clamp(1.6rem, 3vw, 2.35rem); letter-spacing: -0.028em; }
 .toast svg { width: 20px; height: 20px; color: var(--terra); }
 
 /* ---------- CTA band ---------- */
-/* ── Recenzii ── */
-.reviews-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 22px; }
+/* ── Recenzii (carusel dreapta → stânga) ── */
+.reviews-marquee {
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent);
+}
+.reviews-track {
+  display: flex; gap: 22px; width: max-content; align-items: stretch;
+  animation: review-scroll 45s linear infinite;
+}
+.reviews-marquee:hover .reviews-track { animation-play-state: paused; }
+.reviews-track .review-card { flex: 0 0 clamp(270px, 78vw, 350px); }
+@keyframes review-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .reviews-track { animation: none; flex-wrap: wrap; justify-content: center; width: auto; }
+}
 .review-card {
   background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius);
   padding: 26px 24px; display: flex; flex-direction: column; gap: 14px;
