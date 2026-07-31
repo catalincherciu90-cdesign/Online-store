@@ -460,13 +460,14 @@
       const box = document.getElementById('dash-box');
       if (!box) return;
       box.innerHTML = `<div class="a-empty">Se încarcă…</div>`;
-      let orders = [], products = [];
+      let orders = [], products = [], quotes = [];
       try {
-        const [ro, rp] = await Promise.all([api('/orders'), api('/products')]);
-        orders = await ro.json(); products = await rp.json();
+        const [ro, rp, rq] = await Promise.all([api('/orders'), api('/products'), api('/quotes')]);
+        orders = await ro.json(); products = await rp.json(); quotes = await rq.json();
       } catch (e) { box.innerHTML = `<div class="a-empty">Eroare la încărcare.</div>`; return; }
       if (!Array.isArray(orders)) orders = [];
       if (!Array.isArray(products)) products = [];
+      if (!Array.isArray(quotes)) quotes = [];
       ordersData = orders; // pentru openOrder() din tabelul de mai jos
 
       // Nume produs → producător (pentru „cel mai vândut brand")
@@ -507,6 +508,7 @@
         ${kpi('Comenzi noi', nou, { onclick: "showTab('comenzi');setOrderFilter('nou')" })}
         ${kpi('Comenzi întârziate', delayed.length, { danger: true })}
         ${kpi('Total comenzi', orders.length, { onclick: "showTab('comenzi');setOrderFilter('all')" })}
+        ${kpi('Cereri de ofertă', quotes.length, { onclick: "showTab('cereri')" })}
         ${kpi('Venit livrat', fmt(venit))}
       </div>`;
 
