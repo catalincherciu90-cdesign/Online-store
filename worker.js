@@ -54,6 +54,7 @@ async function ensureSchema(env) {
       const stmts = [
         `CREATE TABLE IF NOT EXISTS reviews (id INTEGER PRIMARY KEY AUTOINCREMENT, author TEXT NOT NULL, rating INTEGER NOT NULL DEFAULT 5, text TEXT NOT NULL, source TEXT DEFAULT 'Google', sort INTEGER DEFAULT 0, active INTEGER NOT NULL DEFAULT 1, created_at TEXT DEFAULT (datetime('now')))`,
         `CREATE TABLE IF NOT EXISTS option_values (grp TEXT NOT NULL, id TEXT NOT NULL, name TEXT NOT NULL, delta REAL DEFAULT 0, hex TEXT, sort INTEGER DEFAULT 0, PRIMARY KEY (grp, id))`,
+        `CREATE TABLE IF NOT EXISTS banners (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT, subtitle TEXT, cta_label TEXT, cta_href TEXT, image TEXT, sort INTEGER DEFAULT 0, active INTEGER NOT NULL DEFAULT 1, created_at TEXT DEFAULT (datetime('now')))`,
       ];
       for (const s of stmts) { try { await env.DB.prepare(s).run(); } catch (e) { console.error('ensureSchema', e); } }
       // Coloane adăugate ulterior pe produse (ALTER nu e idempotent → ignoră „duplicate column").
@@ -237,6 +238,43 @@ async function reviewDelete(request, env, id) {
   return json({ ok: true });
 }
 
+// ── Bannere hero (editabile din admin) ──
+function rowToBanner(r) {
+  return { id: r.id, title: r.title || '', subtitle: r.subtitle || '', ctaLabel: r.cta_label || '', ctaHref: r.cta_href || '', image: r.image || '', sort: r.sort || 0, active: !!r.active };
+}
+async function bannersList(request, env, url) {
+  if (!env.DB) return json([]);
+  if (url.searchParams.get('all')) {
+    if (!await requireAdmin(request, env)) return json({ error: 'Neautorizat' }, 401);
+    const r = await env.DB.prepare('SELECT * FROM banners ORDER BY sort, id DESC').all();
+    return json((r.results || []).map(rowToBanner));
+  }
+  const r = await env.DB.prepare('SELECT * FROM banners WHERE active=1 ORDER BY sort, id DESC').all();
+  return json((r.results || []).map(rowToBanner));
+}
+async function bannerUpsert(request, env) {
+  if (!await requireAdmin(request, env)) return json({ error: 'Neautorizat' }, 401);
+  if (!env.DB) return json({ error: 'Baza de date nu este configurată.' }, 500);
+  const v = await request.json().catch(() => null);
+  if (!v || !v.image) return json({ error: 'Adaugă o imagine pentru banner.' }, 400);
+  if (typeof v.image === 'string' && v.image.length > 3000000) return json({ error: 'Imaginea e prea mare. Folosește una mai mică (max ~2 MB).' }, 413);
+  const active = v.active === false ? 0 : 1;
+  if (v.id) {
+    await env.DB.prepare('UPDATE banners SET title=?,subtitle=?,cta_label=?,cta_href=?,image=?,sort=?,active=? WHERE id=?')
+      .bind(v.title || '', v.subtitle || '', v.ctaLabel || '', v.ctaHref || '', v.image, Number(v.sort) || 0, active, v.id).run();
+    return json({ ok: true, id: v.id });
+  }
+  const res = await env.DB.prepare('INSERT INTO banners (title,subtitle,cta_label,cta_href,image,sort,active) VALUES (?,?,?,?,?,?,?)')
+    .bind(v.title || '', v.subtitle || '', v.ctaLabel || '', v.ctaHref || '', v.image, Number(v.sort) || 0, active).run();
+  return json({ ok: true, id: res.meta ? res.meta.last_row_id : undefined });
+}
+async function bannerDelete(request, env, id) {
+  if (!await requireAdmin(request, env)) return json({ error: 'Neautorizat' }, 401);
+  if (!env.DB) return json({ error: 'Baza de date nu este configurată.' }, 500);
+  await env.DB.prepare('DELETE FROM banners WHERE id=?').bind(id).run();
+  return json({ ok: true });
+}
+
 async function sendEmail(env, payload) {
   if (!env.RESEND_API_KEY) return { delivered: false, error: 'Email neconfigurat.' };
   try {
@@ -315,6 +353,10 @@ async function api(request, env, url) {
   if (p === '/api/options/seed' && m === 'POST') return optionsSeed(request, env);
   const ov = p.match(/^\/api\/options\/([^/]+)\/(.+)$/);
   if (ov && m === 'DELETE') return optionDelete(request, env, decodeURIComponent(ov[1]), decodeURIComponent(ov[2]));
+  if (p === '/api/banners' && m === 'GET') return bannersList(request, env, url);
+  if (p === '/api/banners' && m === 'POST') return bannerUpsert(request, env);
+  const bn = p.match(/^\/api\/banners\/(\d+)$/);
+  if (bn && m === 'DELETE') return bannerDelete(request, env, Number(bn[1]));
   if (p === '/api/reviews' && m === 'GET') return reviewsList(request, env, url);
   if (p === '/api/reviews' && m === 'POST') return reviewUpsert(request, env);
   const rv = p.match(/^\/api\/reviews\/(\d+)$/);

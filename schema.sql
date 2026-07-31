@@ -42,6 +42,19 @@ CREATE TABLE IF NOT EXISTS quotes (
   created_at TEXT DEFAULT (datetime('now'))
 );
 
+-- Bannere hero (slider pe prima pagină, editabile din admin)
+CREATE TABLE IF NOT EXISTS banners (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  title      TEXT,
+  subtitle   TEXT,
+  cta_label  TEXT,            -- textul butonului
+  cta_href   TEXT,            -- linkul butonului
+  image      TEXT,            -- data URL (base64) al imaginii
+  sort       INTEGER DEFAULT 0,
+  active     INTEGER NOT NULL DEFAULT 1,
+  created_at TEXT DEFAULT (datetime('now'))
+);
+
 -- Recenzii clienți (afișate pe prima pagină, editabile din admin)
 CREATE TABLE IF NOT EXISTS reviews (
   id       INTEGER PRIMARY KEY AUTOINCREMENT,

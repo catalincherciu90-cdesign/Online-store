@@ -37,7 +37,13 @@
   </header>
 
   <!-- HERO -->
-  <section class="hero">
+  <!-- HERO BANNERE (încărcate din admin) -->
+  <section class="hero-banners" id="hero-banners" style="display:none">
+    <div class="hb-track" id="hb-track"></div>
+    <div class="hb-dots" id="hb-dots"></div>
+  </section>
+
+  <section class="hero" id="hero-default">
     <div class="container hero-inner">
       <div class="hero-text">
         <div class="hero-badge"><span class="dot"></span> <b>Producător direct</b> · Garanție până la 30 de ani</div>
@@ -221,6 +227,43 @@
   <script src="assets/js/cart.js"></script>
   <script src="assets/js/main.js"></script>
   <script>
+    // ── Hero bannere (slider) ──
+    const escB = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    function initBanners() {
+      fetch('/api/banners').then(r => r.ok ? r.json() : []).then(list => {
+        if (!Array.isArray(list) || !list.length) return;
+        const track = document.getElementById('hb-track');
+        const dotsBox = document.getElementById('hb-dots');
+        track.innerHTML = list.map(b => {
+          const hasText = b.title || b.subtitle || (b.ctaLabel && b.ctaHref);
+          const overlay = hasText ? `<div class="hb-overlay"><div class="container">
+            ${b.title ? `<h1>${escB(b.title)}</h1>` : ''}
+            ${b.subtitle ? `<p>${escB(b.subtitle)}</p>` : ''}
+            ${b.ctaLabel && b.ctaHref ? `<a class="btn btn-primary btn-lg" href="${escB(b.ctaHref)}">${escB(b.ctaLabel)}</a>` : ''}
+          </div></div>` : '';
+          return `<div class="hb-slide"><img class="hb-img" src="${escB(b.image)}" alt="${escB(b.title || 'Banner')}">${overlay}</div>`;
+        }).join('');
+        document.getElementById('hero-banners').style.display = 'block';
+        document.getElementById('hero-default').style.display = 'none';
+
+        let idx = 0;
+        const go = i => {
+          idx = (i + list.length) % list.length;
+          track.style.transform = `translateX(-${idx * 100}%)`;
+          dotsBox.querySelectorAll('.hb-dot').forEach((d, k) => d.classList.toggle('active', k === idx));
+        };
+        if (list.length > 1) {
+          dotsBox.innerHTML = list.map((_, i) => `<button class="hb-dot${i === 0 ? ' active' : ''}" aria-label="Banner ${i + 1}"></button>`).join('');
+          dotsBox.querySelectorAll('.hb-dot').forEach((d, i) => d.addEventListener('click', () => go(i)));
+          let timer = setInterval(() => go(idx + 1), 6000);
+          const sec = document.getElementById('hero-banners');
+          sec.addEventListener('mouseenter', () => clearInterval(timer));
+          sec.addEventListener('mouseleave', () => { timer = setInterval(() => go(idx + 1), 6000); });
+        }
+      }).catch(() => {});
+    }
+    initBanners();
+
     // Randare categorii
     const catIcon = { tigla:'tigla', falt:'falt', panou:'panou', pluvial:'pluvial', accesoriu:'accesoriu', folie:'folie' };
     const catColors = {

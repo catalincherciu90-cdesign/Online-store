@@ -65,6 +65,7 @@
     <div class="admin-tabs">
       <button class="active" data-tab="produse" onclick="showTab('produse')">Produse</button>
       <button data-tab="proprietati" onclick="showTab('proprietati')">Proprietăți</button>
+      <button data-tab="bannere" onclick="showTab('bannere')">Banner</button>
       <button data-tab="recenzii" onclick="showTab('recenzii')">Recenzii</button>
       <button data-tab="comenzi" onclick="showTab('comenzi')">Comenzi</button>
       <button data-tab="cereri" onclick="showTab('cereri')">Cereri ofertă</button>
@@ -90,6 +91,15 @@
       </div>
       <p class="muted-sm" style="margin-bottom:16px">Valorile de aici apar la toate produsele. Adaugă culori, grosimi sau finisaje noi — se văd imediat în editorul de produs și pe site.</p>
       <div id="props-box"></div>
+    </div>
+
+    <div id="tab-bannere" style="display:none">
+      <div class="toolbar">
+        <h2 class="grow" style="font-size:1.3rem">Banner (hero)</h2>
+        <button class="btn btn-primary" style="padding:9px 16px" onclick="openBanner()">+ Banner nou</button>
+      </div>
+      <p class="muted-sm" style="margin-bottom:16px">Bannerele active apar ca slider în partea de sus a paginii principale. Recomandat: imagine lată (ex. 1920×720 px). Dacă nu ai niciun banner activ, se afișează hero-ul implicit.</p>
+      <div id="banners-box"></div>
     </div>
 
     <div id="tab-recenzii" style="display:none">
@@ -146,6 +156,40 @@
           <button type="button" class="btn btn-outline" onclick="closeEditor()">Anulează</button>
         </div>
         <div class="form-status" id="editor-status"></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- EDITOR BANNER -->
+  <div class="overlay" id="banner-view">
+    <div class="modal" style="max-width:620px">
+      <h3 id="banner-title" style="margin-bottom:18px">Banner</h3>
+      <form class="checkout-form" id="banner-form" onsubmit="saveBanner(event)">
+        <input type="hidden" name="id">
+        <input type="hidden" name="image">
+        <div class="field full">
+          <label>Imagine banner *</label>
+          <input type="file" accept="image/*" id="banner-file" onchange="onBannerFile(this.files[0])">
+          <div class="muted-sm" style="margin-top:6px">Se redimensionează automat la max. 1920px lățime pentru încărcare rapidă.</div>
+          <div id="banner-preview" style="margin-top:10px"></div>
+        </div>
+        <div class="field full"><label>Titlu (opțional, apare peste imagine)</label><input name="title" placeholder="ex: Reduceri de sezon la țiglă metalică"></div>
+        <div class="field full"><label>Subtitlu (opțional)</label><input name="subtitle" placeholder="ex: Transport gratuit peste 100 mp"></div>
+        <div class="form-row">
+          <div class="field"><label>Text buton (opțional)</label><input name="ctaLabel" placeholder="ex: Vezi oferta"></div>
+          <div class="field"><label>Link buton (opțional)</label><input name="ctaHref" placeholder="ex: produse.html"></div>
+        </div>
+        <div class="form-row">
+          <div class="field"><label>Ordine</label><input name="sort" type="number" value="0"></div>
+          <div class="field" style="display:flex;align-items:flex-end">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:600"><input type="checkbox" name="active" checked> Activ (afișat pe site)</label>
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:14px">
+          <button class="btn btn-primary" style="flex:1">Salvează</button>
+          <button type="button" class="btn btn-outline" onclick="closeBanner()">Anulează</button>
+        </div>
+        <div class="form-status" id="banner-status"></div>
       </form>
     </div>
   </div>
@@ -225,14 +269,107 @@
       document.getElementById('dash-view').style.display = 'block';
       document.getElementById('whoami').style.display = 'flex';
       document.getElementById('admin-user').textContent = 'Conectat';
-      loadProps().then(loadProducts); loadOrders(); loadQuotes(); loadReviews();
+      loadProps().then(loadProducts); loadOrders(); loadQuotes(); loadReviews(); loadBanners();
     }
 
     function showTab(t) {
-      ['produse', 'proprietati', 'recenzii', 'comenzi', 'cereri'].forEach(x => {
+      ['produse', 'proprietati', 'bannere', 'recenzii', 'comenzi', 'cereri'].forEach(x => {
         document.getElementById('tab-' + x).style.display = x === t ? 'block' : 'none';
         document.querySelector(`.admin-tabs [data-tab="${x}"]`).classList.toggle('active', x === t);
       });
+    }
+
+    // ── Bannere hero ──
+    let bannersData = [];
+    let bannerImage = ''; // data URL curent din editor
+    async function loadBanners() {
+      const box = document.getElementById('banners-box');
+      try {
+        const res = await api('/banners?all=1');
+        bannersData = await res.json();
+      } catch (e) { box.innerHTML = `<div class="a-empty">Nu am putut încărca bannerele.</div>`; return; }
+      if (!Array.isArray(bannersData) || !bannersData.length) {
+        box.innerHTML = `<div class="a-empty">Niciun banner încă. Apasă „+ Banner nou" ca să încarci primul.</div>`;
+        return;
+      }
+      box.innerHTML = `<table class="a-table"><thead><tr><th>Imagine</th><th>Titlu</th><th>Ordine</th><th>Stare</th><th></th></tr></thead><tbody>` +
+        bannersData.map((b, i) => `<tr>
+          <td><img src="${esc(b.image)}" alt="" style="width:120px;height:54px;object-fit:cover;border-radius:6px;border:1px solid var(--line)"></td>
+          <td>${b.title ? esc(b.title) : '<span class="muted-sm">(fără text)</span>'}</td>
+          <td>${b.sort || 0}</td>
+          <td>${b.active ? '<span style="color:#1a8f4c;font-weight:600">activ</span>' : '<span class="muted-sm">ascuns</span>'}</td>
+          <td style="white-space:nowrap;text-align:right">
+            <button class="a-btn-sm" onclick="openBanner(${i})">Editează</button>
+            <button class="a-btn-sm danger" onclick="delBanner(${b.id})">Șterge</button>
+          </td></tr>`).join('') + `</tbody></table>`;
+    }
+    // Redimensionează + comprimă imaginea în browser înainte de upload (rapid, fără server de imagini).
+    function onBannerFile(file) {
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        const img = new Image();
+        img.onload = () => {
+          const maxW = 1920;
+          const scale = Math.min(1, maxW / img.width);
+          const w = Math.round(img.width * scale), h = Math.round(img.height * scale);
+          const canvas = document.createElement('canvas');
+          canvas.width = w; canvas.height = h;
+          canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+          bannerImage = canvas.toDataURL('image/jpeg', 0.82);
+          document.getElementById('banner-form').image.value = bannerImage;
+          document.getElementById('banner-preview').innerHTML =
+            `<img src="${bannerImage}" style="width:100%;max-height:200px;object-fit:cover;border-radius:8px;border:1px solid var(--line)">
+             <div class="muted-sm" style="margin-top:4px">Dimensiune: ~${Math.round(bannerImage.length / 1024)} KB</div>`;
+        };
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    }
+    function openBanner(i) {
+      const f = document.getElementById('banner-form');
+      f.reset();
+      document.getElementById('banner-status').textContent = '';
+      const ed = typeof i === 'number' ? bannersData[i] : null;
+      document.getElementById('banner-title').textContent = ed ? 'Editează bannerul' : 'Banner nou';
+      f.id.value = ed ? ed.id : '';
+      f.title.value = ed ? ed.title : '';
+      f.subtitle.value = ed ? ed.subtitle : '';
+      f.ctaLabel.value = ed ? ed.ctaLabel : '';
+      f.ctaHref.value = ed ? ed.ctaHref : '';
+      f.sort.value = ed ? (ed.sort || 0) : 0;
+      f.active.checked = ed ? !!ed.active : true;
+      bannerImage = ed ? ed.image : '';
+      f.image.value = bannerImage;
+      document.getElementById('banner-file').value = '';
+      document.getElementById('banner-preview').innerHTML = bannerImage
+        ? `<img src="${bannerImage}" style="width:100%;max-height:200px;object-fit:cover;border-radius:8px;border:1px solid var(--line)">`
+        : '';
+      document.getElementById('banner-view').classList.add('open');
+    }
+    function closeBanner() { document.getElementById('banner-view').classList.remove('open'); }
+    async function saveBanner(e) {
+      e.preventDefault();
+      const f = e.target;
+      if (!bannerImage) { const st = document.getElementById('banner-status'); st.className = 'form-status err'; st.textContent = 'Încarcă o imagine pentru banner.'; return; }
+      const body = {
+        image: bannerImage, title: f.title.value.trim(), subtitle: f.subtitle.value.trim(),
+        ctaLabel: f.ctaLabel.value.trim(), ctaHref: f.ctaHref.value.trim(),
+        sort: Number(f.sort.value) || 0, active: f.active.checked,
+      };
+      if (f.id.value) body.id = Number(f.id.value);
+      const st = document.getElementById('banner-status');
+      try {
+        const res = await api('/banners', { method: 'POST', body: JSON.stringify(body) });
+        const d = await res.json();
+        if (d.ok) { closeBanner(); loadBanners(); }
+        else { st.className = 'form-status err'; st.textContent = d.error || 'Eroare.'; }
+      } catch (err) { st.className = 'form-status err'; st.textContent = err.message; }
+    }
+    async function delBanner(id) {
+      if (!confirm('Ștergi acest banner definitiv?')) return;
+      try { await api('/banners/' + id, { method: 'DELETE' }); loadBanners(); }
+      catch (e) { alert('Eroare: ' + e.message); }
     }
 
     // ── Recenzii ──
