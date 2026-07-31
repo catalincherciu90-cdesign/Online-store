@@ -534,7 +534,8 @@ h2 { font-size: clamp(1.6rem, 3vw, 2.35rem); letter-spacing: -0.028em; }
   display: flex; gap: 22px; width: max-content; align-items: stretch;
   animation: review-scroll 45s linear infinite;
 }
-.reviews-marquee:hover .reviews-track { animation-play-state: paused; }
+.reviews-marquee:hover .reviews-track,
+.reviews-marquee:focus-within .reviews-track { animation-play-state: paused; }
 .reviews-track .review-card { flex: 0 0 clamp(270px, 78vw, 350px); }
 @keyframes review-scroll {
   from { transform: translateX(0); }

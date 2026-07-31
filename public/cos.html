@@ -217,23 +217,28 @@
       const order = Object.fromEntries(new FormData(form).entries());
       const items = Cart.items().map(it => {
         const p = getProduct(it.id);
-        return { nume: p.name, optiuni: optionSummary(it.opts), cant: it.qty, unit: p.unit, pret: Cart.unitPrice(it) };
+        // Trimitem id + opțiunile structurate ca serverul să recalculeze prețul din baza de date.
+        return { id: it.id, opts: it.opts, nume: p ? p.name : it.id, optiuni: optionSummary(it.opts), cant: it.qty, unit: p ? p.unit : 'buc', pret: Cart.unitPrice(it) };
       });
-      const subtotal = Cart.subtotal();
-      const delivery = subtotal >= DELIVERY_THRESHOLD ? 0 : DELIVERY_FEE;
-      const payload = { ...order, items, total: subtotal + delivery };
+      const payload = { ...order, items };
+      const st = document.getElementById('order-status');
+      const showErr = msg => {
+        if (st) { st.className = 'form-status err'; st.textContent = msg; st.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+        btn.disabled = false; btn.textContent = 'Trimite comanda';
+      };
 
       btn.disabled = true; btn.textContent = 'Se trimite...';
-      let ref = 'CMD-' + Date.now().toString().slice(-6);
+      let ref;
       try {
         const res = await fetch('/api/order', {
           method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
         });
         const data = await res.json().catch(() => ({}));
-        if (data && data.ref) ref = data.ref;
+        if (!res.ok || !data.ok) { showErr((data && data.error) || 'Nu am putut trimite comanda. Încearcă din nou sau sună-ne.'); return; }
+        ref = data.ref;
       } catch (err) {
-        // fără backend configurat: comanda rămâne demo (ramburs), continuăm cu ref local
-        console.log('Comandă (offline/demo)', payload);
+        showErr('Eroare de rețea. Verifică conexiunea și încearcă din nou.');
+        return;
       }
       Cart.clear();
       root.innerHTML = `<div class="cart-empty">

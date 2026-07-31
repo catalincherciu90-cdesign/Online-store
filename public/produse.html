@@ -187,6 +187,17 @@
       document.getElementById('catalog-sub').textContent = c ? c.desc : 'Sisteme complete de acoperiș, direct de la producător.';
     }
 
+    // Verifică dacă produsul chiar oferă valoarea selectată (nu doar dacă are grupul de opțiuni)
+    function productHasThickness(p, tid) {
+      if (typeof usesFinishes === 'function' && usesFinishes(p)) return p.finishes.some(f => (f.thicknesses || []).includes(tid));
+      return productOptions(p).includes('grosime');
+    }
+    function productHasColor(p, cid) {
+      if (typeof usesFinishes === 'function' && usesFinishes(p)) return p.finishes.some(f => (f.colors || []).includes(cid));
+      if (p.finishColors) return Object.values(p.finishColors).some(arr => (arr || []).includes(cid));
+      return productOptions(p).includes('culoare');
+    }
+
     function render() {
       let list = PRODUCTS.slice();
       if (activeCat !== 'all') list = list.filter(p => p.cat === activeCat);
@@ -195,8 +206,8 @@
         const [lo, hi] = activePrice.split('-').map(Number);
         list = list.filter(p => p.price >= lo && p.price <= hi);
       }
-      if (activeThickness !== 'all') list = list.filter(p => productOptions(p).includes('grosime'));
-      if (activeColor !== 'all') list = list.filter(p => productOptions(p).includes('culoare'));
+      if (activeThickness !== 'all') list = list.filter(p => productHasThickness(p, activeThickness));
+      if (activeColor !== 'all') list = list.filter(p => productHasColor(p, activeColor));
       if (activeSort === 'price-asc') list.sort((a,b) => a.price - b.price);
       else if (activeSort === 'price-desc') list.sort((a,b) => b.price - a.price);
       else if (activeSort === 'name') list.sort((a,b) => a.name.localeCompare(b.name, 'ro'));

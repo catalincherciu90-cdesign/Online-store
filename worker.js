@@ -117,6 +117,8 @@ async function productsCreate(request, env) {
   if (!env.DB) return json({ error: 'Baza de date nu este configurată.' }, 500);
   const p = await request.json().catch(() => null);
   if (!p || !p.id || !p.name || !p.cat) return json({ error: 'Date produs incomplete.' }, 400);
+  const existing = await env.DB.prepare('SELECT 1 FROM products WHERE id=?').bind(p.id).first();
+  if (existing) return json({ error: 'Există deja un produs cu codul „' + p.id + '". Alege alt cod sau editează produsul existent.' }, 409);
   await upsertProduct(env, p);
   return json({ ok: true });
 }
@@ -244,11 +246,13 @@ async function reviewDelete(request, env, id) {
 }
 
 // ── Setări site (logo + date de contact) ──
+// Chei expuse public prin GET /api/settings (allowlist — orice cheie nouă rămâne privată implicit)
+const PUBLIC_SETTINGS = ['logo', 'brandName', 'phone', 'email', 'email2', 'schedule', 'address', 'facebook', 'instagram'];
 async function settingsGet(env) {
   if (!env.DB) return json({});
   const r = await env.DB.prepare('SELECT key, value FROM settings').all();
   const out = {};
-  for (const row of (r.results || [])) out[row.key] = row.value;
+  for (const row of (r.results || [])) if (PUBLIC_SETTINGS.includes(row.key)) out[row.key] = row.value;
   return json(out);
 }
 async function settingsSave(request, env) {
@@ -339,53 +343,104 @@ async function sendEmail(env, payload) {
   } catch (e) { return { delivered: false, error: String(e) }; }
 }
 
+// Constante de livrare (trebuie să corespundă cu cele din cos.html)
+const DELIVERY_THRESHOLD = 2000, DELIVERY_FEE = 150;
+// Taie un string la o lungime maximă (validare defensivă pe câmpurile din formulare)
+const clip = (s, n) => (s == null ? '' : String(s)).slice(0, n);
+// Prețul unitar calculat SERVER-SIDE din produsul din baza de date (nu din payload-ul clientului)
+function serverUnitPrice(p, opts) {
+  const o = opts || {};
+  if (p.finishes && Array.isArray(p.finishes) && p.finishes.length) {
+    const f = p.finishes.find(x => x.id === o.finisaj) || p.finishes[0];
+    const key = (o.culoare || '') + '|' + (o.grosime || '');
+    const v = f && f.prices ? f.prices[key] : undefined;
+    return typeof v === 'number' ? v : (Number(p.price) || 0);
+  }
+  if (o.culoare && p.colorPrices && typeof p.colorPrices[o.culoare] === 'number') return p.colorPrices[o.culoare];
+  return Number(p.price) || 0;
+}
+
 async function orderCreate(request, env) {
   const body = await request.json().catch(() => null);
   if (!body) return json({ ok: false, error: 'Date invalide.' }, 400);
-  const { nume, prenume, telefon, email, adresa, oras, judet, obs, items, total } = body;
+  let { nume, prenume, telefon, email, adresa, oras, judet, obs, items } = body;
   if (!nume || !telefon || !adresa || !Array.isArray(items) || !items.length) return json({ ok: false, error: 'Date incomplete.' }, 400);
+  if (items.length > 200) return json({ ok: false, error: 'Prea multe produse în comandă.' }, 400);
+  // Validare de lungime pe câmpuri
+  nume = clip(nume, 120); prenume = clip(prenume, 120); telefon = clip(telefon, 40);
+  email = clip(email, 160); adresa = clip(adresa, 300); oras = clip(oras, 120); judet = clip(judet, 120); obs = clip(obs, 2000);
+
+  // Recalcul preț SERVER-SIDE: prețul din client e ignorat, folosim prețurile reale din DB.
+  const priced = []; let subtotal = 0;
+  for (const it of items) {
+    const id = it && it.id ? String(it.id) : null;
+    const qty = Math.max(1, Math.min(100000, parseInt(it && it.cant) || 1));
+    let name = clip(it && it.nume, 200), unit = clip(it && it.unit, 20) || 'buc', pret = 0;
+    if (id && env.DB) {
+      const row = await env.DB.prepare('SELECT * FROM products WHERE id=? AND active=1').bind(id).first();
+      if (row) { const p = rowToProduct(row); pret = serverUnitPrice(p, it && it.opts); name = p.name; unit = p.unit || unit; }
+    }
+    subtotal += pret * qty;
+    priced.push({ nume: name, optiuni: clip(it && it.optiuni, 300), cant: qty, unit, pret });
+  }
+  const delivery = subtotal >= DELIVERY_THRESHOLD ? 0 : DELIVERY_FEE;
+  const total = subtotal + delivery;
+
   const ref = 'CMD-' + Date.now().toString().slice(-6);
+  let saved = false;
   if (env.DB) {
     try {
       await env.DB.prepare(`INSERT INTO orders (ref,nume,prenume,telefon,email,adresa,oras,judet,obs,items,total) VALUES (?,?,?,?,?,?,?,?,?,?,?)`)
-        .bind(ref, nume, prenume || '', telefon, email || '', adresa, oras || '', judet || '', obs || '', JSON.stringify(items), Number(total) || 0).run();
+        .bind(ref, nume, prenume || '', telefon, email || '', adresa, oras || '', judet || '', obs || '', JSON.stringify(priced), total).run();
+      saved = true;
     } catch (e) { console.error('DB order', e); }
   }
-  const rows = items.map(it => `<tr><td>${esc(it.nume)}${it.optiuni ? `<br><small>${esc(it.optiuni)}</small>` : ''}</td><td align="center">${esc(it.cant)} ${esc(it.unit || '')}</td><td align="right">${fmtLei(it.pret)}</td></tr>`).join('');
+  const rows = priced.map(it => `<tr><td>${esc(it.nume)}${it.optiuni ? `<br><small>${esc(it.optiuni)}</small>` : ''}</td><td align="center">${esc(it.cant)} ${esc(it.unit || '')}</td><td align="right">${fmtLei(it.pret)}</td></tr>`).join('');
   const to = env.ORDER_TO_EMAIL || env.QUOTE_TO_EMAIL;
-  let res = { delivered: false, error: 'Email neconfigurat.' };
-  if (to) res = await sendEmail(env, { to: [to], reply_to: email || undefined, subject: `Comandă ${ref} — ${prenume || ''} ${nume}`,
-    html: `<h2>Comandă ${esc(ref)}</h2><p>${esc(prenume)} ${esc(nume)} · ${esc(telefon)} · ${esc(email)}<br>${esc(adresa)}, ${esc(oras)}, ${esc(judet)}</p><table border="1" cellpadding="6" style="border-collapse:collapse">${rows}</table><p><b>Total: ${fmtLei(total)}</b> (ramburs)</p>` });
-  return json({ ok: true, ref, delivered: res.delivered });
+  let mail = { delivered: false };
+  if (to) mail = await sendEmail(env, { to: [to], reply_to: email || undefined, subject: `Comandă ${ref} — ${prenume || ''} ${nume}`,
+    html: `<h2>Comandă ${esc(ref)}</h2><p>${esc(prenume)} ${esc(nume)} · ${esc(telefon)} · ${esc(email)}<br>${esc(adresa)}, ${esc(oras)}, ${esc(judet)}</p><table border="1" cellpadding="6" style="border-collapse:collapse">${rows}</table><p>Subtotal: ${fmtLei(subtotal)} · Livrare: ${delivery ? fmtLei(delivery) : 'gratuită'}<br><b>Total: ${fmtLei(total)}</b> (ramburs)</p>` });
+  // Fail loud: nu confirma o comandă care nu s-a înregistrat nicăieri.
+  if (env.DB && !saved) return json({ ok: false, error: 'Nu am putut înregistra comanda. Te rugăm sună-ne pentru confirmare.' }, 500);
+  if (!env.DB && !mail.delivered) return json({ ok: false, error: 'Comanda nu a putut fi înregistrată. Te rugăm contactează-ne telefonic.' }, 500);
+  return json({ ok: true, ref, total, delivered: mail.delivered });
 }
 
 async function quoteCreate(request, env) {
   let form;
   try { form = await request.formData(); } catch { return json({ ok: false, error: 'Date invalide.' }, 400); }
-  const g = k => (form.get(k) || '').toString().trim();
-  const nume = g('nume'), telefon = g('telefon'), email = g('email'), tip = g('tip'), suprafata = g('suprafata'), mesaj = g('mesaj');
+  const g = (k, n) => clip((form.get(k) || '').toString().trim(), n);
+  const nume = g('nume', 120), telefon = g('telefon', 40), email = g('email', 160),
+    tip = g('tip', 80), suprafata = g('suprafata', 40), mesaj = g('mesaj', 3000);
   if (!nume || !telefon || !email || !mesaj) return json({ ok: false, error: 'Completează câmpurile obligatorii.' }, 400);
   const file = form.get('plan');
   let attachment = null, planInfo = 'Fără plan atașat.';
   if (file && typeof file === 'object' && file.size > 0) {
     if (file.size > 15 * 1024 * 1024) return json({ ok: false, error: 'Fișierul depășește 15 MB.' }, 413);
-    attachment = { filename: file.name || 'plan', content: toBase64(await file.arrayBuffer()) };
-    planInfo = `${file.name} (${(file.size / 1048576).toFixed(2)} MB)`;
+    const allowed = ['pdf', 'jpg', 'jpeg', 'png', 'webp', 'dwg', 'dxf', 'doc', 'docx'];
+    const ext = (file.name || '').split('.').pop().toLowerCase();
+    if (!allowed.includes(ext)) return json({ ok: false, error: 'Tip de fișier neacceptat. Acceptăm: ' + allowed.join(', ') + '.' }, 415);
+    attachment = { filename: clip(file.name || 'plan', 200), content: toBase64(await file.arrayBuffer()) };
+    planInfo = `${clip(file.name, 200)} (${(file.size / 1048576).toFixed(2)} MB)`;
   }
   const ref = 'OF-' + Date.now().toString().slice(-6);
+  let saved = false;
   if (env.DB) {
     try {
       await env.DB.prepare(`INSERT INTO quotes (ref,nume,telefon,email,tip,suprafata,mesaj,plan) VALUES (?,?,?,?,?,?,?,?)`)
         .bind(ref, nume, telefon, email, tip, suprafata, mesaj, planInfo).run();
+      saved = true;
     } catch (e) { console.error('DB quote', e); }
   }
   const to = env.QUOTE_TO_EMAIL;
+  let mail = { delivered: false };
   if (to) {
     const payload = { to: [to], reply_to: email, subject: `Cerere ofertă ${ref} — ${nume}`,
       html: `<h2>Cerere ofertă ${esc(ref)}</h2><p>${esc(nume)} · ${esc(telefon)} · ${esc(email)}</p><p>Tip: ${esc(tip)} · ${esc(suprafata)} mp · Plan: ${esc(planInfo)}</p><p>${esc(mesaj)}</p>` };
     if (attachment) payload.attachments = [attachment];
-    await sendEmail(env, payload);
+    mail = await sendEmail(env, payload);
   }
+  if (env.DB && !saved && !mail.delivered) return json({ ok: false, error: 'Nu am putut înregistra cererea. Te rugăm sună-ne.' }, 500);
   return json({ ok: true, ref });
 }
 
