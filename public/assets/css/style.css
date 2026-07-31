@@ -4,22 +4,23 @@
    ========================================================================== */
 
 :root {
-  --ink: #0b1626;
-  --navy: #14284a;
-  --navy-dark: #0c1a30;
-  --navy-light: #24456f;
-  --terra: #ef7d31;
-  --terra-700: #b8551f;
-  --terra-dark: #9c4718;
-  --accent-soft: #fff2e7;
+  /* Paletă principală: primar #0099CC, fundal #F7F7F7, text #333333 */
+  --ink: #222222;
+  --navy: #0b3b4a;         /* teal închis — structură/titluri (armonizează cu primarul) */
+  --navy-dark: #072b37;
+  --navy-light: #0f5a72;
+  --terra: #0099cc;        /* PRIMAR — accent (linkuri, iconuri, eyebrow, focus) */
+  --terra-700: #007ea8;    /* mai închis — fundal butoane, badge-uri (contrast text alb) */
+  --terra-dark: #006c90;   /* cel mai închis — hover butoane */
+  --accent-soft: #e6f6fc;  /* tentă deschisă de primar */
   --success-deep: #166a3e;
   --slate: #53627a;
-  --bg: #f5f7fb;
+  --bg: #f7f7f7;           /* FUNDAL */
   --bg-alt: #ffffff;
-  --line: #e7ebf2;
-  --line-strong: #d5dce7;
-  --text: #16233a;
-  --muted: #6a778c;
+  --line: #e6e8eb;
+  --line-strong: #d4d7dc;
+  --text: #333333;         /* TEXT */
+  --muted: #667085;
   --success: #1f9d57;
   --danger: #cf3d3d;
   --shadow-sm: 0 1px 2px rgba(12, 26, 48, .06), 0 1px 3px rgba(12, 26, 48, .05);
@@ -203,9 +204,9 @@ h2 { font-size: clamp(1.6rem, 3vw, 2.35rem); letter-spacing: -0.028em; }
 .hero {
   position: relative; color: #fff; overflow: hidden;
   background:
-    radial-gradient(1100px 520px at 82% -8%, rgba(239,125,49,.20) 0%, transparent 55%),
-    radial-gradient(900px 500px at 8% 110%, rgba(36,69,111,.6) 0%, transparent 60%),
-    linear-gradient(155deg, var(--ink) 0%, var(--navy) 62%, #1a3a5f 100%);
+    radial-gradient(1100px 520px at 82% -8%, rgba(0,153,204,.24) 0%, transparent 55%),
+    radial-gradient(900px 500px at 8% 110%, rgba(15,90,114,.55) 0%, transparent 60%),
+    linear-gradient(155deg, #06232c 0%, var(--navy) 62%, #0f5a72 100%);
 }
 .hero::after {
   content: ""; position: absolute; inset: 0; opacity: .5; pointer-events: none;
