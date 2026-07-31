@@ -248,6 +248,7 @@
     }
 
     updateHeader();
+    document.getElementById('product-grid').innerHTML = skeletonCards(9);
     loadCatalog().then(() => {
       buildBrandFilters();
       if (paramProducer) {

@@ -90,11 +90,54 @@ function loadSiteSettings() {
   fetch('/api/settings').then(r => r.ok ? r.json() : {}).then(applySettings).catch(() => {});
 }
 
+/* ==========================================================================
+   Reveal on scroll (subtil) + stagger pe grile — fără librării externe
+   ========================================================================== */
+const REVEAL_SELECTOR = '.section-head, .product-card, .cat-tile, .brand-logo, .feature, .post-card, .trust-item, [data-reveal]';
+let revealObserver = null;
+function initReveal() {
+  // Fără IntersectionObserver → conținutul rămâne vizibil (nicio clasă .reveal)
+  if (!('IntersectionObserver' in window)) return;
+  revealObserver = new IntersectionObserver((entries) => {
+    entries.forEach(en => {
+      if (en.isIntersecting) { en.target.classList.add('in'); revealObserver.unobserve(en.target); }
+    });
+  }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+  revealScan();
+  // Prinde și cardurile adăugate dinamic (produse din API), o singură dată pe frame
+  let queued = false;
+  const queue = () => { if (queued) return; queued = true; requestAnimationFrame(() => { queued = false; revealScan(); }); };
+  try { new MutationObserver(queue).observe(document.body, { childList: true, subtree: true }); } catch (e) {}
+}
+function revealScan() {
+  if (!revealObserver) return;
+  const fresh = [...document.querySelectorAll(REVEAL_SELECTOR)]
+    .filter(el => !el.classList.contains('reveal') && !el.closest('.reviews-marquee') && !el.closest('.hero'));
+  if (!fresh.length) return;
+  // Stagger: grupează elementele noi după părinte și le dă un mic delay incremental
+  const byParent = new Map();
+  fresh.forEach(el => { const p = el.parentElement || document.body; if (!byParent.has(p)) byParent.set(p, []); byParent.get(p).push(el); });
+  byParent.forEach(list => list.forEach((el, i) => {
+    el.classList.add('reveal');
+    if (list.length > 1) el.style.transitionDelay = Math.min(i, 6) * 70 + 'ms';
+    revealObserver.observe(el);
+  }));
+}
+
+/* Placeholdere „skeleton" pentru grilele de produse (percepție de viteză) */
+function skeletonCards(n) {
+  const one = '<div class="skeleton-card" aria-hidden="true"><div class="sk sk-media"></div>' +
+    '<div class="sk-body"><div class="sk sk-line sm"></div><div class="sk sk-line lg"></div>' +
+    '<div class="sk sk-line"></div><div class="sk sk-line" style="width:88%"></div></div></div>';
+  return one.repeat(n || 6);
+}
+
 /* Meniu mobil */
 document.addEventListener('DOMContentLoaded', () => {
   injectTopbar();
   loadSiteSettings();
   headerScrollShadow();
+  initReveal();
   const toggle = document.querySelector('.menu-toggle');
   const nav = document.querySelector('.nav');
   if (toggle && nav) {

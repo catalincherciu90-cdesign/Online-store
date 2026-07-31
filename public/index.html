@@ -255,6 +255,7 @@
     hydrateImages();
 
     // Produse recomandate (badge best seller / premium / nou)
+    document.getElementById('home-featured').innerHTML = skeletonCards(6);
     loadCatalog().then(() => {
       const featured = PRODUCTS.filter(p => p.badge).slice(0, 6);
       document.getElementById('home-featured').innerHTML = featured.map(renderProductCard).join('');

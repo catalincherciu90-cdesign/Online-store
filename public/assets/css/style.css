@@ -763,3 +763,23 @@ h2 { font-size: clamp(1.6rem, 3vw, 2.35rem); letter-spacing: -0.028em; }
   .hero-stats { gap: 22px; }
   .section { padding: 44px 0; }
 }
+
+/* ==========================================================================
+   Reveal on scroll (apariție lină) + Skeleton loading
+   ========================================================================== */
+.reveal { opacity: 0; transform: translateY(18px); transition: opacity .6s cubic-bezier(.22,.61,.36,1), transform .6s cubic-bezier(.22,.61,.36,1); will-change: opacity, transform; }
+.reveal.in { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce) {
+  .reveal { opacity: 1 !important; transform: none !important; transition: none !important; }
+}
+
+.skeleton-card { border: 1px solid var(--line); border-radius: var(--radius); background: var(--bg-alt); overflow: hidden; }
+.skeleton-card .sk-media { width: 100%; aspect-ratio: 4 / 3; border-radius: 0; }
+.skeleton-card .sk-body { padding: 18px; display: flex; flex-direction: column; gap: 12px; }
+.sk { position: relative; overflow: hidden; background: #e9edf0; border-radius: 8px; }
+.sk::after { content: ""; position: absolute; inset: 0; transform: translateX(-100%); background: linear-gradient(90deg, transparent, rgba(255,255,255,.7), transparent); animation: sk-shimmer 1.3s infinite; }
+.sk-line { height: 12px; }
+.sk-line.lg { height: 20px; width: 72%; }
+.sk-line.sm { width: 42%; }
+@keyframes sk-shimmer { 100% { transform: translateX(100%); } }
+@media (prefers-reduced-motion: reduce) { .sk::after { animation: none; } }
