@@ -345,7 +345,7 @@ async function reviewDelete(request, env, id) {
 // ── Setări site (logo + date de contact) ──
 // Chei expuse public prin GET /api/settings (allowlist — orice cheie nouă rămâne privată implicit)
 const PUBLIC_SETTINGS = ['logo', 'brandName', 'phone', 'email', 'email2', 'schedule', 'address', 'facebook', 'instagram', 'tiktok', 'youtube', 'whatsapp',
-  'about_title', 'about_lead', 'about_story_title', 'about_story', 'about_mission'];
+  'about_title', 'about_lead', 'about_story_title', 'about_story', 'about_mission', 'nav'];
 async function settingsGet(env) {
   if (!env.DB) return json({});
   const r = await env.DB.prepare('SELECT key, value FROM settings').all();

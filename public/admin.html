@@ -76,6 +76,7 @@
       <button data-tab="blog" onclick="showTab('blog')">Blog</button>
       <button data-tab="comenzi" onclick="showTab('comenzi')">Comenzi</button>
       <button data-tab="cereri" onclick="showTab('cereri')">Cereri ofertă</button>
+      <button data-tab="meniu" onclick="showTab('meniu')">Meniu</button>
       <button data-tab="setari" onclick="showTab('setari')">Setări</button>
     </div>
 
@@ -117,6 +118,17 @@
       </div>
       <p class="muted-sm" style="margin-bottom:16px">Recenziile active apar pe prima pagină, la secțiunea „Ce spun clienții noștri". Ordinea = câmpul „Ordine" (crescător).</p>
       <div id="reviews-box"></div>
+    </div>
+
+    <div id="tab-meniu" style="display:none">
+      <div class="toolbar">
+        <h2 class="grow" style="font-size:1.3rem">Meniu (bara de navigare)</h2>
+        <button class="a-btn-sm" onclick="resetNav()">Resetează la implicit</button>
+        <button class="btn btn-primary" style="padding:9px 16px" onclick="saveNav()">Salvează meniul</button>
+      </div>
+      <p class="muted-sm" style="margin-bottom:16px">Ordonează cu ↑/↓, redenumește, ascunde sau adaugă elemente. „Link" e o pagină internă (ex. <code>produse.html</code>) sau o adresă completă (https://…).</p>
+      <div id="nav-box"></div>
+      <button class="a-btn-sm" style="margin-top:12px" onclick="addNavItem()">+ Adaugă element</button>
     </div>
 
     <div id="tab-setari" style="display:none">
@@ -411,11 +423,11 @@
       document.getElementById('dash-view').style.display = 'block';
       document.getElementById('whoami').style.display = 'flex';
       document.getElementById('admin-user').textContent = 'Conectat';
-      loadProps().then(loadProducts); loadOrders(); loadQuotes(); loadReviews(); loadBanners(); loadSettings(); loadPosts();
+      loadProps().then(loadProducts); loadOrders(); loadQuotes(); loadReviews(); loadBanners(); loadSettings(); loadPosts(); loadNav();
     }
 
     function showTab(t) {
-      ['produse', 'proprietati', 'bannere', 'recenzii', 'blog', 'comenzi', 'cereri', 'setari'].forEach(x => {
+      ['produse', 'proprietati', 'bannere', 'recenzii', 'blog', 'meniu', 'comenzi', 'cereri', 'setari'].forEach(x => {
         document.getElementById('tab-' + x).style.display = x === t ? 'block' : 'none';
         document.querySelector(`.admin-tabs [data-tab="${x}"]`).classList.toggle('active', x === t);
       });
@@ -560,6 +572,49 @@
       if (!confirm('Ștergi acest producător?')) return;
       try { await api('/producers/' + encodeURIComponent(id), { method: 'DELETE' }); loadProducers(); }
       catch (e) { alert('Eroare: ' + e.message); }
+    }
+
+    // ── Meniu (bara de navigare) ──
+    const NAV_DEFAULT = [
+      { label: 'Acasă', href: 'index.html', visible: true },
+      { label: 'Produse', href: 'produse.html', visible: true },
+      { label: 'Blog', href: 'blog.html', visible: true },
+      { label: 'Despre noi', href: 'despre.html', visible: true },
+      { label: 'Contact', href: 'contact.html', visible: true },
+    ];
+    let navItems = [];
+    async function loadNav() {
+      try {
+        const res = await api('/settings'); const s = await res.json();
+        if (s.nav) { try { navItems = JSON.parse(s.nav); } catch (e) { navItems = []; } }
+      } catch (e) { /* neconfigurat */ }
+      if (!Array.isArray(navItems) || !navItems.length) navItems = NAV_DEFAULT.map(x => ({ ...x }));
+      renderNav();
+    }
+    function renderNav() {
+      const box = document.getElementById('nav-box'); if (!box) return;
+      box.innerHTML = navItems.map((it, i) => `
+        <div style="display:flex;gap:8px;align-items:center;background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:8px">
+          <div style="display:flex;flex-direction:column;gap:3px">
+            <button class="a-btn-sm" onclick="moveNav(${i},-1)" ${i === 0 ? 'disabled' : ''}>↑</button>
+            <button class="a-btn-sm" onclick="moveNav(${i},1)" ${i === navItems.length - 1 ? 'disabled' : ''}>↓</button>
+          </div>
+          <input value="${esc(it.label || '')}" oninput="navItems[${i}].label=this.value" placeholder="Etichetă" style="flex:1;min-width:0;padding:8px;border:1px solid var(--line-strong);border-radius:6px">
+          <input value="${esc(it.href || '')}" oninput="navItems[${i}].href=this.value" placeholder="Link (ex: produse.html)" style="flex:1;min-width:0;padding:8px;border:1px solid var(--line-strong);border-radius:6px">
+          <label class="muted-sm" style="display:flex;align-items:center;gap:6px;white-space:nowrap"><input type="checkbox" ${it.visible !== false ? 'checked' : ''} onchange="navItems[${i}].visible=this.checked"> vizibil</label>
+          <button class="a-btn-sm danger" onclick="delNavItem(${i})" title="Șterge">✕</button>
+        </div>`).join('');
+    }
+    function moveNav(i, d) { const j = i + d; if (j < 0 || j >= navItems.length) return; const t = navItems[i]; navItems[i] = navItems[j]; navItems[j] = t; renderNav(); }
+    function addNavItem() { navItems.push({ label: 'Pagină nouă', href: '', visible: true }); renderNav(); }
+    function delNavItem(i) { navItems.splice(i, 1); renderNav(); }
+    function resetNav() { if (!confirm('Revii la meniul implicit?')) return; navItems = NAV_DEFAULT.map(x => ({ ...x })); renderNav(); }
+    async function saveNav() {
+      const clean = navItems.filter(it => (it.label || '').trim() && (it.href || '').trim());
+      try {
+        await api('/settings', { method: 'POST', body: JSON.stringify({ nav: JSON.stringify(clean) }) });
+        alert('✓ Meniu salvat. Reîmprospătează site-ul (Ctrl+Shift+R) ca să vezi schimbarea.');
+      } catch (e) { alert('Eroare: ' + e.message); }
     }
 
     // ── Bannere hero ──

@@ -40,6 +40,23 @@ function applySettings(s) {
       el.innerHTML = `<img src="${s.logo}" alt="${(s.brandName || 'ExpoTigla')}" class="logo-img">`;
     });
   }
+  // Meniu (bara de navigare) configurabil din admin
+  if (s.nav) {
+    try {
+      const items = JSON.parse(s.nav);
+      const nav = document.querySelector('.site-header .nav');
+      if (Array.isArray(items) && items.length && nav) {
+        const esc = t => String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        let cur = (location.pathname.split('/').pop() || 'index.html');
+        if (cur === '') cur = 'index.html';
+        nav.innerHTML = items.filter(it => it && it.visible !== false && it.label && it.href).map(it => {
+          const base = String(it.href).split('?')[0].split('#')[0];
+          const active = base === cur ? ' class="active"' : '';
+          return `<a href="${esc(it.href)}"${active}>${esc(it.label)}</a>`;
+        }).join('');
+      }
+    } catch (e) { /* config invalid → păstrează meniul implicit */ }
+  }
   // Câmpuri marcate cu data-site (telefon, email, adresă, program, social…)
   document.querySelectorAll('[data-site]').forEach(el => {
     const key = el.getAttribute('data-site');
