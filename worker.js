@@ -1,4 +1,4 @@
-// Acoperiș PRO — Cloudflare Worker
+// ExpoTigla — Cloudflare Worker
 // Servește site-ul static (binding ASSETS) + API-ul /api/* cu bază de date D1.
 // Înlocuiește Pages Functions (care nu rulează pe un Worker).
 
@@ -66,6 +66,7 @@ async function ensureSchema(env) {
         `CREATE TABLE IF NOT EXISTS banners (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT, subtitle TEXT, cta_label TEXT, cta_href TEXT, image TEXT, align TEXT DEFAULT 'left', height TEXT DEFAULT 'md', sort INTEGER DEFAULT 0, active INTEGER NOT NULL DEFAULT 1, created_at TEXT DEFAULT (datetime('now')))`,
         `CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT)`,
         `CREATE TABLE IF NOT EXISTS producers (id TEXT PRIMARY KEY, name TEXT NOT NULL, logo TEXT, sort INTEGER DEFAULT 0)`,
+        `CREATE TABLE IF NOT EXISTS posts (id INTEGER PRIMARY KEY AUTOINCREMENT, slug TEXT UNIQUE, title TEXT NOT NULL, excerpt TEXT, content TEXT, image TEXT, active INTEGER NOT NULL DEFAULT 1, created_at TEXT DEFAULT (datetime('now')))`,
       ];
       for (const s of stmts) { try { await env.DB.prepare(s).run(); } catch (e) { console.error('ensureSchema', e); } }
       // Coloane adăugate ulterior pe produse (ALTER nu e idempotent → ignoră „duplicate column").
@@ -175,7 +176,7 @@ const STATUS_LABEL = { nou: 'Nou', confirmata: 'Confirmată', 'in-livrare': 'În
 const STATUS_CLIENT_MSG = {
   confirmata: 'Comanda ta a fost <b>confirmată</b>. O pregătim pentru livrare și te ținem la curent.',
   'in-livrare': 'Comanda ta este <b>în livrare</b> — pornește spre tine. Plata se face ramburs, la primire.',
-  livrata: 'Comanda ta a fost <b>livrată</b>. Îți mulțumim că ai ales Acoperiș PRO!',
+  livrata: 'Comanda ta a fost <b>livrată</b>. Îți mulțumim că ai ales ExpoTigla!',
   anulata: 'Comanda ta a fost <b>anulată</b>. Dacă e o greșeală sau ai întrebări, te rugăm contactează-ne.',
 };
 async function orderStatusUpdate(request, env, id) {
@@ -197,7 +198,7 @@ async function orderStatusUpdate(request, env, id) {
     const res = await sendEmail(env, { to: [o.email], subject: `Comanda ${esc(o.ref)} — ${STATUS_LABEL[status]}`,
       html: `<h2>Salut, ${esc(o.prenume || o.nume)}!</h2><p>${STATUS_CLIENT_MSG[status]}</p>
         <p>Comanda: <b>${esc(o.ref)}</b> · Total: <b>${fmtLei(o.total)}</b> (ramburs)</p>
-        <p>Ai întrebări? Răspunde la acest email.<br>— Echipa Acoperiș PRO</p>` });
+        <p>Ai întrebări? Răspunde la acest email.<br>— Echipa ExpoTigla</p>` });
     delivered = res.delivered;
   }
   return json({ ok: true, status, emailSent: delivered });
@@ -337,6 +338,52 @@ async function producerDelete(request, env, id) {
   return json({ ok: true });
 }
 
+// ── Blog (articole) ──
+function rowToPost(r, withContent) {
+  const o = { id: r.id, slug: r.slug, title: r.title, excerpt: r.excerpt || '', image: r.image || '', active: !!r.active, created_at: r.created_at };
+  if (withContent) o.content = r.content || '';
+  return o;
+}
+async function postsList(request, env, url) {
+  if (!env.DB) return json([]);
+  if (url.searchParams.get('all')) {
+    if (!await requireAdmin(request, env)) return json({ error: 'Neautorizat' }, 401);
+    const r = await env.DB.prepare('SELECT * FROM posts ORDER BY id DESC').all();
+    return json((r.results || []).map(x => rowToPost(x, true)));
+  }
+  const r = await env.DB.prepare('SELECT id,slug,title,excerpt,image,active,created_at FROM posts WHERE active=1 ORDER BY id DESC').all();
+  return json((r.results || []).map(x => rowToPost(x, false)));
+}
+async function postGet(env, slug) {
+  if (!env.DB) return json({ error: 'Indisponibil.' }, 404);
+  const r = await env.DB.prepare('SELECT * FROM posts WHERE slug=? AND active=1').bind(slug).first();
+  if (!r) return json({ error: 'Articol inexistent.' }, 404);
+  return json(rowToPost(r, true));
+}
+async function postUpsert(request, env) {
+  if (!await requireAdmin(request, env)) return json({ error: 'Neautorizat' }, 401);
+  if (!env.DB) return json({ error: 'Baza de date nu este configurată.' }, 500);
+  const v = await request.json().catch(() => null);
+  if (!v || !v.title) return json({ error: 'Adaugă un titlu.' }, 400);
+  if (typeof v.image === 'string' && v.image.length > 2000000) return json({ error: 'Imaginea de copertă e prea mare.' }, 413);
+  const slug = (v.slug || v.title).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || ('a' + Date.now());
+  const active = v.active === false ? 0 : 1;
+  if (v.id) {
+    await env.DB.prepare('UPDATE posts SET slug=?,title=?,excerpt=?,content=?,image=?,active=? WHERE id=?')
+      .bind(slug, v.title, v.excerpt || '', v.content || '', v.image || '', active, v.id).run();
+    return json({ ok: true, id: v.id, slug });
+  }
+  const res = await env.DB.prepare('INSERT INTO posts (slug,title,excerpt,content,image,active) VALUES (?,?,?,?,?,?)')
+    .bind(slug, v.title, v.excerpt || '', v.content || '', v.image || '', active).run();
+  return json({ ok: true, id: res.meta ? res.meta.last_row_id : undefined, slug });
+}
+async function postDelete(request, env, id) {
+  if (!await requireAdmin(request, env)) return json({ error: 'Neautorizat' }, 401);
+  if (!env.DB) return json({ error: 'Baza de date nu este configurată.' }, 500);
+  await env.DB.prepare('DELETE FROM posts WHERE id=?').bind(id).run();
+  return json({ ok: true });
+}
+
 // ── Bannere hero (editabile din admin) ──
 function rowToBanner(r) {
   return { id: r.id, title: r.title || '', subtitle: r.subtitle || '', ctaLabel: r.cta_label || '', ctaHref: r.cta_href || '', image: r.image || '', align: r.align || 'left', height: r.height || 'md', sort: r.sort || 0, active: !!r.active };
@@ -382,7 +429,7 @@ async function sendEmail(env, payload) {
     const r = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${env.RESEND_API_KEY}` },
-      body: JSON.stringify({ from: env.QUOTE_FROM || 'Acoperis PRO <onboarding@resend.dev>', ...payload }),
+      body: JSON.stringify({ from: env.QUOTE_FROM || 'ExpoTigla <onboarding@resend.dev>', ...payload }),
     });
     return { delivered: r.ok, error: r.ok ? null : `Resend HTTP ${r.status}` };
   } catch (e) { return { delivered: false, error: String(e) }; }
@@ -450,13 +497,13 @@ async function orderCreate(request, env) {
   if (!env.DB && !mail.delivered) return json({ ok: false, error: 'Comanda nu a putut fi înregistrată. Te rugăm contactează-ne telefonic.' }, 500);
   // Email de confirmare către CLIENT (best-effort; necesită RESEND_API_KEY + domeniu verificat)
   if (email && env.RESEND_API_KEY) {
-    await sendEmail(env, { to: [email], subject: `Comanda ta ${ref} — Acoperiș PRO`,
+    await sendEmail(env, { to: [email], subject: `Comanda ta ${ref} — ExpoTigla`,
       html: `<h2>Îți mulțumim pentru comandă, ${esc(prenume || nume)}!</h2>
         <p>Am înregistrat comanda <b>${esc(ref)}</b>. Iată rezumatul:</p>
         <table border="1" cellpadding="6" style="border-collapse:collapse">${rows}</table>
         <p>Subtotal: ${fmtLei(subtotal)} · Livrare: ${delivery ? fmtLei(delivery) : 'gratuită'}<br><b>Total de plată (ramburs): ${fmtLei(total)}</b></p>
         <p>Ce urmează: te contactăm în cel mai scurt timp la <b>${esc(telefon)}</b> pentru confirmare și programarea livrării. Plata se face ramburs, la livrare.</p>
-        <p>Ai întrebări? Răspunde la acest email.<br>— Echipa Acoperiș PRO</p>` });
+        <p>Ai întrebări? Răspunde la acest email.<br>— Echipa ExpoTigla</p>` });
   }
   return json({ ok: true, ref, total, delivered: mail.delivered });
 }
@@ -515,6 +562,11 @@ async function api(request, env, url) {
   if (p === '/api/options/seed' && m === 'POST') return optionsSeed(request, env);
   const ov = p.match(/^\/api\/options\/([^/]+)\/(.+)$/);
   if (ov && m === 'DELETE') return optionDelete(request, env, decodeURIComponent(ov[1]), decodeURIComponent(ov[2]));
+  if (p === '/api/posts' && m === 'GET') return postsList(request, env, url);
+  if (p === '/api/posts' && m === 'POST') return postUpsert(request, env);
+  const pm = p.match(/^\/api\/posts\/(.+)$/);
+  if (pm && m === 'GET') return postGet(env, decodeURIComponent(pm[1]));
+  if (pm && m === 'DELETE') return postDelete(request, env, Number(pm[1]));
   if (p === '/api/settings' && m === 'GET') return settingsGet(env);
   if (p === '/api/settings' && m === 'POST') return settingsSave(request, env);
   if (p === '/api/producers' && m === 'GET') return producersList(env);

@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Acoperiș PRO — UI comun: meniu mobil, toast, an footer
+   ExpoTigla — UI comun: meniu mobil, toast, an footer
    ========================================================================== */
 
 /* Bară utilitară (business) injectată deasupra headerului, pe toate paginile */
@@ -37,7 +37,7 @@ function applySettings(s) {
   if (s.logo) {
     document.querySelectorAll('.site-header .logo').forEach(el => {
       el.classList.add('has-logo-img');
-      el.innerHTML = `<img src="${s.logo}" alt="${(s.brandName || 'Acoperiș PRO')}" class="logo-img">`;
+      el.innerHTML = `<img src="${s.logo}" alt="${(s.brandName || 'ExpoTigla')}" class="logo-img">`;
     });
   }
   // Câmpuri marcate cu data-site (telefon, email, adresă, program, social…)

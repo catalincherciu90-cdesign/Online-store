@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin | Acoperiș PRO</title>
+  <title>Admin | ExpoTigla</title>
   <meta name="robots" content="noindex">
   <link rel="stylesheet" href="assets/css/style.css">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%230099cc' d='M12 3 2 12h3v8h14v-8h3z'/%3E%3C/svg%3E">
@@ -44,7 +44,7 @@
 
   <div class="admin-top">
     <div class="container">
-      <a href="index.html" class="logo">Acoperiș<b>PRO</b> · Admin</a>
+      <a href="index.html" class="logo">Expo<b>Tigla</b> · Admin</a>
       <div id="whoami" style="display:none;align-items:center;gap:14px">
         <span class="muted-sm" style="color:#aeb9c9" id="admin-user"></span>
         <button class="a-btn-sm" onclick="logout()">Ieșire</button>
@@ -56,7 +56,7 @@
   <div id="login-view" class="container">
     <div class="login-wrap">
       <h2 style="margin-bottom:6px">Autentificare admin</h2>
-      <p class="muted-sm" style="margin-bottom:20px">Panou de administrare Acoperiș PRO.</p>
+      <p class="muted-sm" style="margin-bottom:20px">Panou de administrare ExpoTigla.</p>
       <form id="login-form" class="checkout-form" onsubmit="doLogin(event)">
         <div class="field"><label>Utilizator</label><input name="user" value="admin" required></div>
         <div class="field"><label>Parolă</label><input name="password" type="password" required></div>
@@ -73,6 +73,7 @@
       <button data-tab="proprietati" onclick="showTab('proprietati')">Proprietăți</button>
       <button data-tab="bannere" onclick="showTab('bannere')">Banner</button>
       <button data-tab="recenzii" onclick="showTab('recenzii')">Recenzii</button>
+      <button data-tab="blog" onclick="showTab('blog')">Blog</button>
       <button data-tab="comenzi" onclick="showTab('comenzi')">Comenzi</button>
       <button data-tab="cereri" onclick="showTab('cereri')">Cereri ofertă</button>
       <button data-tab="setari" onclick="showTab('setari')">Setări</button>
@@ -154,6 +155,15 @@
         <p class="muted-sm" style="margin-bottom:14px">Adaugă producătorii cu logo. Numele trebuie scris identic cu cel din produse ca logo-ul să apară pe banda de branduri și pe pagini.</p>
         <div id="producers-box"></div>
       </div>
+    </div>
+
+    <div id="tab-blog" style="display:none">
+      <div class="toolbar">
+        <h2 class="grow" style="font-size:1.3rem">Blog</h2>
+        <button class="btn btn-primary" style="padding:9px 16px" onclick="openPost()">+ Articol nou</button>
+      </div>
+      <p class="muted-sm" style="margin-bottom:16px">Articolele active apar pe pagina Blog. Ideal pentru ghiduri (cum alegi țigla, calcul necesar) — bune și pentru Google.</p>
+      <div id="posts-box"></div>
     </div>
 
     <div id="tab-comenzi" style="display:none">
@@ -262,6 +272,32 @@
     </div>
   </div>
 
+  <!-- EDITOR ARTICOL BLOG -->
+  <div class="overlay" id="post-view">
+    <div class="modal" style="max-width:680px">
+      <h3 id="post-title-h" style="margin-bottom:18px">Articol</h3>
+      <form id="post-form" class="checkout-form" onsubmit="savePost(event)">
+        <input type="hidden" name="id">
+        <input type="hidden" name="image">
+        <div class="field full"><label>Titlu *</label><input name="title" required placeholder="ex: Cum aleg țigla metalică potrivită"></div>
+        <div class="field full"><label>Link (slug, opțional — se generează din titlu)</label><input name="slug" placeholder="cum-aleg-tigla-metalica"></div>
+        <div class="field full"><label>Rezumat (apare pe card)</label><textarea name="excerpt" rows="2" placeholder="O propoziție-două care rezumă articolul."></textarea></div>
+        <div class="field full">
+          <label>Imagine copertă (opțional)</label>
+          <input type="file" accept="image/*" id="post-file" onchange="onPostFile(this.files[0])">
+          <div id="post-preview" style="margin-top:10px"></div>
+        </div>
+        <div class="field full"><label>Conținut *</label><textarea name="content" rows="12" required placeholder="Scrie articolul aici. Lasă un rând gol între paragrafe."></textarea></div>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:600"><input type="checkbox" name="active" checked> Publicat (vizibil pe site)</label>
+        <div style="display:flex;gap:10px;margin-top:14px">
+          <button class="btn btn-primary" style="flex:1">Salvează</button>
+          <button type="button" class="btn btn-outline" onclick="closePost()">Anulează</button>
+        </div>
+        <div class="form-status" id="post-status"></div>
+      </form>
+    </div>
+  </div>
+
   <!-- EDITOR RECENZIE -->
   <div class="overlay" id="review-view">
     <div class="modal" style="max-width:560px">
@@ -337,11 +373,11 @@
       document.getElementById('dash-view').style.display = 'block';
       document.getElementById('whoami').style.display = 'flex';
       document.getElementById('admin-user').textContent = 'Conectat';
-      loadProps().then(loadProducts); loadOrders(); loadQuotes(); loadReviews(); loadBanners(); loadSettings();
+      loadProps().then(loadProducts); loadOrders(); loadQuotes(); loadReviews(); loadBanners(); loadSettings(); loadPosts();
     }
 
     function showTab(t) {
-      ['produse', 'proprietati', 'bannere', 'recenzii', 'comenzi', 'cereri', 'setari'].forEach(x => {
+      ['produse', 'proprietati', 'bannere', 'recenzii', 'blog', 'comenzi', 'cereri', 'setari'].forEach(x => {
         document.getElementById('tab-' + x).style.display = x === t ? 'block' : 'none';
         document.querySelector(`.admin-tabs [data-tab="${x}"]`).classList.toggle('active', x === t);
       });
@@ -550,6 +586,80 @@
     async function delBanner(id) {
       if (!confirm('Ștergi acest banner definitiv?')) return;
       try { await api('/banners/' + id, { method: 'DELETE' }); loadBanners(); }
+      catch (e) { alert('Eroare: ' + e.message); }
+    }
+
+    // ── Blog ──
+    let postsData = [];
+    let postImage = '';
+    async function loadPosts() {
+      const box = document.getElementById('posts-box');
+      try { const res = await api('/posts?all=1'); postsData = await res.json(); }
+      catch (e) { box.innerHTML = `<div class="a-empty">Nu am putut încărca articolele.</div>`; return; }
+      if (!Array.isArray(postsData) || !postsData.length) { box.innerHTML = `<div class="a-empty">Niciun articol încă. Apasă „+ Articol nou".</div>`; return; }
+      box.innerHTML = `<table class="a-table"><thead><tr><th>Titlu</th><th>Link</th><th>Data</th><th>Stare</th><th></th></tr></thead><tbody>` +
+        postsData.map((p, i) => `<tr>
+          <td><b>${esc(p.title)}</b></td>
+          <td class="muted-sm">/blog.html?slug=${esc(p.slug)}</td>
+          <td class="muted-sm">${esc((p.created_at || '').slice(0, 10))}</td>
+          <td>${p.active ? '<span style="color:#1a8f4c;font-weight:600">publicat</span>' : '<span class="muted-sm">ascuns</span>'}</td>
+          <td style="text-align:right;white-space:nowrap">
+            <button class="a-btn-sm" onclick="openPost(${i})">Editează</button>
+            <button class="a-btn-sm danger" onclick="delPost(${p.id})">Șterge</button>
+          </td></tr>`).join('') + `</tbody></table>`;
+    }
+    function onPostFile(file) {
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        const img = new Image();
+        img.onload = () => {
+          const maxW = 1400, scale = Math.min(1, maxW / img.width);
+          const w = Math.round(img.width * scale), h = Math.round(img.height * scale);
+          const c = document.createElement('canvas'); c.width = w; c.height = h;
+          c.getContext('2d').drawImage(img, 0, 0, w, h);
+          postImage = c.toDataURL('image/jpeg', 0.82);
+          document.getElementById('post-form').image.value = postImage;
+          document.getElementById('post-preview').innerHTML = `<img src="${postImage}" style="width:100%;max-height:200px;object-fit:cover;border-radius:8px;border:1px solid var(--line)">`;
+        };
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    }
+    function openPost(i) {
+      const f = document.getElementById('post-form'); f.reset();
+      document.getElementById('post-status').textContent = '';
+      const ed = typeof i === 'number' ? postsData[i] : null;
+      document.getElementById('post-title-h').textContent = ed ? 'Editează articolul' : 'Articol nou';
+      f.id.value = ed ? ed.id : '';
+      f.title.value = ed ? ed.title : '';
+      f.slug.value = ed ? ed.slug : '';
+      f.excerpt.value = ed ? ed.excerpt : '';
+      f.content.value = ed ? (ed.content || '') : '';
+      f.active.checked = ed ? !!ed.active : true;
+      postImage = ed ? (ed.image || '') : '';
+      f.image.value = postImage;
+      document.getElementById('post-file').value = '';
+      document.getElementById('post-preview').innerHTML = postImage ? `<img src="${postImage}" style="width:100%;max-height:200px;object-fit:cover;border-radius:8px;border:1px solid var(--line)">` : '';
+      document.getElementById('post-view').classList.add('open');
+    }
+    function closePost() { document.getElementById('post-view').classList.remove('open'); }
+    async function savePost(e) {
+      e.preventDefault();
+      const f = e.target;
+      const body = { title: f.title.value.trim(), slug: f.slug.value.trim(), excerpt: f.excerpt.value.trim(), content: f.content.value, image: postImage, active: f.active.checked };
+      if (f.id.value) body.id = Number(f.id.value);
+      const st = document.getElementById('post-status');
+      try {
+        const res = await api('/posts', { method: 'POST', body: JSON.stringify(body) });
+        const d = await res.json();
+        if (d.ok) { closePost(); loadPosts(); }
+        else { st.className = 'form-status err'; st.textContent = d.error || 'Eroare.'; }
+      } catch (err) { st.className = 'form-status err'; st.textContent = err.message; }
+    }
+    async function delPost(id) {
+      if (!confirm('Ștergi acest articol definitiv?')) return;
+      try { await api('/posts/' + id, { method: 'DELETE' }); loadPosts(); }
       catch (e) { alert('Eroare: ' + e.message); }
     }
 

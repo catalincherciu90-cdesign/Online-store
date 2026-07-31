@@ -573,6 +573,27 @@ h2 { font-size: clamp(1.6rem, 3vw, 2.35rem); letter-spacing: -0.028em; }
 .review-text { margin: 0; color: var(--ink); line-height: 1.62; font-size: .98rem; text-wrap: pretty; }
 .review-author { margin-top: auto; color: var(--navy); font-weight: 700; font-size: .95rem; }
 
+/* ── Blog ── */
+.blog-head { text-align: center; max-width: 680px; margin: 0 auto 40px; }
+.blog-head p { color: var(--muted); margin-top: 12px; font-size: 1.08rem; }
+.blog-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 26px; }
+.blog-card { display: flex; flex-direction: column; background: #fff; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; transition: transform .18s ease, box-shadow .2s ease, border-color .2s ease; }
+.blog-card:hover { transform: translateY(-3px); box-shadow: var(--shadow); border-color: var(--line-strong); }
+.blog-card-media { aspect-ratio: 16/9; background: var(--bg); overflow: hidden; }
+.blog-card-media img { width: 100%; height: 100%; object-fit: cover; }
+.blog-card-ph { width: 100%; height: 100%; display: grid; place-items: center; color: #fff; background: linear-gradient(135deg, var(--terra), var(--navy-light)); }
+.blog-card-ph svg { width: 46px; height: 46px; opacity: .85; }
+.blog-card-body { padding: 18px 20px 20px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
+.blog-card-body h3 { font-size: 1.12rem; }
+.blog-card-body p { color: var(--muted); font-size: .95rem; flex: 1; }
+.blog-date { font-size: .78rem; color: var(--terra-700); font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+.blog-more { color: var(--terra-700); font-weight: 700; font-size: .9rem; }
+.blog-article { max-width: 760px; margin: 0 auto; }
+.blog-article h1 { margin: 8px 0 6px; }
+.blog-cover { width: 100%; border-radius: var(--radius); margin: 20px 0; aspect-ratio: 16/9; object-fit: cover; }
+.blog-content { font-size: 1.05rem; line-height: 1.75; color: var(--text); }
+.blog-content p { margin: 0 0 18px; }
+
 .cta-band {
   position: relative; overflow: hidden; text-align: center; color: #fff;
   background:

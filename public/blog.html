@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Blog & ghiduri | ExpoTigla</title>
+  <meta name="description" content="Ghiduri și sfaturi despre sisteme de acoperiș: cum alegi țigla metalică, montaj, întreținere și calcul necesar.">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%230099cc' d='M12 3 2 12h3v8h14v-8h3z'/%3E%3C/svg%3E">
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="container header-inner">
+      <a href="index.html" class="logo">
+        Expo<b>Tigla</b>
+      </a>
+      <nav class="nav">
+        <a href="index.html">Acasă</a>
+        <a href="produse.html">Produse</a>
+        <a href="blog.html" class="active">Blog</a>
+        <a href="contact.html">Contact</a>
+      </nav>
+      <div class="header-actions">
+        <a href="cos.html" class="cart-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+          <span>Coș</span><span class="cart-count">0</span>
+        </a>
+        <button class="menu-toggle" aria-label="Meniu">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <section class="container" style="padding:36px 20px 64px" id="blog-root"></section>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-col">
+          <div class="logo">Expo<b>Tigla</b></div>
+          <p>Sisteme complete de acoperiș pentru case și clădiri industriale. Calitate de la producător, cu garanție și livrare națională.</p>
+        </div>
+        <div class="footer-col">
+          <h4>Produse</h4>
+          <a href="produse.html?cat=tigla-metalica">Țiglă metalică</a>
+          <a href="produse.html?cat=tabla-faltuita">Tablă fălțuită</a>
+          <a href="produse.html?cat=panouri-sandwich">Panouri sandwich</a>
+          <a href="produse.html?cat=sistem-pluvial">Sistem pluvial</a>
+          <a href="produse.html?cat=accesorii">Accesorii montaj</a>
+          <a href="produse.html?cat=folii-membrane">Folii &amp; membrane</a>
+        </div>
+        <div class="footer-col">
+          <h4>Companie</h4>
+          <a href="produse.html">Catalog</a>
+          <a href="blog.html">Blog</a>
+          <a href="contact.html">Contact</a>
+          <a href="contact.html">Cere ofertă</a>
+        </div>
+        <div class="footer-col">
+          <h4>Contact</h4>
+          <p>📞 <span data-site="phone">0740 000 000</span></p>
+          <p>✉️ <span data-site="email">comenzi@acoperispro.ro</span></p>
+          <p>📍 <span data-site="address">Str. Industriei 12, București</span></p>
+        </div>
+      </div>
+      <div class="footer-bottom">© <span class="js-year">2026</span> ExpoTigla. Toate drepturile rezervate. Prețurile includ TVA.</div>
+    </div>
+  </footer>
+
+  <script src="assets/js/store-img.js"></script>
+  <script src="assets/js/data.js"></script>
+  <script src="assets/js/cart.js"></script>
+  <script src="assets/js/main.js"></script>
+  <script>
+    const slug = new URLSearchParams(location.search).get('slug');
+    const root = document.getElementById('blog-root');
+    const bEsc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const fmtDate = s => (s || '').replace('T', ' ').slice(0, 10);
+    function contentHtml(txt) {
+      return bEsc(txt).split(/\n\s*\n/).map(p => `<p>${p.trim().replace(/\n/g, '<br>')}</p>`).join('');
+    }
+
+    if (slug) {
+      fetch('/api/posts/' + encodeURIComponent(slug)).then(r => r.ok ? r.json() : null).then(post => {
+        if (!post || post.error) {
+          root.innerHTML = `<div class="empty-state" style="padding:80px 20px;text-align:center"><h2>Articolul nu a fost găsit</h2><a href="blog.html" class="btn btn-primary" style="margin-top:16px">Înapoi la blog</a></div>`;
+          return;
+        }
+        document.title = post.title + ' | ExpoTigla';
+        root.innerHTML = `<article class="blog-article">
+          <div class="breadcrumb"><a href="index.html">Acasă</a><span>/</span><a href="blog.html">Blog</a><span>/</span> ${bEsc(post.title)}</div>
+          <h1>${bEsc(post.title)}</h1>
+          <div class="blog-date">${fmtDate(post.created_at)}</div>
+          ${post.image ? `<img class="blog-cover" src="${bEsc(post.image)}" alt="${bEsc(post.title)}">` : ''}
+          <div class="blog-content">${contentHtml(post.content)}</div>
+          <a href="blog.html" class="btn btn-outline" style="margin-top:28px">← Toate articolele</a>
+        </article>`;
+      }).catch(() => { root.innerHTML = `<div class="empty-state" style="text-align:center;padding:60px"><p>Eroare la încărcare.</p></div>`; });
+    } else {
+      root.innerHTML = `<div class="blog-head">
+        <span class="eyebrow">Blog</span>
+        <h1>Ghiduri & sfaturi pentru acoperișul tău</h1>
+        <p class="muted">Articole utile despre alegerea, montajul și întreținerea sistemelor de acoperiș.</p>
+      </div><div class="blog-grid" id="blog-grid"></div>`;
+      fetch('/api/posts').then(r => r.ok ? r.json() : []).then(list => {
+        const grid = document.getElementById('blog-grid');
+        if (!Array.isArray(list) || !list.length) {
+          grid.innerHTML = `<div style="grid-column:1/-1;padding:60px;text-align:center;color:var(--muted)">Nu există articole încă. Revino curând!</div>`;
+          return;
+        }
+        grid.innerHTML = list.map(p => `<a class="blog-card" href="blog.html?slug=${encodeURIComponent(p.slug)}">
+          <div class="blog-card-media">${p.image ? `<img src="${bEsc(p.image)}" alt="${bEsc(p.title)}">` : `<div class="blog-card-ph"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div>`}</div>
+          <div class="blog-card-body">
+            <div class="blog-date">${fmtDate(p.created_at)}</div>
+            <h3>${bEsc(p.title)}</h3>
+            <p>${bEsc(p.excerpt || '')}</p>
+            <span class="blog-more">Citește →</span>
+          </div></a>`).join('');
+      }).catch(() => {});
+    }
+
+    // Încarcă catalogul ca totalul din butonul de coș să fie corect
+    if (typeof loadCatalog === 'function') loadCatalog();
+  </script>
+</body>
+</html>

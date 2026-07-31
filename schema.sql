@@ -42,6 +42,18 @@ CREATE TABLE IF NOT EXISTS quotes (
   created_at TEXT DEFAULT (datetime('now'))
 );
 
+-- Blog (articole) — afișate pe pagina blog.html, editabile din admin
+CREATE TABLE IF NOT EXISTS posts (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  slug       TEXT UNIQUE,
+  title      TEXT NOT NULL,
+  excerpt    TEXT,             -- rezumat scurt
+  content    TEXT,             -- conținutul articolului (text, paragrafe)
+  image      TEXT,             -- imagine copertă (data URL)
+  active     INTEGER NOT NULL DEFAULT 1,
+  created_at TEXT DEFAULT (datetime('now'))
+);
+
 -- Setări site (logo magazin + date de contact) — cheie/valoare
 CREATE TABLE IF NOT EXISTS settings (
   key   TEXT PRIMARY KEY,
