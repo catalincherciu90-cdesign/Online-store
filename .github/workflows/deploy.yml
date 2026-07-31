@@ -1,0 +1,35 @@
+name: Deploy Cloudflare
+
+# Rulează automat la fiecare push pe main (și manual din tab-ul Actions).
+# Face 2 lucruri: migrează baza D1 (creează tabele lipsă) și publică Worker-ul.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout cod
+        uses: actions/checkout@v4
+
+      - name: Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Instalează wrangler
+        run: npm install -g wrangler
+
+      - name: Migrează baza D1 (CREATE TABLE IF NOT EXISTS — sigur de rulat repetat)
+        run: wrangler d1 execute acoperispro-db --remote --file=schema.sql
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      - name: Publică Worker-ul
+        run: wrangler deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
