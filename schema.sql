@@ -42,6 +42,20 @@ CREATE TABLE IF NOT EXISTS quotes (
   created_at TEXT DEFAULT (datetime('now'))
 );
 
+-- Setări site (logo magazin + date de contact) — cheie/valoare
+CREATE TABLE IF NOT EXISTS settings (
+  key   TEXT PRIMARY KEY,
+  value TEXT
+);
+
+-- Producători (nume + logo) pentru banda de branduri și paginile de produs
+CREATE TABLE IF NOT EXISTS producers (
+  id   TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  logo TEXT,               -- data URL (base64) al logo-ului
+  sort INTEGER DEFAULT 0
+);
+
 -- Bannere hero (slider pe prima pagină, editabile din admin)
 CREATE TABLE IF NOT EXISTS banners (
   id         INTEGER PRIMARY KEY AUTOINCREMENT,

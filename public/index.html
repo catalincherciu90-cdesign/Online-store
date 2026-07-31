@@ -213,9 +213,9 @@
         </div>
         <div class="footer-col">
           <h4>Contact</h4>
-          <p>📞 0740 000 000</p>
-          <p>✉️ comenzi@acoperispro.ro</p>
-          <p>📍 Str. Industriei 12, București</p>
+          <p>📞 <span data-site="phone">0740 000 000</span></p>
+          <p>✉️ <span data-site="email">comenzi@acoperispro.ro</span></p>
+          <p>📍 <span data-site="address">Str. Industriei 12, București</span></p>
         </div>
       </div>
       <div class="footer-bottom">© <span class="js-year">2026</span> Acoperiș PRO. Toate drepturile rezervate. Prețurile includ TVA.</div>
@@ -290,13 +290,23 @@
       document.getElementById('home-featured').innerHTML = featured.map(renderProductCard).join('');
       hydrateImages();
 
-      // Producători (branduri) — construiți din catalog, fiecare linkează la lista filtrată
-      const brands = [...new Set(PRODUCTS.map(p => (p.producator || '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'ro'));
-      if (brands.length) {
+      // Producători (branduri) — cu logo dacă e definit în admin, altfel text
+      (async () => {
+        let prods = [];
+        try { prods = await (await fetch('/api/producers')).json(); } catch (e) {}
+        const byName = {}; (prods || []).forEach(p => byName[p.name.trim().toLowerCase()] = p);
+        const fromProducts = [...new Set(PRODUCTS.map(p => (p.producator || '').trim()).filter(Boolean))];
+        const names = [];
+        (prods || []).slice().sort((a, b) => (a.sort - b.sort) || a.name.localeCompare(b.name, 'ro')).forEach(p => names.push(p.name));
+        fromProducts.forEach(n => { if (!byName[n.toLowerCase()]) names.push(n); });
+        if (!names.length) return;
         document.getElementById('brands').style.display = '';
-        document.getElementById('home-brands').innerHTML = brands.map(b =>
-          `<a class="brand-logo" href="produse.html?producator=${encodeURIComponent(b)}"><span>${escHtml(b)}</span></a>`).join('');
-      }
+        document.getElementById('home-brands').innerHTML = names.map(n => {
+          const p = byName[n.trim().toLowerCase()];
+          const inner = p && p.logo ? `<img src="${p.logo}" alt="${escHtml(n)}" class="brand-logo-img">` : `<span>${escHtml(n)}</span>`;
+          return `<a class="brand-logo" href="produse.html?producator=${encodeURIComponent(n)}">${inner}</a>`;
+        }).join('');
+      })();
     });
 
     // ── Recenzii ──

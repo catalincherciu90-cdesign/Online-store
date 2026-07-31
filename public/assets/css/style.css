@@ -144,6 +144,7 @@ h2 { font-size: clamp(1.6rem, 3vw, 2.35rem); letter-spacing: -0.028em; }
 .header-inner { display: flex; align-items: center; gap: 24px; height: 72px; }
 .logo { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 1.25rem; color: var(--navy); }
 .logo svg { width: 34px; height: 34px; }
+.logo .logo-img { height: 42px; width: auto; max-width: 220px; object-fit: contain; display: block; }
 .logo b { color: var(--terra); }
 .logo svg { width: 34px; height: 34px; }
 .nav { display: flex; gap: 2px; margin-left: 14px; }
@@ -518,6 +519,7 @@ h2 { font-size: clamp(1.6rem, 3vw, 2.35rem); letter-spacing: -0.028em; }
   transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
 }
 .brand-logo:hover { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(20,40,74,.1); border-color: var(--line-strong); }
+.brand-logo-img { max-height: 48px; max-width: 140px; object-fit: contain; display: block; }
 
 .pd-brand { color: var(--muted); font-size: .95rem; margin: 6px 0 2px; }
 .pd-brand b { color: var(--navy); font-weight: 700; }

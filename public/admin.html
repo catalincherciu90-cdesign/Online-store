@@ -69,6 +69,7 @@
       <button data-tab="recenzii" onclick="showTab('recenzii')">Recenzii</button>
       <button data-tab="comenzi" onclick="showTab('comenzi')">Comenzi</button>
       <button data-tab="cereri" onclick="showTab('cereri')">Cereri ofertă</button>
+      <button data-tab="setari" onclick="showTab('setari')">Setări</button>
     </div>
 
     <div id="tab-produse">
@@ -109,6 +110,44 @@
       </div>
       <p class="muted-sm" style="margin-bottom:16px">Recenziile active apar pe prima pagină, la secțiunea „Ce spun clienții noștri". Ordinea = câmpul „Ordine" (crescător).</p>
       <div id="reviews-box"></div>
+    </div>
+
+    <div id="tab-setari" style="display:none">
+      <h2 style="font-size:1.3rem;margin-bottom:16px">Setări site</h2>
+
+      <div style="background:#fff;border:1px solid var(--line);border-radius:12px;padding:20px;margin-bottom:20px">
+        <h3 style="font-size:1.05rem;margin-bottom:14px">Logo magazin & date de contact</h3>
+        <form id="settings-form" class="checkout-form" onsubmit="saveSettings(event)">
+          <div class="field full">
+            <label>Logo magazin</label>
+            <input type="file" accept="image/*" id="logo-file" onchange="onLogoFile(this.files[0])">
+            <div class="muted-sm" style="margin-top:6px">Apare în antet, pe toate paginile. Recomandat PNG cu fundal transparent.</div>
+            <div id="logo-preview" style="margin-top:10px"></div>
+          </div>
+          <div class="form-row">
+            <div class="field"><label>Telefon</label><input name="phone" placeholder="0740 000 000"></div>
+            <div class="field"><label>Email</label><input name="email" placeholder="comenzi@exemplu.ro"></div>
+          </div>
+          <div class="form-row">
+            <div class="field"><label>Email secundar</label><input name="email2" placeholder="oferte@exemplu.ro"></div>
+            <div class="field"><label>Program</label><input name="schedule" placeholder="Luni–Vineri 08:00–18:00"></div>
+          </div>
+          <div class="field full"><label>Adresă</label><input name="address" placeholder="Str. ..., Oraș, județ"></div>
+          <div class="form-row">
+            <div class="field"><label>Facebook (link)</label><input name="facebook" placeholder="https://facebook.com/..."></div>
+            <div class="field"><label>Instagram (link)</label><input name="instagram" placeholder="https://instagram.com/..."></div>
+          </div>
+          <div style="margin-top:10px"><button class="btn btn-primary" style="padding:9px 20px">Salvează setările</button></div>
+          <div class="form-status" id="settings-status"></div>
+        </form>
+      </div>
+
+      <div style="background:#fff;border:1px solid var(--line);border-radius:12px;padding:20px">
+        <div class="toolbar"><h3 class="grow" style="font-size:1.05rem">Producători (logo)</h3>
+          <button class="btn btn-primary" style="padding:8px 14px" onclick="openProducer()">+ Producător</button></div>
+        <p class="muted-sm" style="margin-bottom:14px">Adaugă producătorii cu logo. Numele trebuie scris identic cu cel din produse ca logo-ul să apară pe banda de branduri și pe pagini.</p>
+        <div id="producers-box"></div>
+      </div>
     </div>
 
     <div id="tab-comenzi" style="display:none">
@@ -156,6 +195,29 @@
           <button type="button" class="btn btn-outline" onclick="closeEditor()">Anulează</button>
         </div>
         <div class="form-status" id="editor-status"></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- EDITOR PRODUCĂTOR -->
+  <div class="overlay" id="producer-view">
+    <div class="modal" style="max-width:480px">
+      <h3 id="producer-title" style="margin-bottom:18px">Producător</h3>
+      <form id="producer-form" class="checkout-form" onsubmit="saveProducer(event)">
+        <input type="hidden" name="id">
+        <input type="hidden" name="logo">
+        <div class="field full"><label>Nume producător *</label><input name="name" required placeholder="ex: Ruukki"></div>
+        <div class="field full">
+          <label>Logo</label>
+          <input type="file" accept="image/*" id="producer-file" onchange="onProducerFile(this.files[0])">
+          <div id="producer-preview" style="margin-top:10px"></div>
+        </div>
+        <div class="field full"><label>Ordine</label><input name="sort" type="number" value="0" style="max-width:120px"></div>
+        <div style="display:flex;gap:10px;margin-top:12px">
+          <button class="btn btn-primary" style="flex:1">Salvează</button>
+          <button type="button" class="btn btn-outline" onclick="closeProducer()">Anulează</button>
+        </div>
+        <div class="form-status" id="producer-status"></div>
       </form>
     </div>
   </div>
@@ -269,14 +331,124 @@
       document.getElementById('dash-view').style.display = 'block';
       document.getElementById('whoami').style.display = 'flex';
       document.getElementById('admin-user').textContent = 'Conectat';
-      loadProps().then(loadProducts); loadOrders(); loadQuotes(); loadReviews(); loadBanners();
+      loadProps().then(loadProducts); loadOrders(); loadQuotes(); loadReviews(); loadBanners(); loadSettings();
     }
 
     function showTab(t) {
-      ['produse', 'proprietati', 'bannere', 'recenzii', 'comenzi', 'cereri'].forEach(x => {
+      ['produse', 'proprietati', 'bannere', 'recenzii', 'comenzi', 'cereri', 'setari'].forEach(x => {
         document.getElementById('tab-' + x).style.display = x === t ? 'block' : 'none';
         document.querySelector(`.admin-tabs [data-tab="${x}"]`).classList.toggle('active', x === t);
       });
+    }
+
+    // ── Setări site (logo + contact) ──
+    let siteLogo = '';
+    function fitLogo(file, cb) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const img = new Image();
+        img.onload = () => {
+          const maxH = 140, scale = Math.min(1, maxH / img.height);
+          const w = Math.round(img.width * scale), h = Math.round(img.height * scale);
+          const c = document.createElement('canvas'); c.width = w; c.height = h;
+          c.getContext('2d').drawImage(img, 0, 0, w, h);
+          cb(c.toDataURL('image/png')); // PNG păstrează transparența
+        };
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    }
+    async function loadSettings() {
+      try {
+        const res = await api('/settings'); const s = await res.json();
+        const f = document.getElementById('settings-form');
+        ['phone', 'email', 'email2', 'schedule', 'address', 'facebook', 'instagram'].forEach(k => { if (f[k]) f[k].value = s[k] || ''; });
+        siteLogo = s.logo || '';
+        document.getElementById('logo-preview').innerHTML = siteLogo
+          ? `<img src="${siteLogo}" style="height:56px;background:#0c1a30;padding:8px 12px;border-radius:8px">` : '';
+      } catch (e) { /* neconfigurat */ }
+      loadProducers();
+    }
+    function onLogoFile(file) {
+      if (!file) return;
+      fitLogo(file, url => {
+        siteLogo = url;
+        document.getElementById('logo-preview').innerHTML = `<img src="${siteLogo}" style="height:56px;background:#0c1a30;padding:8px 12px;border-radius:8px">`;
+      });
+    }
+    async function saveSettings(e) {
+      e.preventDefault();
+      const f = e.target;
+      const body = { logo: siteLogo };
+      ['phone', 'email', 'email2', 'schedule', 'address', 'facebook', 'instagram'].forEach(k => { body[k] = f[k] ? f[k].value.trim() : ''; });
+      const st = document.getElementById('settings-status');
+      try {
+        const res = await api('/settings', { method: 'POST', body: JSON.stringify(body) });
+        const d = await res.json();
+        if (d.ok) { st.className = 'form-status'; st.style.color = '#1a8f4c'; st.textContent = '✓ Salvat. Modificările apar pe site imediat.'; }
+        else { st.className = 'form-status err'; st.style.color = ''; st.textContent = d.error || 'Eroare.'; }
+      } catch (err) { st.className = 'form-status err'; st.style.color = ''; st.textContent = err.message; }
+    }
+
+    // ── Producători (logo) ──
+    let producersData = [];
+    let producerLogo = '';
+    async function loadProducers() {
+      const box = document.getElementById('producers-box');
+      try { const res = await api('/producers'); producersData = await res.json(); }
+      catch (e) { box.innerHTML = `<div class="a-empty">Nu am putut încărca producătorii.</div>`; return; }
+      if (!producersData.length) { box.innerHTML = `<div class="a-empty">Niciun producător cu logo încă. Apasă „+ Producător".</div>`; return; }
+      box.innerHTML = `<table class="a-table"><thead><tr><th>Logo</th><th>Nume</th><th>Ordine</th><th></th></tr></thead><tbody>` +
+        producersData.map((p, i) => `<tr>
+          <td>${p.logo ? `<img src="${esc(p.logo)}" style="height:34px;max-width:120px;object-fit:contain">` : '<span class="muted-sm">—</span>'}</td>
+          <td>${esc(p.name)}</td>
+          <td>${p.sort || 0}</td>
+          <td style="text-align:right;white-space:nowrap">
+            <button class="a-btn-sm" onclick="openProducer(${i})">Editează</button>
+            <button class="a-btn-sm danger" onclick="delProducer('${esc(p.id)}')">Șterge</button>
+          </td></tr>`).join('') + `</tbody></table>`;
+    }
+    function onProducerFile(file) {
+      if (!file) return;
+      fitLogo(file, url => {
+        producerLogo = url;
+        document.getElementById('producer-form').logo.value = producerLogo;
+        document.getElementById('producer-preview').innerHTML = `<img src="${producerLogo}" style="height:50px;max-width:170px;object-fit:contain;background:#f4f6f8;padding:6px 10px;border-radius:8px">`;
+      });
+    }
+    function openProducer(i) {
+      const f = document.getElementById('producer-form'); f.reset();
+      document.getElementById('producer-status').textContent = '';
+      const ed = typeof i === 'number' ? producersData[i] : null;
+      document.getElementById('producer-title').textContent = ed ? 'Editează producător' : 'Producător nou';
+      f.id.value = ed ? ed.id : '';
+      f.name.value = ed ? ed.name : '';
+      f.sort.value = ed ? (ed.sort || 0) : 0;
+      producerLogo = ed ? ed.logo : '';
+      f.logo.value = producerLogo;
+      document.getElementById('producer-file').value = '';
+      document.getElementById('producer-preview').innerHTML = producerLogo
+        ? `<img src="${producerLogo}" style="height:50px;max-width:170px;object-fit:contain;background:#f4f6f8;padding:6px 10px;border-radius:8px">` : '';
+      document.getElementById('producer-view').classList.add('open');
+    }
+    function closeProducer() { document.getElementById('producer-view').classList.remove('open'); }
+    async function saveProducer(e) {
+      e.preventDefault();
+      const f = e.target;
+      const body = { name: f.name.value.trim(), logo: producerLogo, sort: Number(f.sort.value) || 0 };
+      if (f.id.value) body.id = f.id.value;
+      const st = document.getElementById('producer-status');
+      try {
+        const res = await api('/producers', { method: 'POST', body: JSON.stringify(body) });
+        const d = await res.json();
+        if (d.ok) { closeProducer(); loadProducers(); }
+        else { st.className = 'form-status err'; st.textContent = d.error || 'Eroare.'; }
+      } catch (err) { st.className = 'form-status err'; st.textContent = err.message; }
+    }
+    async function delProducer(id) {
+      if (!confirm('Ștergi acest producător?')) return;
+      try { await api('/producers/' + encodeURIComponent(id), { method: 'DELETE' }); loadProducers(); }
+      catch (e) { alert('Eroare: ' + e.message); }
     }
 
     // ── Bannere hero ──

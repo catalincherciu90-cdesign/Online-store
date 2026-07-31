@@ -55,6 +55,8 @@ async function ensureSchema(env) {
         `CREATE TABLE IF NOT EXISTS reviews (id INTEGER PRIMARY KEY AUTOINCREMENT, author TEXT NOT NULL, rating INTEGER NOT NULL DEFAULT 5, text TEXT NOT NULL, source TEXT DEFAULT 'Google', sort INTEGER DEFAULT 0, active INTEGER NOT NULL DEFAULT 1, created_at TEXT DEFAULT (datetime('now')))`,
         `CREATE TABLE IF NOT EXISTS option_values (grp TEXT NOT NULL, id TEXT NOT NULL, name TEXT NOT NULL, delta REAL DEFAULT 0, hex TEXT, sort INTEGER DEFAULT 0, PRIMARY KEY (grp, id))`,
         `CREATE TABLE IF NOT EXISTS banners (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT, subtitle TEXT, cta_label TEXT, cta_href TEXT, image TEXT, align TEXT DEFAULT 'left', height TEXT DEFAULT 'md', sort INTEGER DEFAULT 0, active INTEGER NOT NULL DEFAULT 1, created_at TEXT DEFAULT (datetime('now')))`,
+        `CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT)`,
+        `CREATE TABLE IF NOT EXISTS producers (id TEXT PRIMARY KEY, name TEXT NOT NULL, logo TEXT, sort INTEGER DEFAULT 0)`,
       ];
       for (const s of stmts) { try { await env.DB.prepare(s).run(); } catch (e) { console.error('ensureSchema', e); } }
       // Coloane adăugate ulterior pe produse (ALTER nu e idempotent → ignoră „duplicate column").
@@ -241,6 +243,51 @@ async function reviewDelete(request, env, id) {
   return json({ ok: true });
 }
 
+// ── Setări site (logo + date de contact) ──
+async function settingsGet(env) {
+  if (!env.DB) return json({});
+  const r = await env.DB.prepare('SELECT key, value FROM settings').all();
+  const out = {};
+  for (const row of (r.results || [])) out[row.key] = row.value;
+  return json(out);
+}
+async function settingsSave(request, env) {
+  if (!await requireAdmin(request, env)) return json({ error: 'Neautorizat' }, 401);
+  if (!env.DB) return json({ error: 'Baza de date nu este configurată.' }, 500);
+  const body = await request.json().catch(() => null);
+  if (!body || typeof body !== 'object') return json({ error: 'Date invalide.' }, 400);
+  for (const [k, v] of Object.entries(body)) {
+    const val = v == null ? '' : String(v);
+    if (val.length > 3000000) return json({ error: 'Valoare prea mare pentru „' + k + '".' }, 413);
+    await env.DB.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?,?)').bind(k, val).run();
+  }
+  return json({ ok: true });
+}
+
+// ── Producători (nume + logo) ──
+function rowToProducer(r) { return { id: r.id, name: r.name, logo: r.logo || '', sort: r.sort || 0 }; }
+async function producersList(env) {
+  if (!env.DB) return json([]);
+  const r = await env.DB.prepare('SELECT * FROM producers ORDER BY sort, name').all();
+  return json((r.results || []).map(rowToProducer));
+}
+async function producerUpsert(request, env) {
+  if (!await requireAdmin(request, env)) return json({ error: 'Neautorizat' }, 401);
+  if (!env.DB) return json({ error: 'Baza de date nu este configurată.' }, 500);
+  const v = await request.json().catch(() => null);
+  if (!v || !v.name) return json({ error: 'Adaugă numele producătorului.' }, 400);
+  if (typeof v.logo === 'string' && v.logo.length > 2000000) return json({ error: 'Logo prea mare.' }, 413);
+  const id = v.id || v.name.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || ('p' + Date.now());
+  await env.DB.prepare('INSERT OR REPLACE INTO producers (id, name, logo, sort) VALUES (?,?,?,?)').bind(id, v.name, v.logo || '', Number(v.sort) || 0).run();
+  return json({ ok: true, id });
+}
+async function producerDelete(request, env, id) {
+  if (!await requireAdmin(request, env)) return json({ error: 'Neautorizat' }, 401);
+  if (!env.DB) return json({ error: 'Baza de date nu este configurată.' }, 500);
+  await env.DB.prepare('DELETE FROM producers WHERE id=?').bind(id).run();
+  return json({ ok: true });
+}
+
 // ── Bannere hero (editabile din admin) ──
 function rowToBanner(r) {
   return { id: r.id, title: r.title || '', subtitle: r.subtitle || '', ctaLabel: r.cta_label || '', ctaHref: r.cta_href || '', image: r.image || '', align: r.align || 'left', height: r.height || 'md', sort: r.sort || 0, active: !!r.active };
@@ -358,6 +405,12 @@ async function api(request, env, url) {
   if (p === '/api/options/seed' && m === 'POST') return optionsSeed(request, env);
   const ov = p.match(/^\/api\/options\/([^/]+)\/(.+)$/);
   if (ov && m === 'DELETE') return optionDelete(request, env, decodeURIComponent(ov[1]), decodeURIComponent(ov[2]));
+  if (p === '/api/settings' && m === 'GET') return settingsGet(env);
+  if (p === '/api/settings' && m === 'POST') return settingsSave(request, env);
+  if (p === '/api/producers' && m === 'GET') return producersList(env);
+  if (p === '/api/producers' && m === 'POST') return producerUpsert(request, env);
+  const pr = p.match(/^\/api\/producers\/(.+)$/);
+  if (pr && m === 'DELETE') return producerDelete(request, env, decodeURIComponent(pr[1]));
   if (p === '/api/banners' && m === 'GET') return bannersList(request, env, url);
   if (p === '/api/banners' && m === 'POST') return bannerUpsert(request, env);
   const bn = p.match(/^\/api\/banners\/(\d+)$/);
