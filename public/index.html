@@ -206,7 +206,7 @@
         if (!Array.isArray(list) || !list.length) { showDefault(); return; }
         const track = document.getElementById('hb-track');
         const dotsBox = document.getElementById('hb-dots');
-        track.innerHTML = list.map(b => {
+        track.innerHTML = list.map((b, i) => {
           const hasText = b.title || b.subtitle || (b.ctaLabel && b.ctaHref);
           const align = ['left', 'center', 'right'].includes(b.align) ? b.align : 'left';
           const overlay = hasText ? `<div class="hb-overlay hb-a-${align}"><div class="container">
@@ -214,8 +214,10 @@
             ${b.subtitle ? `<p>${escB(b.subtitle)}</p>` : ''}
             ${b.ctaLabel && b.ctaHref ? `<a class="btn btn-primary btn-lg" href="${escB(b.ctaHref)}">${escB(b.ctaLabel)}</a>` : ''}
           </div></div>` : '';
-          const mobImg = b.imageMobile ? `<img class="hb-img hb-img-m" src="${escB(b.imageMobile)}" alt="${escB(b.title || 'Banner')}">` : '';
-          return `<div class="hb-slide${b.imageMobile ? ' hb-has-mobile' : ''}"><img class="hb-img hb-img-d" src="${escB(b.image)}" alt="${escB(b.title || 'Banner')}">${mobImg}${overlay}</div>`;
+          // Primul banner e prioritar la încărcare; restul, lazy.
+          const prio = i === 0 ? 'fetchpriority="high"' : 'loading="lazy"';
+          const mobImg = b.imageMobile ? `<img class="hb-img hb-img-m" ${prio} decoding="async" src="${escB(b.imageMobile)}" alt="${escB(b.title || 'Banner')}">` : '';
+          return `<div class="hb-slide${b.imageMobile ? ' hb-has-mobile' : ''}"><img class="hb-img hb-img-d" ${prio} decoding="async" src="${escB(b.image)}" alt="${escB(b.title || 'Banner')}">${mobImg}${overlay}</div>`;
         }).join('');
         document.getElementById('hero-banners').style.display = 'block';
         // hero-default rămâne ascuns (e ascuns implicit)

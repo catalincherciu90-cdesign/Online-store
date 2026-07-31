@@ -441,8 +441,41 @@ async function postDelete(request, env, id) {
 }
 
 // ── Bannere hero (editabile din admin) ──
+// Admin: obiectul include data URL-ul complet (pentru preview/editare).
 function rowToBanner(r) {
   return { id: r.id, title: r.title || '', subtitle: r.subtitle || '', ctaLabel: r.cta_label || '', ctaHref: r.cta_href || '', image: r.image || '', imageMobile: r.image_mobile || '', align: r.align || 'left', height: r.height || 'md', sort: r.sort || 0, active: !!r.active };
+}
+// Public: imaginea NU se trimite ca base64 în JSON, ci ca URL către un endpoint
+// binar cache-uibil. Astfel JSON-ul e mic și imaginea se încarcă rapid + cache.
+function rowToBannerPublic(r) {
+  const b = rowToBanner(r);
+  b.image = r.image ? `/api/banners/${r.id}/image?v=${r.image.length}` : '';
+  b.imageMobile = r.image_mobile ? `/api/banners/${r.id}/image-mobile?v=${r.image_mobile.length}` : '';
+  return b;
+}
+// Decodează un data URL („data:image/jpeg;base64,....") în { mime, bytes }
+function decodeDataUrl(dataUrl) {
+  const m = /^data:([^;,]+)?(;base64)?,([\s\S]*)$/.exec(dataUrl || '');
+  if (!m) return null;
+  const mime = m[1] || 'application/octet-stream';
+  const data = m[3] || '';
+  if (m[2]) {
+    const bin = atob(data);
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return { mime, bytes };
+  }
+  return { mime, bytes: new TextEncoder().encode(decodeURIComponent(data)) };
+}
+// Servește imaginea unui banner ca fișier binar, cu cache lung (immutable).
+// URL-ul conține ?v=<lungime>, deci se schimbă când imaginea se schimbă → fără cache stale.
+async function bannerImage(env, id, mobile) {
+  if (!env.DB) return new Response('Not found', { status: 404 });
+  const col = mobile ? 'image_mobile' : 'image';
+  const row = await env.DB.prepare(`SELECT ${col} AS img FROM banners WHERE id=?`).bind(id).first();
+  const dec = row && row.img ? decodeDataUrl(row.img) : null;
+  if (!dec) return new Response('Not found', { status: 404 });
+  return new Response(dec.bytes, { headers: { 'Content-Type': dec.mime, 'Cache-Control': 'public, max-age=31536000, immutable' } });
 }
 async function bannersList(request, env, url) {
   if (!env.DB) return json([]);
@@ -452,7 +485,7 @@ async function bannersList(request, env, url) {
     return json((r.results || []).map(rowToBanner));
   }
   const r = await env.DB.prepare('SELECT * FROM banners WHERE active=1 ORDER BY sort, id DESC').all();
-  return json((r.results || []).map(rowToBanner));
+  return json((r.results || []).map(rowToBannerPublic));
 }
 async function bannerUpsert(request, env) {
   if (!await requireAdmin(request, env)) return json({ error: 'Neautorizat' }, 401);
@@ -648,6 +681,8 @@ async function api(request, env, url) {
   if (pr && m === 'DELETE') return producerDelete(request, env, decodeURIComponent(pr[1]));
   if (p === '/api/banners' && m === 'GET') return bannersList(request, env, url);
   if (p === '/api/banners' && m === 'POST') return bannerUpsert(request, env);
+  const bimg = p.match(/^\/api\/banners\/(\d+)\/(image|image-mobile)$/);
+  if (bimg && m === 'GET') return bannerImage(env, Number(bimg[1]), bimg[2] === 'image-mobile');
   const bn = p.match(/^\/api\/banners\/(\d+)$/);
   if (bn && m === 'DELETE') return bannerDelete(request, env, Number(bn[1]));
   if (p === '/api/reviews' && m === 'GET') return reviewsList(request, env, url);
