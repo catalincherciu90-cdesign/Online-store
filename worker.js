@@ -414,6 +414,16 @@ async function orderCreate(request, env) {
   // Fail loud: nu confirma o comandă care nu s-a înregistrat nicăieri.
   if (env.DB && !saved) return json({ ok: false, error: 'Nu am putut înregistra comanda. Te rugăm sună-ne pentru confirmare.' }, 500);
   if (!env.DB && !mail.delivered) return json({ ok: false, error: 'Comanda nu a putut fi înregistrată. Te rugăm contactează-ne telefonic.' }, 500);
+  // Email de confirmare către CLIENT (best-effort; necesită RESEND_API_KEY + domeniu verificat)
+  if (email && env.RESEND_API_KEY) {
+    await sendEmail(env, { to: [email], subject: `Comanda ta ${ref} — Acoperiș PRO`,
+      html: `<h2>Îți mulțumim pentru comandă, ${esc(prenume || nume)}!</h2>
+        <p>Am înregistrat comanda <b>${esc(ref)}</b>. Iată rezumatul:</p>
+        <table border="1" cellpadding="6" style="border-collapse:collapse">${rows}</table>
+        <p>Subtotal: ${fmtLei(subtotal)} · Livrare: ${delivery ? fmtLei(delivery) : 'gratuită'}<br><b>Total de plată (ramburs): ${fmtLei(total)}</b></p>
+        <p>Ce urmează: te contactăm în cel mai scurt timp la <b>${esc(telefon)}</b> pentru confirmare și programarea livrării. Plata se face ramburs, la livrare.</p>
+        <p>Ai întrebări? Răspunde la acest email.<br>— Echipa Acoperiș PRO</p>` });
+  }
   return json({ ok: true, ref, total, delivered: mail.delivered });
 }
 

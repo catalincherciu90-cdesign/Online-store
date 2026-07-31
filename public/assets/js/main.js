@@ -51,6 +51,17 @@ function applySettings(s) {
     else if (mode === 'href') el.setAttribute('href', val);
     else el.textContent = val;
   });
+  // Iconițe social în footer (doar dacă sunt setate linkuri)
+  const FB = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M22 12a10 10 0 1 0-11.6 9.9v-7H7.9V12h2.5V9.8c0-2.5 1.5-3.9 3.8-3.9 1.1 0 2.2.2 2.2.2v2.5h-1.2c-1.2 0-1.6.8-1.6 1.6V12h2.7l-.4 2.9h-2.3v7A10 10 0 0 0 22 12z"/></svg>';
+  const IG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>';
+  const socials = [['Facebook', s.facebook, FB], ['Instagram', s.instagram, IG]].filter(x => x[1]);
+  const col = document.querySelector('.site-footer .footer-col');
+  if (socials.length && col && !col.querySelector('.footer-social')) {
+    const div = document.createElement('div');
+    div.className = 'footer-social';
+    div.innerHTML = socials.map(([name, url, icon]) => `<a href="${url}" target="_blank" rel="noopener" aria-label="${name}">${icon}</a>`).join('');
+    col.appendChild(div);
+  }
 }
 function loadSiteSettings() {
   fetch('/api/settings').then(r => r.ok ? r.json() : {}).then(applySettings).catch(() => {});

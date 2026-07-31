@@ -6,7 +6,7 @@
   <title>Acoperiș PRO — Sisteme de acoperiș, țiglă metalică, tablă fălțuită</title>
   <meta name="description" content="Magazin online de sisteme de acoperiș: țiglă metalică, tablă fălțuită, panouri sandwich, sistem pluvial și accesorii. Livrare în toată țara, garanție până la 30 de ani.">
   <link rel="stylesheet" href="assets/css/style.css">
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23e07b39' d='M12 3 2 12h3v8h14v-8h3z'/%3E%3C/svg%3E">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%230099cc' d='M12 3 2 12h3v8h14v-8h3z'/%3E%3C/svg%3E">
 </head>
 <body>
 
@@ -14,7 +14,7 @@
   <header class="site-header">
     <div class="container header-inner">
       <a href="index.html" class="logo">
-        <svg viewBox="0 0 24 24" fill="none"><path d="M12 3 2 12h3v8h14v-8h3z" fill="#e07b39"/><path d="M9 20v-6h6v6" fill="#16324f"/></svg>
+        <svg viewBox="0 0 24 24" fill="none"><path d="M12 3 2 12h3v8h14v-8h3z" fill="#0099cc"/><path d="M9 20v-6h6v6" fill="#0b3b4a"/></svg>
         Acoperiș<b>PRO</b>
       </a>
       <nav class="nav">
@@ -41,6 +41,18 @@
   <section class="hero-banners" id="hero-banners" style="display:none">
     <div class="hb-track" id="hb-track"></div>
     <div class="hb-dots" id="hb-dots"></div>
+  </section>
+
+  <!-- Hero de rezervă (afișat doar când nu există bannere încărcate) -->
+  <section class="hero hero-simple" id="hero-default">
+    <div class="container">
+      <h1>Sisteme complete de acoperiș, direct de la producător</h1>
+      <p>Țiglă metalică, tablă fălțuită, panouri sandwich și sistem pluvial — cu garanție până la 30 de ani și livrare în toată țara.</p>
+      <div class="hero-cta">
+        <a href="produse.html" class="btn btn-primary btn-lg">Vezi produsele</a>
+        <a href="contact.html" class="btn btn-ghost btn-lg">Cere ofertă</a>
+      </div>
+    </div>
   </section>
 
   <!-- Bară de încredere (fâșie independentă, sub banner) -->
@@ -159,13 +171,14 @@
           <a href="produse.html?cat=tabla-faltuita">Tablă fălțuită</a>
           <a href="produse.html?cat=panouri-sandwich">Panouri sandwich</a>
           <a href="produse.html?cat=sistem-pluvial">Sistem pluvial</a>
+          <a href="produse.html?cat=accesorii">Accesorii montaj</a>
+          <a href="produse.html?cat=folii-membrane">Folii &amp; membrane</a>
         </div>
         <div class="footer-col">
           <h4>Companie</h4>
           <a href="produse.html">Catalog</a>
           <a href="contact.html">Contact</a>
           <a href="contact.html">Cere ofertă</a>
-          <a href="import.html">⚙ Import imagini</a>
         </div>
         <div class="footer-col">
           <h4>Contact</h4>
@@ -201,6 +214,7 @@
           return `<div class="hb-slide"><img class="hb-img" src="${escB(b.image)}" alt="${escB(b.title || 'Banner')}">${overlay}</div>`;
         }).join('');
         document.getElementById('hero-banners').style.display = 'block';
+        const hd = document.getElementById('hero-default'); if (hd) hd.style.display = 'none';
 
         let idx = 0;
         const go = i => {

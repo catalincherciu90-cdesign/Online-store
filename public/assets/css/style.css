@@ -103,11 +103,11 @@ h2 { font-size: clamp(1.6rem, 3vw, 2.35rem); letter-spacing: -0.028em; }
 .btn:active { transform: translateY(1px); }
 .btn-primary {
   background: var(--terra-700); color: #fff;
-  box-shadow: 0 4px 14px rgba(184, 85, 31, .32), inset 0 1px 0 rgba(255,255,255,.2);
+  box-shadow: 0 4px 14px rgba(0, 126, 168, .32), inset 0 1px 0 rgba(255,255,255,.2);
 }
 .btn-primary:hover {
   background: var(--terra-dark);
-  box-shadow: 0 10px 26px rgba(184, 85, 31, .4), inset 0 1px 0 rgba(255,255,255,.2);
+  box-shadow: 0 10px 26px rgba(0, 126, 168, .4), inset 0 1px 0 rgba(255,255,255,.2);
   transform: translateY(-1px);
 }
 .btn-outline { background: transparent; border-color: var(--line-strong); color: var(--navy); }
@@ -201,6 +201,18 @@ h2 { font-size: clamp(1.6rem, 3vw, 2.35rem); letter-spacing: -0.028em; }
 .hb-dot:hover { transform: scale(1.15); }
 .hb-dot.active { background: #fff; }
 
+/* Hero simplu de rezervă (fără ilustrație) — doar când nu există bannere */
+.hero-simple { padding: 66px 0 74px; text-align: center; }
+.hero-simple h1 { color: #fff; max-width: 800px; margin: 0 auto; }
+.hero-simple p { color: #dbe8f0; max-width: 620px; margin: 16px auto 26px; font-size: 1.1rem; text-wrap: pretty; }
+.hero-simple .hero-cta { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+
+/* Iconițe social în footer (injectate din setări) */
+.footer-social { display: flex; gap: 10px; margin-top: 16px; }
+.footer-social a { width: 36px; height: 36px; border-radius: 9px; background: rgba(255,255,255,.08); display: grid; place-items: center; color: #fff; transition: background .18s, transform .18s; }
+.footer-social a:hover { background: var(--terra-700); transform: translateY(-2px); }
+.footer-social svg { width: 18px; height: 18px; }
+
 .hero {
   position: relative; color: #fff; overflow: hidden;
   background:
@@ -256,7 +268,7 @@ h2 { font-size: clamp(1.6rem, 3vw, 2.35rem); letter-spacing: -0.028em; }
 }
 .hero-float-card .hfc-ic {
   width: 40px; height: 40px; border-radius: 10px; flex-shrink: 0;
-  background: linear-gradient(135deg, var(--accent-soft), #ffe3cd);
+  background: linear-gradient(135deg, var(--accent-soft), #cdeaf5);
   display: flex; align-items: center; justify-content: center;
 }
 .hero-float-card .hfc-ic svg { width: 21px; height: 21px; color: var(--terra-700); }
@@ -592,7 +604,7 @@ h2 { font-size: clamp(1.6rem, 3vw, 2.35rem); letter-spacing: -0.028em; }
 .feature:hover { transform: translateY(-4px); box-shadow: var(--shadow); }
 .feature:hover::before { transform: scaleX(1); }
 .feature .ic {
-  width: 60px; height: 60px; margin: 0 auto 18px; background: linear-gradient(135deg, var(--accent-soft), #ffe3cd);
+  width: 60px; height: 60px; margin: 0 auto 18px; background: linear-gradient(135deg, var(--accent-soft), #cdeaf5);
   border-radius: 16px; display: flex; align-items: center; justify-content: center; color: var(--terra-700);
   transition: transform .3s cubic-bezier(.2,.7,.3,1);
 }
@@ -611,7 +623,7 @@ h2 { font-size: clamp(1.6rem, 3vw, 2.35rem); letter-spacing: -0.028em; }
 .contact-info .info-card:hover { transform: translateY(-3px); box-shadow: var(--shadow); border-color: transparent; }
 .contact-info .info-card .ic-badge {
   width: 46px; height: 46px; border-radius: 12px; flex-shrink: 0;
-  background: linear-gradient(135deg, var(--accent-soft), #ffe3cd);
+  background: linear-gradient(135deg, var(--accent-soft), #cdeaf5);
   display: flex; align-items: center; justify-content: center;
 }
 .contact-info .info-card svg { width: 22px; height: 22px; color: var(--terra-700); flex-shrink: 0; margin: 0; }
@@ -622,7 +634,7 @@ h2 { font-size: clamp(1.6rem, 3vw, 2.35rem); letter-spacing: -0.028em; }
 /* ---------- Import imagini (admin) ---------- */
 .import-intro { background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 22px 24px; margin-bottom: 24px; }
 .import-intro p { color: var(--slate); margin-bottom: 8px; }
-.import-note { background: #fff7ef; border: 1px solid #f3d9bf; color: #8a5a2a; border-radius: var(--radius-sm); padding: 12px 16px; font-size: .9rem; margin-top: 12px; }
+.import-note { background: #eef7fb; border: 1px solid #cbe6f2; color: #0b6580; border-radius: var(--radius-sm); padding: 12px 16px; font-size: .9rem; margin-top: 12px; }
 .import-actions { display: flex; gap: 12px; flex-wrap: wrap; margin: 18px 0 30px; }
 .import-h { margin: 30px 0 16px; font-size: 1.25rem; }
 .slot-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
@@ -639,11 +651,11 @@ h2 { font-size: clamp(1.6rem, 3vw, 2.35rem); letter-spacing: -0.028em; }
 .slot-remove { display: none; background: none; border: 1px solid var(--line); color: var(--danger); border-radius: var(--radius-sm); padding: 9px 12px; font-size: .85rem; cursor: pointer; font-family: inherit; }
 .slot-remove:hover { background: #fdecec; border-color: var(--danger); }
 .dropzone { border: 2px dashed var(--line); border-radius: var(--radius); padding: 28px; text-align: center; color: var(--muted); margin-bottom: 24px; transition: border-color .2s, background .2s; }
-.dropzone.drag { border-color: var(--terra-700); background: #fff7ef; color: var(--terra-700); }
+.dropzone.drag { border-color: var(--terra-700); background: #eef7fb; color: var(--terra-700); }
 
 /* Upload plan (cerere ofertă) */
 .plan-drop { border: 2px dashed var(--line); border-radius: var(--radius-sm); padding: 22px; text-align: center; color: var(--muted); cursor: pointer; transition: border-color .2s, background .2s; }
-.plan-drop:hover, .plan-drop.drag { border-color: var(--terra-700); background: #fff7ef; }
+.plan-drop:hover, .plan-drop.drag { border-color: var(--terra-700); background: #eef7fb; }
 .plan-drop svg { width: 30px; height: 30px; color: var(--terra-700); margin: 0 auto 8px; }
 .plan-drop p { font-size: .95rem; color: var(--slate); }
 .plan-drop p b { color: var(--terra-700); }
