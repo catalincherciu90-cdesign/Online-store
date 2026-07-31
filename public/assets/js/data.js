@@ -427,6 +427,8 @@ function loadCatalog() {
         }
       }
     } catch (e) { /* fără API / offline → rămâne catalogul static */ }
+    // Catalogul e disponibil → reîmprospătează totalul din butonul de coș
+    try { document.dispatchEvent(new CustomEvent('cart:change')); } catch (e) {}
     return PRODUCTS;
   })();
   return CATALOG_READY;

@@ -164,6 +164,7 @@ h2 { font-size: clamp(1.6rem, 3vw, 2.35rem); letter-spacing: -0.028em; }
 }
 .cart-btn:hover { background: var(--navy-light); transform: translateY(-1px); box-shadow: 0 6px 16px rgba(20,40,74,.25); }
 .cart-btn svg { width: 20px; height: 20px; }
+.cart-total { font-weight: 700; font-size: .92rem; white-space: nowrap; padding-left: 8px; margin-left: 2px; border-left: 1px solid rgba(255,255,255,.22); }
 .cart-count {
   position: absolute; top: -8px; right: -8px; min-width: 22px; height: 22px;
   padding: 0 6px; background: var(--terra-700); color: #fff; border-radius: 11px;

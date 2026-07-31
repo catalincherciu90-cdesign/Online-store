@@ -75,6 +75,16 @@ function refreshCartBadge() {
   const n = Cart.count();
   el.textContent = n;
   el.style.display = n > 0 ? 'flex' : 'none';
+  // Total în butonul de coș (injectat o singură dată, apare pe toate paginile)
+  const btn = el.closest('.cart-btn');
+  if (btn) {
+    let tot = btn.querySelector('.cart-total');
+    if (!tot) { tot = document.createElement('span'); tot.className = 'cart-total'; el.parentNode.insertBefore(tot, el); }
+    const sum = (typeof Cart.subtotal === 'function') ? Cart.subtotal() : 0;
+    const show = n > 0 && sum > 0;
+    tot.textContent = show ? (typeof formatPrice === 'function' ? formatPrice(sum) : sum.toFixed(2) + ' lei') : '';
+    tot.style.display = show ? 'inline' : 'none';
+  }
 }
 
 document.addEventListener('cart:change', refreshCartBadge);
