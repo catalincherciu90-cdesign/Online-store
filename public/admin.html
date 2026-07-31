@@ -839,7 +839,7 @@
         ['phone', 'email', 'email2', 'schedule', 'address', 'facebook', 'instagram', 'tiktok', 'youtube', 'whatsapp', 'about_title', 'about_lead', 'about_story_title', 'about_story', 'about_mission'].forEach(k => { if (f[k]) f[k].value = s[k] || ''; });
         siteLogo = s.logo || '';
         document.getElementById('logo-preview').innerHTML = siteLogo
-          ? `<img src="${siteLogo}" style="height:56px;background:#0c1a30;padding:8px 12px;border-radius:8px">` : '';
+          ? `<img src="${siteLogo}" style="height:56px;background:#fff;padding:8px 14px;border-radius:8px;border:1px solid var(--em-border)">` : '';
       } catch (e) { /* neconfigurat */ }
       loadProducers();
       loadAdmins();
@@ -878,7 +878,7 @@
       if (!file) return;
       fitLogo(file, url => {
         siteLogo = url;
-        document.getElementById('logo-preview').innerHTML = `<img src="${siteLogo}" style="height:56px;background:#0c1a30;padding:8px 12px;border-radius:8px">`;
+        document.getElementById('logo-preview').innerHTML = `<img src="${siteLogo}" style="height:56px;background:#fff;padding:8px 14px;border-radius:8px;border:1px solid var(--em-border)">`;
       });
     }
     async function saveSettings(e) {
