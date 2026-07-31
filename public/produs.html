@@ -105,6 +105,7 @@
           <div class="pd-info">
             <span class="cat-tag">${categoryName(p.cat)}</span>
             <h1>${p.name}</h1>
+            ${p.producator ? `<div class="pd-brand">Producător: <b>${p.producator}</b></div>` : ''}
             <div class="pd-price"><span id="pd-price-val">${formatPrice(optionPrice(p, sel))}</span> <span class="unit">/ ${p.unit}</span></div>
             <div class="pd-vat">Preț cu TVA inclus</div>
             <p class="pd-desc">${p.desc}</p>

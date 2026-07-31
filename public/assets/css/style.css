@@ -477,6 +477,9 @@ h2 { font-size: clamp(1.6rem, 3vw, 2.35rem); letter-spacing: -0.028em; }
 .toast svg { width: 20px; height: 20px; color: var(--terra); }
 
 /* ---------- CTA band ---------- */
+.pd-brand { color: var(--muted); font-size: .95rem; margin: 6px 0 2px; }
+.pd-brand b { color: var(--navy); font-weight: 700; }
+
 /* ── Recenzii (carusel dreapta → stânga) ── */
 .reviews-marquee {
   overflow: hidden;

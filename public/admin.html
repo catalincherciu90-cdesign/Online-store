@@ -126,7 +126,10 @@
           <div class="field"><label>Preț de bază *</label><input name="price" type="number" step="0.01" required></div>
           <div class="field"><label>Unitate</label><input name="unit" value="mp"></div>
         </div>
-        <div class="field full"><label>Badge (opțional)</label><input name="badge" placeholder="Best seller / Premium / Nou"></div>
+        <div class="form-row">
+          <div class="field"><label>Badge (opțional)</label><input name="badge" placeholder="Best seller / Premium / Nou"></div>
+          <div class="field"><label>Producător (opțional)</label><input name="producator" placeholder="ex: Ruukki, ArcelorMittal"></div>
+        </div>
         <div class="field full"><label>Descriere</label><textarea name="desc" rows="2"></textarea></div>
         <div class="field full"><label>Specificații (câte una pe linie: „Cheie: valoare")</label><textarea name="specs" rows="4" placeholder="Grosime: 0.5 mm&#10;Garanție: 15 ani"></textarea></div>
         <div class="field full">
@@ -359,10 +362,11 @@
           box.innerHTML = `<div class="a-empty">Niciun produs în baza de date. Apasă „Importă din catalog" ca să populezi din catalogul existent.</div>`;
           return;
         }
-        box.innerHTML = `<table class="a-table"><thead><tr><th>Nume</th><th>Categorie</th><th>Preț</th><th>Badge</th><th></th></tr></thead><tbody>${
+        box.innerHTML = `<table class="a-table"><thead><tr><th>Nume</th><th>Categorie</th><th>Producător</th><th>Preț</th><th>Badge</th><th></th></tr></thead><tbody>${
           list.map(p => `<tr>
             <td><b>${esc(p.name)}</b><br><span class="muted-sm">${esc(p.id)}</span></td>
             <td>${esc(categoryName(p.cat))}</td>
+            <td>${p.producator ? esc(p.producator) : '<span class="muted-sm">—</span>'}</td>
             <td>${fmt(p.price)} <span class="muted-sm">/ ${esc(p.unit)}</span></td>
             <td>${p.badge ? `<span class="badge-pill">${esc(p.badge)}</span>` : '—'}</td>
             <td><div class="a-actions">
@@ -492,6 +496,7 @@
             const cat = resolveCat(cell(r, 'categorie'));
             if (!catIds.has(cat)) continue; // primul rând al unui produs are nevoie de categorie validă
             prod = byCod[cod] = { id: cod, cat, name: cell(r, 'denumire'), desc: cell(r, 'descriere'),
+              producator: cell(r, 'producator') || null,
               unit: cell(r, 'unitate') || 'buc', badge: cell(r, 'badge') || null, specs: {}, _fin: {}, _prices: [] };
             cell(r, 'specificatii').split(';').forEach(part => { const j = part.indexOf(':'); if (j > 0) prod.specs[part.slice(0, j).trim()] = part.slice(j + 1).trim(); });
           } else {
@@ -536,6 +541,7 @@
           });
           products.push({
             id: cod, cat, name: cell(r, 'denumire'), desc: cell(r, 'descriere'),
+            producator: cell(r, 'producator') || null,
             price: parseFloat((cell(r, 'pret') || '0').replace(',', '.')) || 0,
             unit: cell(r, 'unitate') || 'buc', badge: cell(r, 'badge') || null, specs, finishColors,
             colorPrices: Object.keys(colorPrices).length ? colorPrices : undefined,
@@ -763,6 +769,7 @@
       if (p) {
         f.id.value = p.id; f.cat.value = p.cat; f.name.value = p.name; f.price.value = p.price;
         f.unit.value = p.unit || 'mp'; f.badge.value = p.badge || ''; f.desc.value = p.desc || '';
+        f.producator.value = p.producator || '';
         f.specs.value = specsToText(p.specs);
         document.getElementById('f-hasfin').checked = !!(p.finishes && p.finishes.length);
       } else { document.getElementById('f-hasfin').checked = false; }
@@ -780,6 +787,7 @@
         id: f.id.value.trim(), cat: f.cat.value, name: f.name.value.trim(),
         price: parseFloat(f.price.value) || 0, unit: f.unit.value.trim() || 'mp',
         badge: f.badge.value.trim() || null, desc: f.desc.value.trim(),
+        producator: f.producator.value.trim() || null,
         specs: textToSpecs(f.specs.value),
         options: hasFin ? undefined : [], // fără finisaje = doar preț de bază
         finishes,

@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS products (
   unit       TEXT NOT NULL DEFAULT 'buc',
   badge      TEXT,
   descr      TEXT,
+  producator TEXT,         -- numele producătorului / brandului
   specs         TEXT,         -- JSON { cheie: valoare }
   options       TEXT,         -- JSON array de grupuri, sau NULL = implicit pe categorie
   option_prices TEXT,         -- JSON { "grup:valoare": delta } delte finisaj/grosime

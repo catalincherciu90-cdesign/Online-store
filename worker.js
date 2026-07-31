@@ -56,6 +56,10 @@ async function ensureSchema(env) {
         `CREATE TABLE IF NOT EXISTS option_values (grp TEXT NOT NULL, id TEXT NOT NULL, name TEXT NOT NULL, delta REAL DEFAULT 0, hex TEXT, sort INTEGER DEFAULT 0, PRIMARY KEY (grp, id))`,
       ];
       for (const s of stmts) { try { await env.DB.prepare(s).run(); } catch (e) { console.error('ensureSchema', e); } }
+      // Coloane adăugate ulterior pe produse (ALTER nu e idempotent → ignoră „duplicate column").
+      for (const col of ['producator TEXT']) {
+        try { await env.DB.prepare(`ALTER TABLE products ADD COLUMN ${col}`).run(); } catch (e) { /* există deja */ }
+      }
     })();
   }
   return SCHEMA_READY;
@@ -64,7 +68,7 @@ async function ensureSchema(env) {
 function rowToProduct(r) {
   return {
     id: r.id, cat: r.cat, name: r.name, price: r.price, unit: r.unit,
-    badge: r.badge || null, desc: r.descr || '',
+    badge: r.badge || null, desc: r.descr || '', producator: r.producator || '',
     specs: r.specs ? JSON.parse(r.specs) : {},
     options: r.options ? JSON.parse(r.options) : undefined,
     optionPrices: r.option_prices ? JSON.parse(r.option_prices) : undefined,
@@ -77,11 +81,11 @@ function rowToProduct(r) {
 const jstr = o => (o && (Array.isArray(o) ? o.length : Object.keys(o).length) ? JSON.stringify(o) : null);
 async function upsertProduct(env, p) {
   await env.DB.prepare(
-    `INSERT OR REPLACE INTO products (id,cat,name,price,unit,badge,descr,specs,options,option_prices,finish_colors,color_prices,finishes,active)
-     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,1)`
+    `INSERT OR REPLACE INTO products (id,cat,name,price,unit,badge,descr,producator,specs,options,option_prices,finish_colors,color_prices,finishes,active)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,1)`
   ).bind(
     p.id, p.cat, p.name, Number(p.price) || 0, p.unit || 'buc', p.badge || null,
-    p.desc || '', JSON.stringify(p.specs || {}), p.options ? JSON.stringify(p.options) : null,
+    p.desc || '', p.producator || null, JSON.stringify(p.specs || {}), p.options ? JSON.stringify(p.options) : null,
     jstr(p.optionPrices), jstr(p.finishColors), jstr(p.colorPrices), jstr(p.finishes)
   ).run();
 }
@@ -116,10 +120,10 @@ async function productUpdate(request, env, id) {
   const p = await request.json().catch(() => null);
   if (!p) return json({ error: 'Date invalide.' }, 400);
   await env.DB.prepare(
-    `UPDATE products SET cat=?,name=?,price=?,unit=?,badge=?,descr=?,specs=?,options=?,option_prices=?,finish_colors=?,color_prices=?,finishes=? WHERE id=?`
+    `UPDATE products SET cat=?,name=?,price=?,unit=?,badge=?,descr=?,producator=?,specs=?,options=?,option_prices=?,finish_colors=?,color_prices=?,finishes=? WHERE id=?`
   ).bind(
     p.cat, p.name, Number(p.price) || 0, p.unit || 'buc', p.badge || null,
-    p.desc || '', JSON.stringify(p.specs || {}), p.options ? JSON.stringify(p.options) : null,
+    p.desc || '', p.producator || null, JSON.stringify(p.specs || {}), p.options ? JSON.stringify(p.options) : null,
     jstr(p.optionPrices), jstr(p.finishColors), jstr(p.colorPrices), jstr(p.finishes), id
   ).run();
   return json({ ok: true });
