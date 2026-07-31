@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Acoperiș PRO — Coș de cumpărături (localStorage)
+   ExpoTigla — Coș de cumpărături (localStorage)
    Suportă variante de produs (opțiuni: finisaj / grosime / culoare).
    Fiecare combinație unică produs+opțiuni = o linie separată în coș.
    Linie: { id, qty, opts }  →  cheie: keyOf(id, opts)

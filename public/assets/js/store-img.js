@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Acoperiș PRO — Stocare imagini în browser (IndexedDB)
+   ExpoTigla — Stocare imagini în browser (IndexedDB)
    Folosit de sistemul de import imagini. Cheile au forma:
      p:<id-produs>     (ex. p:tm-clasic-05)
      c:<id-categorie>  (ex. c:tigla-metalica)

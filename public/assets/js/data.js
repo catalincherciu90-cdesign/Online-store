@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Acoperiș PRO — Date produse (catalog sisteme de acoperiș)
+   ExpoTigla — Date produse (catalog sisteme de acoperiș)
    Prețuri în RON, cu TVA. Datele sunt statice (demo) — pot fi înlocuite
    ulterior cu un API / CMS fără a schimba restul aplicației.
    ========================================================================== */
