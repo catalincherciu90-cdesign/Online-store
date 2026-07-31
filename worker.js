@@ -43,6 +43,24 @@ async function requireAdmin(request, env) {
   catch { return null; }
 }
 
+// Auto-migrare: creează tabelele care ar putea lipsi (idempotent, CREATE IF NOT
+// EXISTS). Rulează o singură dată per isolate, ca site-ul să meargă fără să fie
+// nevoie de `wrangler d1 execute`.
+let SCHEMA_READY = null;
+async function ensureSchema(env) {
+  if (!env.DB) return;
+  if (!SCHEMA_READY) {
+    SCHEMA_READY = (async () => {
+      const stmts = [
+        `CREATE TABLE IF NOT EXISTS reviews (id INTEGER PRIMARY KEY AUTOINCREMENT, author TEXT NOT NULL, rating INTEGER NOT NULL DEFAULT 5, text TEXT NOT NULL, source TEXT DEFAULT 'Google', sort INTEGER DEFAULT 0, active INTEGER NOT NULL DEFAULT 1, created_at TEXT DEFAULT (datetime('now')))`,
+        `CREATE TABLE IF NOT EXISTS option_values (grp TEXT NOT NULL, id TEXT NOT NULL, name TEXT NOT NULL, delta REAL DEFAULT 0, hex TEXT, sort INTEGER DEFAULT 0, PRIMARY KEY (grp, id))`,
+      ];
+      for (const s of stmts) { try { await env.DB.prepare(s).run(); } catch (e) { console.error('ensureSchema', e); } }
+    })();
+  }
+  return SCHEMA_READY;
+}
+
 function rowToProduct(r) {
   return {
     id: r.id, cat: r.cat, name: r.name, price: r.price, unit: r.unit,
@@ -280,6 +298,7 @@ async function quoteCreate(request, env) {
 /* ── Router ────────────────────────────────────────────────────────────── */
 async function api(request, env, url) {
   const p = url.pathname, m = request.method;
+  await ensureSchema(env);
   if (p === '/api/admin/login' && m === 'POST') return login(request, env);
   if (p === '/api/products' && m === 'GET') return productsList(env);
   if (p === '/api/products' && m === 'POST') return productsCreate(request, env);
