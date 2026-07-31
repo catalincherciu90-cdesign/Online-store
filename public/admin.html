@@ -8,61 +8,88 @@
   <link rel="stylesheet" href="assets/css/style.css">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%230099cc' d='M12 3 2 12h3v8h14v-8h3z'/%3E%3C/svg%3E">
   <style>
-    .admin-top { background: var(--ink); color: #fff; }
-    .admin-top .container { display: flex; align-items: center; justify-content: space-between; height: 60px; }
-    .admin-top .logo { color: #fff; } .admin-top .logo b { color: var(--terra); }
-    .admin-tabs { display: flex; gap: 6px; border-bottom: 1px solid var(--line); margin: 24px 0; }
-    .admin-tabs button { padding: 12px 18px; border: 0; background: none; font-family: inherit; font-size: .98rem; font-weight: 600; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; }
-    .admin-tabs button.active { color: var(--navy); border-bottom-color: var(--terra); }
-    .a-table { width: 100%; border-collapse: collapse; background: #fff; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
-    .a-table th, .a-table td { text-align: left; padding: 11px 14px; border-bottom: 1px solid var(--line); font-size: .92rem; vertical-align: top; }
-    .a-table th { background: var(--bg); font-size: .78rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+    /* ===== Shell admin — aspect profesional ===== */
+    body { background: linear-gradient(180deg, #eaf1f4 0%, var(--bg) 320px) no-repeat; }
+    .admin-top { background: linear-gradient(100deg, #082129 0%, var(--navy) 60%, #0f5266 100%); color: #fff; position: sticky; top: 0; z-index: 50; box-shadow: 0 1px 0 rgba(255,255,255,.05), 0 6px 18px rgba(8,33,41,.18); }
+    .admin-top .container { display: flex; align-items: center; justify-content: space-between; height: 66px; }
+    .admin-brand { display: inline-flex; align-items: center; gap: 12px; color: #fff; font-weight: 700; font-size: 1.1rem; letter-spacing: -0.015em; }
+    .admin-brand .brand-mark { width: 36px; height: 36px; border-radius: 10px; background: var(--terra); display: grid; place-items: center; box-shadow: 0 5px 14px rgba(0,153,204,.45); flex-shrink: 0; }
+    .admin-brand .brand-mark svg { width: 21px; height: 21px; color: #fff; }
+    .admin-brand .sub { color: #8fbccb; font-weight: 500; font-size: .82rem; padding-left: 11px; margin-left: 3px; border-left: 1px solid rgba(255,255,255,.18); }
+    .admin-user-chip { display: inline-flex; align-items: center; gap: 12px; background: rgba(255,255,255,.09); border: 1px solid rgba(255,255,255,.13); padding: 5px 6px 5px 15px; border-radius: 100px; }
+    .admin-user-chip .u-name { color: #d6e6ec; font-size: .86rem; font-weight: 500; }
+    .admin-user-chip .a-btn-sm { background: rgba(255,255,255,.14); border-color: transparent; color: #fff; padding: 6px 13px; }
+    .admin-user-chip .a-btn-sm:hover { background: #fff; color: var(--navy); }
+
+    /* Navigație pe „card" cu iconițe */
+    .admin-tabs { display: flex; flex-wrap: wrap; gap: 4px; background: #fff; border: 1px solid var(--line); border-radius: 15px; padding: 6px; margin: 26px 0 24px; box-shadow: var(--shadow-sm); }
+    .admin-tabs button { display: inline-flex; align-items: center; gap: 8px; padding: 9px 15px; border: 0; background: none; font-family: inherit; font-size: .9rem; font-weight: 600; color: var(--slate); cursor: pointer; border-radius: 10px; transition: background .15s, color .15s, box-shadow .15s; }
+    .admin-tabs button svg { width: 16px; height: 16px; opacity: .75; flex-shrink: 0; }
+    .admin-tabs button:hover { background: var(--bg); color: var(--navy); }
+    .admin-tabs button.active { background: var(--terra); color: #fff; box-shadow: 0 5px 14px rgba(0,153,204,.3); }
+    .admin-tabs button.active svg { opacity: 1; }
+
+    /* Tabele */
+    .a-table { width: 100%; border-collapse: separate; border-spacing: 0; background: #fff; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; box-shadow: var(--shadow-sm); }
+    .a-table th, .a-table td { text-align: left; padding: 13px 16px; border-bottom: 1px solid var(--line); font-size: .92rem; vertical-align: top; }
+    .a-table th { background: #f8fafb; font-size: .74rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 700; }
+    .a-table tbody tr { transition: background .12s; }
+    .a-table tbody tr:hover { background: #f5fbfd; }
     .a-table tr:last-child td { border-bottom: 0; }
     .a-actions { display: flex; gap: 8px; }
-    .a-btn-sm { padding: 6px 12px; font-size: .85rem; border-radius: 8px; border: 1px solid var(--line-strong); background: #fff; cursor: pointer; font-family: inherit; }
-    .a-btn-sm:hover { border-color: var(--navy); }
-    .a-btn-sm.danger { color: var(--danger); }
-    .a-btn-sm.danger:hover { border-color: var(--danger); background: #fdecec; }
-    .login-wrap { max-width: 400px; margin: 60px auto; background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 32px; box-shadow: var(--shadow); }
-    .overlay { position: fixed; inset: 0; background: rgba(11,22,38,.5); display: none; align-items: flex-start; justify-content: center; padding: 40px 16px; overflow: auto; z-index: 60; }
+    .a-btn-sm { padding: 7px 13px; font-size: .84rem; font-weight: 600; border-radius: 9px; border: 1px solid var(--line-strong); background: #fff; cursor: pointer; font-family: inherit; color: var(--navy); transition: border-color .14s, background .14s, color .14s; }
+    .a-btn-sm:hover { border-color: var(--terra); color: var(--terra-dark); background: var(--accent-soft); }
+    .a-btn-sm.danger { color: var(--danger); border-color: #eccfcf; }
+    .a-btn-sm.danger:hover { border-color: var(--danger); background: #fdecec; color: var(--danger); }
+
+    .login-wrap { max-width: 410px; margin: 72px auto; background: #fff; border: 1px solid var(--line); border-radius: 18px; padding: 40px 36px 34px; box-shadow: var(--shadow); }
+    .login-wrap .brand-mark { width: 46px; height: 46px; border-radius: 12px; background: var(--terra); display: grid; place-items: center; box-shadow: 0 6px 16px rgba(0,153,204,.4); margin-bottom: 18px; }
+    .login-wrap .brand-mark svg { width: 26px; height: 26px; color: #fff; }
+    .overlay { position: fixed; inset: 0; background: rgba(8,26,34,.55); backdrop-filter: blur(2px); display: none; align-items: flex-start; justify-content: center; padding: 40px 16px; overflow: auto; z-index: 60; }
     .overlay.open { display: flex; }
-    .modal { background: #fff; border-radius: var(--radius); padding: 26px; width: 100%; max-width: 560px; }
+    .modal { background: #fff; border-radius: 16px; padding: 28px; width: 100%; max-width: 560px; box-shadow: var(--shadow-lg); }
     .badge-pill { display: inline-block; padding: 2px 9px; border-radius: 20px; font-size: .74rem; font-weight: 700; background: var(--accent-soft); color: var(--terra-dark); }
     .muted-sm { color: var(--muted); font-size: .85rem; }
-    .toolbar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; align-items: center; }
+    .toolbar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 18px; align-items: center; }
     .toolbar .grow { flex: 1; }
-    .a-empty { padding: 40px; text-align: center; color: var(--muted); }
+    .a-empty { padding: 44px; text-align: center; color: var(--muted); background: #fff; border: 1px dashed var(--line-strong); border-radius: 14px; }
     .ord-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
-    .ord-tab { padding: 7px 14px; border: 1px solid var(--line-strong); background: #fff; border-radius: 100px; font-size: .88rem; font-weight: 600; color: var(--slate); cursor: pointer; display: inline-flex; align-items: center; gap: 7px; }
+    .ord-tab { padding: 7px 14px; border: 1px solid var(--line-strong); background: #fff; border-radius: 100px; font-size: .88rem; font-weight: 600; color: var(--slate); cursor: pointer; display: inline-flex; align-items: center; gap: 7px; transition: all .14s; }
     .ord-tab:hover { border-color: var(--navy); color: var(--navy); }
     .ord-tab.active { background: var(--navy); border-color: var(--navy); color: #fff; }
     .ord-tab-n { background: rgba(0,0,0,.08); border-radius: 100px; padding: 0 7px; font-size: .78rem; min-width: 18px; text-align: center; }
     .ord-tab.active .ord-tab-n { background: rgba(255,255,255,.22); }
-    /* Dashboard */
-    .dash-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; margin-bottom: 20px; }
-    .dash-kpi { background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 18px 20px; }
-    .dash-kpi.clickable { cursor: pointer; }
-    .dash-kpi.clickable:hover { border-color: var(--navy); box-shadow: 0 2px 10px rgba(0,0,0,.05); }
-    .dash-kpi-val { font-size: 1.9rem; font-weight: 800; color: var(--navy); line-height: 1.1; }
-    .dash-kpi-lbl { font-size: .82rem; color: var(--muted); margin-top: 4px; }
-    .dash-kpi.danger .dash-kpi-val { color: #cf3d3d; }
-    .dash-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-bottom: 24px; }
-    .dash-card { background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 18px 20px; }
-    .dash-card-t { font-size: .78rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin-bottom: 8px; }
-    .dash-card-v { font-size: 1.25rem; font-weight: 700; color: var(--navy); }
-    .dash-card-s { font-size: .85rem; color: var(--muted); margin-top: 3px; }
+
+    /* ===== Dashboard ===== */
+    .dash-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 22px; }
+    .dash-kpi { position: relative; background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 20px 22px 20px 24px; box-shadow: var(--shadow-sm); overflow: hidden; }
+    .dash-kpi::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--terra); }
+    .dash-kpi.danger::before { background: var(--danger); }
+    .dash-kpi.clickable { cursor: pointer; transition: transform .14s, box-shadow .14s; }
+    .dash-kpi.clickable:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+    .dash-kpi-val { font-size: 2rem; font-weight: 800; color: var(--navy); line-height: 1.05; letter-spacing: -0.02em; }
+    .dash-kpi-lbl { font-size: .76rem; color: var(--muted); margin-top: 6px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; }
+    .dash-kpi.danger .dash-kpi-val { color: var(--danger); }
+    .dash-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 15px; margin-bottom: 28px; }
+    .dash-card { position: relative; background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 20px 22px; box-shadow: var(--shadow-sm); }
+    .dash-card-t { font-size: .74rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 700; margin-bottom: 10px; }
+    .dash-card-v { font-size: 1.3rem; font-weight: 800; color: var(--navy); letter-spacing: -0.01em; }
+    .dash-card-s { font-size: .85rem; color: var(--muted); margin-top: 4px; }
     .dash-card-empty { font-size: .95rem; color: var(--muted); }
-    .dash-section-t { font-size: 1rem; font-weight: 700; margin: 8px 0 12px; }
-    .danger-txt { color: #cf3d3d; font-weight: 700; }
+    .dash-section-t { font-size: 1.02rem; font-weight: 800; color: var(--navy); margin: 10px 0 13px; }
+    .danger-txt { color: var(--danger); font-weight: 700; }
   </style>
 </head>
 <body>
 
   <div class="admin-top">
     <div class="container">
-      <a href="index.html" class="logo">Expo<b>Tigla</b> · Admin</a>
-      <div id="whoami" style="display:none;align-items:center;gap:14px">
-        <span class="muted-sm" style="color:#aeb9c9" id="admin-user"></span>
+      <a href="index.html" class="admin-brand">
+        <span class="brand-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v9h14v-9"/><path d="M9.5 19v-5h5v5"/></svg></span>
+        Expo<b>Tigla</b> <span class="sub">Panou de administrare</span>
+      </a>
+      <div id="whoami" class="admin-user-chip" style="display:none">
+        <span class="u-name" id="admin-user"></span>
         <button class="a-btn-sm" onclick="logout()">Ieșire</button>
       </div>
     </div>
@@ -71,6 +98,7 @@
   <!-- LOGIN -->
   <div id="login-view" class="container">
     <div class="login-wrap">
+      <span class="brand-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v9h14v-9"/><path d="M9.5 19v-5h5v5"/></svg></span>
       <h2 style="margin-bottom:6px">Autentificare admin</h2>
       <p class="muted-sm" style="margin-bottom:20px">Panou de administrare ExpoTigla.</p>
       <form id="login-form" class="checkout-form" onsubmit="doLogin(event)">
@@ -85,16 +113,16 @@
   <!-- DASHBOARD -->
   <div id="dash-view" class="container" style="display:none;padding-bottom:60px">
     <div class="admin-tabs">
-      <button class="active" data-tab="dashboard" onclick="showTab('dashboard')">Dashboard</button>
-      <button data-tab="produse" onclick="showTab('produse')">Produse</button>
-      <button data-tab="proprietati" onclick="showTab('proprietati')">Proprietăți</button>
-      <button data-tab="bannere" onclick="showTab('bannere')">Banner</button>
-      <button data-tab="recenzii" onclick="showTab('recenzii')">Recenzii</button>
-      <button data-tab="blog" onclick="showTab('blog')">Blog</button>
-      <button data-tab="comenzi" onclick="showTab('comenzi')">Comenzi</button>
-      <button data-tab="cereri" onclick="showTab('cereri')">Cereri ofertă</button>
-      <button data-tab="meniu" onclick="showTab('meniu')">Meniu</button>
-      <button data-tab="setari" onclick="showTab('setari')">Setări</button>
+      <button class="active" data-tab="dashboard" onclick="showTab('dashboard')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>Dashboard</button>
+      <button data-tab="produse" onclick="showTab('produse')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8 12 3 3 8l9 5 9-5Z"/><path d="M3 8v8l9 5 9-5V8"/><path d="m12 13 0 8"/></svg>Produse</button>
+      <button data-tab="proprietati" onclick="showTab('proprietati')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><circle cx="9" cy="6" r="2.4"/><line x1="4" y1="12" x2="20" y2="12"/><circle cx="15" cy="12" r="2.4"/><line x1="4" y1="18" x2="20" y2="18"/><circle cx="8" cy="18" r="2.4"/></svg>Proprietăți</button>
+      <button data-tab="bannere" onclick="showTab('bannere')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.8"/><path d="m21 16-5-5-9 9"/></svg>Banner</button>
+      <button data-tab="recenzii" onclick="showTab('recenzii')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 2.9 5.9 6.1.9-4.4 4.3 1 6.1-5.6-2.9-5.6 2.9 1-6.1L3 9.8l6.1-.9Z"/></svg>Recenzii</button>
+      <button data-tab="blog" onclick="showTab('blog')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v5h5"/><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8Z"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg>Blog</button>
+      <button data-tab="comenzi" onclick="showTab('comenzi')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M2 3h2.2l2.1 12.4a1.5 1.5 0 0 0 1.5 1.2h9.2a1.5 1.5 0 0 0 1.5-1.2L21 7H5"/></svg>Comenzi</button>
+      <button data-tab="cereri" onclick="showTab('cereri')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/><line x1="9" y1="11" x2="15" y2="11"/><line x1="9" y1="15" x2="13" y2="15"/></svg>Cereri ofertă</button>
+      <button data-tab="meniu" onclick="showTab('meniu')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg>Meniu</button>
+      <button data-tab="setari" onclick="showTab('setari')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.6 1.6 0 0 0-1-1.5 1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.6 1.6 0 0 0 1.5-1 1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H9a1.6 1.6 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a1.6 1.6 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1Z"/></svg>Setări</button>
     </div>
 
     <div id="tab-dashboard">
