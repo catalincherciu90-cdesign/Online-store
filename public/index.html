@@ -44,7 +44,7 @@
   </section>
 
   <!-- Hero de rezervă (afișat doar când nu există bannere încărcate) -->
-  <section class="hero hero-simple" id="hero-default">
+  <section class="hero hero-simple" id="hero-default" style="display:none">
     <div class="container">
       <h1>Sisteme complete de acoperiș, direct de la producător</h1>
       <p>Țiglă metalică, tablă fălțuită, panouri sandwich și sistem pluvial — cu garanție până la 30 de ani și livrare în toată țara.</p>
@@ -199,8 +199,11 @@
     // ── Hero bannere (slider) ──
     const escB = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     function initBanners() {
+      // Hero-ul de rezervă (codat) apare DOAR dacă nu există bannere încărcate,
+      // ca să nu pâlpâie „grafica veche" înainte să se încarce bannerul din admin.
+      const showDefault = () => { const hd = document.getElementById('hero-default'); if (hd) hd.style.display = ''; };
       fetch('/api/banners').then(r => r.ok ? r.json() : []).then(list => {
-        if (!Array.isArray(list) || !list.length) return;
+        if (!Array.isArray(list) || !list.length) { showDefault(); return; }
         const track = document.getElementById('hb-track');
         const dotsBox = document.getElementById('hb-dots');
         track.innerHTML = list.map(b => {
@@ -215,7 +218,7 @@
           return `<div class="hb-slide${b.imageMobile ? ' hb-has-mobile' : ''}"><img class="hb-img hb-img-d" src="${escB(b.image)}" alt="${escB(b.title || 'Banner')}">${mobImg}${overlay}</div>`;
         }).join('');
         document.getElementById('hero-banners').style.display = 'block';
-        const hd = document.getElementById('hero-default'); if (hd) hd.style.display = 'none';
+        // hero-default rămâne ascuns (e ascuns implicit)
 
         let idx = 0;
         const go = i => {
@@ -231,7 +234,7 @@
           sec.addEventListener('mouseenter', () => clearInterval(timer));
           sec.addEventListener('mouseleave', () => { timer = setInterval(() => go(idx + 1), 6000); });
         }
-      }).catch(() => {});
+      }).catch(showDefault);
     }
     initBanners();
 
