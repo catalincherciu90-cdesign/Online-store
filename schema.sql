@@ -41,6 +41,18 @@ CREATE TABLE IF NOT EXISTS quotes (
   created_at TEXT DEFAULT (datetime('now'))
 );
 
+-- Recenzii clienți (afișate pe prima pagină, editabile din admin)
+CREATE TABLE IF NOT EXISTS reviews (
+  id       INTEGER PRIMARY KEY AUTOINCREMENT,
+  author   TEXT NOT NULL,           -- numele clientului
+  rating   INTEGER NOT NULL DEFAULT 5,  -- 1..5 stele
+  text     TEXT NOT NULL,           -- textul recenziei
+  source   TEXT DEFAULT 'Google',   -- sursa (Google, Facebook, Site etc.)
+  sort     INTEGER DEFAULT 0,       -- ordine de afișare
+  active   INTEGER NOT NULL DEFAULT 1,
+  created_at TEXT DEFAULT (datetime('now'))
+);
+
 -- Valori globale de opțiuni (finisaje / grosimi / culori) editabile din admin
 CREATE TABLE IF NOT EXISTS option_values (
   grp   TEXT NOT NULL,        -- 'finisaj' | 'grosime' | 'culoare'

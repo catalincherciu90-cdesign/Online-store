@@ -477,6 +477,23 @@ h2 { font-size: clamp(1.6rem, 3vw, 2.35rem); letter-spacing: -0.028em; }
 .toast svg { width: 20px; height: 20px; color: var(--terra); }
 
 /* ---------- CTA band ---------- */
+/* ── Recenzii ── */
+.reviews-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 22px; }
+.review-card {
+  background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 26px 24px; display: flex; flex-direction: column; gap: 14px;
+  box-shadow: 0 1px 2px rgba(20,40,74,.04);
+}
+.review-top { display: flex; align-items: center; gap: 12px; }
+.review-mark {
+  width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;
+  display: grid; place-items: center; background: #fff; border: 1px solid var(--line);
+}
+.review-mark.initial { background: var(--navy); color: #fff; font-weight: 800; border-color: var(--navy); }
+.review-stars { color: #f5a623; letter-spacing: 2px; font-size: 1.05rem; line-height: 1; }
+.review-text { margin: 0; color: var(--ink); line-height: 1.62; font-size: .98rem; text-wrap: pretty; }
+.review-author { margin-top: auto; color: var(--navy); font-weight: 700; font-size: .95rem; }
+
 .cta-band {
   position: relative; overflow: hidden; text-align: center; color: #fff;
   background:

@@ -178,6 +178,43 @@ async function optionsSeed(request, env) {
   return json({ ok: true, imported: n });
 }
 
+// ── Recenzii clienți ──
+function rowToReview(r) {
+  return { id: r.id, author: r.author, rating: r.rating, text: r.text, source: r.source || 'Google', sort: r.sort || 0, active: !!r.active };
+}
+async function reviewsList(request, env, url) {
+  if (!env.DB) return json([]);
+  if (url.searchParams.get('all')) {
+    if (!await requireAdmin(request, env)) return json({ error: 'Neautorizat' }, 401);
+    const r = await env.DB.prepare('SELECT * FROM reviews ORDER BY sort, id DESC').all();
+    return json((r.results || []).map(rowToReview));
+  }
+  const r = await env.DB.prepare('SELECT * FROM reviews WHERE active=1 ORDER BY sort, id DESC').all();
+  return json((r.results || []).map(rowToReview));
+}
+async function reviewUpsert(request, env) {
+  if (!await requireAdmin(request, env)) return json({ error: 'Neautorizat' }, 401);
+  if (!env.DB) return json({ error: 'Baza de date nu este configurată.' }, 500);
+  const v = await request.json().catch(() => null);
+  if (!v || !v.author || !v.text) return json({ error: 'Completează autor și text.' }, 400);
+  const rating = Math.max(1, Math.min(5, Number(v.rating) || 5));
+  const active = v.active === false ? 0 : 1;
+  if (v.id) {
+    await env.DB.prepare('UPDATE reviews SET author=?,rating=?,text=?,source=?,sort=?,active=? WHERE id=?')
+      .bind(v.author, rating, v.text, v.source || 'Google', Number(v.sort) || 0, active, v.id).run();
+    return json({ ok: true, id: v.id });
+  }
+  const res = await env.DB.prepare('INSERT INTO reviews (author,rating,text,source,sort,active) VALUES (?,?,?,?,?,?)')
+    .bind(v.author, rating, v.text, v.source || 'Google', Number(v.sort) || 0, active).run();
+  return json({ ok: true, id: res.meta ? res.meta.last_row_id : undefined });
+}
+async function reviewDelete(request, env, id) {
+  if (!await requireAdmin(request, env)) return json({ error: 'Neautorizat' }, 401);
+  if (!env.DB) return json({ error: 'Baza de date nu este configurată.' }, 500);
+  await env.DB.prepare('DELETE FROM reviews WHERE id=?').bind(id).run();
+  return json({ ok: true });
+}
+
 async function sendEmail(env, payload) {
   if (!env.RESEND_API_KEY) return { delivered: false, error: 'Email neconfigurat.' };
   try {
@@ -255,6 +292,10 @@ async function api(request, env, url) {
   if (p === '/api/options/seed' && m === 'POST') return optionsSeed(request, env);
   const ov = p.match(/^\/api\/options\/([^/]+)\/(.+)$/);
   if (ov && m === 'DELETE') return optionDelete(request, env, decodeURIComponent(ov[1]), decodeURIComponent(ov[2]));
+  if (p === '/api/reviews' && m === 'GET') return reviewsList(request, env, url);
+  if (p === '/api/reviews' && m === 'POST') return reviewUpsert(request, env);
+  const rv = p.match(/^\/api\/reviews\/(\d+)$/);
+  if (rv && m === 'DELETE') return reviewDelete(request, env, Number(rv[1]));
   if (p === '/api/orders' && m === 'GET') return ordersList(request, env);
   if (p === '/api/quotes' && m === 'GET') return quotesList(request, env);
   if (p === '/api/order' && m === 'POST') return orderCreate(request, env);

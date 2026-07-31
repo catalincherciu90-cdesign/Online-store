@@ -65,6 +65,7 @@
     <div class="admin-tabs">
       <button class="active" data-tab="produse" onclick="showTab('produse')">Produse</button>
       <button data-tab="proprietati" onclick="showTab('proprietati')">Proprietăți</button>
+      <button data-tab="recenzii" onclick="showTab('recenzii')">Recenzii</button>
       <button data-tab="comenzi" onclick="showTab('comenzi')">Comenzi</button>
       <button data-tab="cereri" onclick="showTab('cereri')">Cereri ofertă</button>
     </div>
@@ -89,6 +90,15 @@
       </div>
       <p class="muted-sm" style="margin-bottom:16px">Valorile de aici apar la toate produsele. Adaugă culori, grosimi sau finisaje noi — se văd imediat în editorul de produs și pe site.</p>
       <div id="props-box"></div>
+    </div>
+
+    <div id="tab-recenzii" style="display:none">
+      <div class="toolbar">
+        <h2 class="grow" style="font-size:1.3rem">Recenzii</h2>
+        <button class="btn btn-primary" style="padding:9px 16px" onclick="openReview()">+ Recenzie nouă</button>
+      </div>
+      <p class="muted-sm" style="margin-bottom:16px">Recenziile active apar pe prima pagină, la secțiunea „Ce spun clienții noștri". Ordinea = câmpul „Ordine" (crescător).</p>
+      <div id="reviews-box"></div>
     </div>
 
     <div id="tab-comenzi" style="display:none">
@@ -133,6 +143,36 @@
           <button type="button" class="btn btn-outline" onclick="closeEditor()">Anulează</button>
         </div>
         <div class="form-status" id="editor-status"></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- EDITOR RECENZIE -->
+  <div class="overlay" id="review-view">
+    <div class="modal" style="max-width:560px">
+      <h3 id="review-title" style="margin-bottom:18px">Recenzie</h3>
+      <form class="checkout-form" id="review-form" onsubmit="saveReview(event)">
+        <input type="hidden" name="id">
+        <div class="form-row">
+          <div class="field"><label>Autor *</label><input name="author" required placeholder="ex: Andrei M."></div>
+          <div class="field"><label>Sursă</label>
+            <select name="source"><option>Google</option><option>Facebook</option><option>Site</option></select></div>
+        </div>
+        <div class="form-row">
+          <div class="field"><label>Stele</label>
+            <select name="rating">
+              <option value="5">★★★★★ (5)</option><option value="4">★★★★ (4)</option>
+              <option value="3">★★★ (3)</option><option value="2">★★ (2)</option><option value="1">★ (1)</option>
+            </select></div>
+          <div class="field"><label>Ordine</label><input name="sort" type="number" value="0"></div>
+        </div>
+        <div class="field full"><label>Text recenzie *</label><textarea name="text" rows="4" required placeholder="Ce a scris clientul…"></textarea></div>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:600"><input type="checkbox" name="active" checked> Activă (afișată pe site)</label>
+        <div style="display:flex;gap:10px;margin-top:14px">
+          <button class="btn btn-primary" style="flex:1">Salvează</button>
+          <button type="button" class="btn btn-outline" onclick="closeReview()">Anulează</button>
+        </div>
+        <div class="form-status" id="review-status"></div>
       </form>
     </div>
   </div>
@@ -182,14 +222,78 @@
       document.getElementById('dash-view').style.display = 'block';
       document.getElementById('whoami').style.display = 'flex';
       document.getElementById('admin-user').textContent = 'Conectat';
-      loadProps().then(loadProducts); loadOrders(); loadQuotes();
+      loadProps().then(loadProducts); loadOrders(); loadQuotes(); loadReviews();
     }
 
     function showTab(t) {
-      ['produse', 'proprietati', 'comenzi', 'cereri'].forEach(x => {
+      ['produse', 'proprietati', 'recenzii', 'comenzi', 'cereri'].forEach(x => {
         document.getElementById('tab-' + x).style.display = x === t ? 'block' : 'none';
         document.querySelector(`.admin-tabs [data-tab="${x}"]`).classList.toggle('active', x === t);
       });
+    }
+
+    // ── Recenzii ──
+    let reviewsData = [];
+    const stars = n => { n = Math.max(1, Math.min(5, Number(n) || 5)); return '★'.repeat(n) + '☆'.repeat(5 - n); };
+    async function loadReviews() {
+      const box = document.getElementById('reviews-box');
+      try {
+        const res = await api('/reviews?all=1');
+        reviewsData = await res.json();
+      } catch (e) { box.innerHTML = `<div class="a-empty">Nu am putut încărca recenziile.</div>`; return; }
+      if (!Array.isArray(reviewsData) || !reviewsData.length) {
+        box.innerHTML = `<div class="a-empty">Nicio recenzie încă. Apasă „+ Recenzie nouă" ca să adaugi prima.</div>`;
+        return;
+      }
+      box.innerHTML = `<table class="a-table"><thead><tr><th>Autor</th><th>Stele</th><th>Text</th><th>Sursă</th><th>Ordine</th><th>Stare</th><th></th></tr></thead><tbody>` +
+        reviewsData.map((r, i) => `<tr>
+          <td>${esc(r.author)}</td>
+          <td style="color:#f5a623;white-space:nowrap">${stars(r.rating)}</td>
+          <td class="muted-sm" style="max-width:320px">${esc((r.text || '').slice(0, 90))}${(r.text || '').length > 90 ? '…' : ''}</td>
+          <td>${esc(r.source || '')}</td>
+          <td>${r.sort || 0}</td>
+          <td>${r.active ? '<span style="color:#1a8f4c;font-weight:600">activă</span>' : '<span class="muted-sm">ascunsă</span>'}</td>
+          <td style="white-space:nowrap;text-align:right">
+            <button class="a-btn-sm" onclick="openReview(${i})">Editează</button>
+            <button class="a-btn-sm danger" onclick="delReview(${r.id})">Șterge</button>
+          </td></tr>`).join('') + `</tbody></table>`;
+    }
+    function openReview(i) {
+      const f = document.getElementById('review-form');
+      f.reset();
+      document.getElementById('review-status').textContent = '';
+      const ed = typeof i === 'number' ? reviewsData[i] : null;
+      document.getElementById('review-title').textContent = ed ? 'Editează recenzia' : 'Recenzie nouă';
+      f.id.value = ed ? ed.id : '';
+      f.author.value = ed ? ed.author : '';
+      f.source.value = ed ? (ed.source || 'Google') : 'Google';
+      f.rating.value = ed ? ed.rating : 5;
+      f.sort.value = ed ? (ed.sort || 0) : 0;
+      f.text.value = ed ? ed.text : '';
+      f.active.checked = ed ? !!ed.active : true;
+      document.getElementById('review-view').classList.add('open');
+    }
+    function closeReview() { document.getElementById('review-view').classList.remove('open'); }
+    async function saveReview(e) {
+      e.preventDefault();
+      const f = e.target;
+      const body = {
+        author: f.author.value.trim(), source: f.source.value, rating: Number(f.rating.value),
+        sort: Number(f.sort.value) || 0, text: f.text.value.trim(), active: f.active.checked,
+      };
+      if (f.id.value) body.id = Number(f.id.value);
+      const st = document.getElementById('review-status');
+      try {
+        const res = await api('/reviews', { method: 'POST', body: JSON.stringify(body) });
+        const d = await res.json();
+        if (d.ok) { closeReview(); loadReviews(); }
+        else { st.className = 'form-status err'; st.textContent = d.error || 'Eroare.'; }
+      } catch (err) { st.className = 'form-status err'; st.textContent = err.message; }
+    }
+    async function delReview(id) {
+      if (!confirm('Ștergi această recenzie definitiv?')) return;
+      try { await api('/reviews/' + id, { method: 'DELETE' }); loadReviews(); }
+      catch (e) { alert('Eroare: ' + e.message); }
     }
 
     // ── Proprietăți globale (finisaje / grosimi / culori) ──
