@@ -149,6 +149,17 @@
             <div class="field"><label>YouTube (link)</label><input name="youtube" placeholder="https://youtube.com/@..."></div>
           </div>
           <div class="field full"><label>WhatsApp (link)</label><input name="whatsapp" placeholder="https://wa.me/407xxxxxxxx"></div>
+
+          <div style="border-top:1px solid var(--line);margin:18px 0 4px;padding-top:16px">
+            <h3 style="font-size:1.02rem;margin-bottom:4px">Conținut pagina „Despre noi"</h3>
+            <p class="muted-sm" style="margin-bottom:12px">Lasă gol pentru a păstra textul implicit. Pentru paragrafe, lasă un rând liber între ele.</p>
+          </div>
+          <div class="field full"><label>Titlu principal</label><input name="about_title" placeholder="Sisteme de acoperiș, de la oameni care le știu pe ale lor"></div>
+          <div class="field full"><label>Text intro</label><textarea name="about_lead" rows="3" placeholder="Scurtă prezentare care apare sub titlu."></textarea></div>
+          <div class="field full"><label>Titlu secțiune poveste</label><input name="about_story_title" placeholder="Povestea din spatele ExpoTigla"></div>
+          <div class="field full"><label>Poveste (Cine suntem)</label><textarea name="about_story" rows="6" placeholder="Povestea afacerii. Lasă un rând liber între paragrafe."></textarea></div>
+          <div class="field full"><label>Misiune</label><textarea name="about_mission" rows="3" placeholder="Declarația de misiune."></textarea></div>
+
           <div style="margin-top:10px"><button class="btn btn-primary" style="padding:9px 20px">Salvează setările</button></div>
           <div class="form-status" id="settings-status"></div>
         </form>
@@ -409,7 +420,7 @@
       try {
         const res = await api('/settings'); const s = await res.json();
         const f = document.getElementById('settings-form');
-        ['phone', 'email', 'email2', 'schedule', 'address', 'facebook', 'instagram', 'tiktok', 'youtube', 'whatsapp'].forEach(k => { if (f[k]) f[k].value = s[k] || ''; });
+        ['phone', 'email', 'email2', 'schedule', 'address', 'facebook', 'instagram', 'tiktok', 'youtube', 'whatsapp', 'about_title', 'about_lead', 'about_story_title', 'about_story', 'about_mission'].forEach(k => { if (f[k]) f[k].value = s[k] || ''; });
         siteLogo = s.logo || '';
         document.getElementById('logo-preview').innerHTML = siteLogo
           ? `<img src="${siteLogo}" style="height:56px;background:#0c1a30;padding:8px 12px;border-radius:8px">` : '';
@@ -427,7 +438,7 @@
       e.preventDefault();
       const f = e.target;
       const body = { logo: siteLogo };
-      ['phone', 'email', 'email2', 'schedule', 'address', 'facebook', 'instagram', 'tiktok', 'youtube', 'whatsapp'].forEach(k => { body[k] = f[k] ? f[k].value.trim() : ''; });
+      ['phone', 'email', 'email2', 'schedule', 'address', 'facebook', 'instagram', 'tiktok', 'youtube', 'whatsapp', 'about_title', 'about_lead', 'about_story_title', 'about_story', 'about_mission'].forEach(k => { body[k] = f[k] ? f[k].value.trim() : ''; });
       const st = document.getElementById('settings-status');
       try {
         const res = await api('/settings', { method: 'POST', body: JSON.stringify(body) });
