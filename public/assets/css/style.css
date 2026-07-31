@@ -338,7 +338,12 @@ h2 { font-size: clamp(1.6rem, 3vw, 2.35rem); letter-spacing: -0.028em; }
 .product-card .badge[data-badge="Nou"] { background: var(--success-deep); }
 .product-card .badge[data-badge="Economic"] { background: var(--navy-light); }
 .product-card .info { padding: 16px 18px 20px; display: flex; flex-direction: column; flex: 1; }
-.product-card .cat-tag { font-size: .74rem; text-transform: uppercase; letter-spacing: .06em; color: var(--terra-700); font-weight: 700; margin-bottom: 6px; }
+.product-card .cat-tag { font-size: .74rem; text-transform: uppercase; letter-spacing: .06em; color: var(--terra-700); font-weight: 700; }
+.tag-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
+.brand-tag {
+  font-size: .68rem; font-weight: 700; letter-spacing: .03em; color: var(--muted);
+  background: var(--bg); border: 1px solid var(--line); border-radius: 100px; padding: 2px 9px;
+}
 .product-card h3 { font-size: 1.05rem; margin-bottom: 6px; }
 .product-card h3 a:hover { color: var(--terra-700); }
 .product-card .desc { color: var(--muted); font-size: .88rem; margin-bottom: 14px; flex: 1; }

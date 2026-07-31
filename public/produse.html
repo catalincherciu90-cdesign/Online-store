@@ -49,6 +49,10 @@
           <h4>Categorie</h4>
           <div id="cat-filters"></div>
         </div>
+        <div class="filter-group" id="brand-filter-group" style="display:none">
+          <h4>Producător</h4>
+          <div id="brand-filters"></div>
+        </div>
         <div class="filter-group">
           <h4>Preț</h4>
           <label class="filter-opt"><input type="radio" name="price" value="all" checked> Toate prețurile</label>
@@ -135,6 +139,24 @@
     document.querySelectorAll('input[name="price"]').forEach(r => r.addEventListener('change', e => { activePrice = e.target.value; render(); }));
     document.getElementById('sort').addEventListener('change', e => { activeSort = e.target.value; render(); });
 
+    // Filtru de producător — construit dinamic din producătorii existenți în catalog
+    let activeProducer = 'all';
+    let brandList = [];
+    const escAttr = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    function buildBrandFilters() {
+      brandList = [...new Set(PRODUCTS.map(p => (p.producator || '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'ro'));
+      const group = document.getElementById('brand-filter-group');
+      const box = document.getElementById('brand-filters');
+      if (!brandList.length) { group.style.display = 'none'; return; }
+      group.style.display = '';
+      box.innerHTML = `<label class="filter-opt"><input type="radio" name="brand" value="all" checked> Toți producătorii</label>` +
+        brandList.map((b, i) => `<label class="filter-opt"><input type="radio" name="brand" value="${i}"> ${escAttr(b)}</label>`).join('');
+    }
+    document.getElementById('brand-filters').addEventListener('change', e => {
+      activeProducer = e.target.value === 'all' ? 'all' : brandList[+e.target.value];
+      render();
+    });
+
     // Filtre de grosime & culoare (după personalizarea disponibilă)
     let activeThickness = 'all';
     let activeColor = 'all';
@@ -162,6 +184,7 @@
     function render() {
       let list = PRODUCTS.slice();
       if (activeCat !== 'all') list = list.filter(p => p.cat === activeCat);
+      if (activeProducer !== 'all') list = list.filter(p => (p.producator || '').trim() === activeProducer);
       if (activePrice !== 'all') {
         const [lo, hi] = activePrice.split('-').map(Number);
         list = list.filter(p => p.price >= lo && p.price <= hi);
@@ -188,7 +211,7 @@
           ${p.badge ? `<span class="badge" data-badge="${p.badge}">${p.badge}</span>` : ''}${productMedia(p)}
         </a>
         <div class="info">
-          <span class="cat-tag">${categoryName(p.cat)}</span>
+          <div class="tag-row"><span class="cat-tag">${categoryName(p.cat)}</span>${p.producator ? `<span class="brand-tag">${escAttr(p.producator)}</span>` : ''}</div>
           <h3><a href="produs.html?id=${p.id}">${p.name}</a></h3>
           <p class="desc">${p.desc}</p>
           <div class="price-row">
@@ -202,7 +225,7 @@
     }
 
     updateHeader();
-    loadCatalog().then(render);
+    loadCatalog().then(() => { buildBrandFilters(); render(); });
   </script>
 </body>
 </html>

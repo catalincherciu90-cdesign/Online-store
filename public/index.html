@@ -274,7 +274,7 @@
           ${p.badge ? `<span class="badge" data-badge="${p.badge}">${p.badge}</span>` : ''}${productMedia(p)}
         </a>
         <div class="info">
-          <span class="cat-tag">${categoryName(p.cat)}</span>
+          <div class="tag-row"><span class="cat-tag">${categoryName(p.cat)}</span>${p.producator ? `<span class="brand-tag">${p.producator}</span>` : ''}</div>
           <h3><a href="produs.html?id=${p.id}">${p.name}</a></h3>
           <p class="desc">${p.desc}</p>
           <div class="price-row">
