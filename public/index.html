@@ -237,13 +237,12 @@
         track.innerHTML = list.map(b => {
           const hasText = b.title || b.subtitle || (b.ctaLabel && b.ctaHref);
           const align = ['left', 'center', 'right'].includes(b.align) ? b.align : 'left';
-          const height = ['sm', 'md', 'lg'].includes(b.height) ? b.height : 'md';
           const overlay = hasText ? `<div class="hb-overlay hb-a-${align}"><div class="container">
             ${b.title ? `<h1>${escB(b.title)}</h1>` : ''}
             ${b.subtitle ? `<p>${escB(b.subtitle)}</p>` : ''}
             ${b.ctaLabel && b.ctaHref ? `<a class="btn btn-primary btn-lg" href="${escB(b.ctaHref)}">${escB(b.ctaLabel)}</a>` : ''}
           </div></div>` : '';
-          return `<div class="hb-slide hb-h-${height}"><img class="hb-img" src="${escB(b.image)}" alt="${escB(b.title || 'Banner')}">${overlay}</div>`;
+          return `<div class="hb-slide"><img class="hb-img" src="${escB(b.image)}" alt="${escB(b.title || 'Banner')}">${overlay}</div>`;
         }).join('');
         document.getElementById('hero-banners').style.display = 'block';
         document.getElementById('hero-default').style.display = 'none';

@@ -170,7 +170,7 @@
         <div class="field full">
           <label>Imagine banner *</label>
           <input type="file" accept="image/*" id="banner-file" onchange="onBannerFile(this.files[0])">
-          <div class="muted-sm" style="margin-top:6px">Se redimensionează automat la max. 1920px lățime pentru încărcare rapidă.</div>
+          <div class="muted-sm" style="margin-top:6px">Se încadrează automat la formatul 1920×720 px (decupare centrată). Ideal: încarcă o imagine deja 1920×720.</div>
           <div id="banner-preview" style="margin-top:10px"></div>
         </div>
         <div class="field full"><label>Titlu (opțional, apare peste imagine)</label><input name="title" placeholder="ex: Reduceri de sezon la țiglă metalică"></div>
@@ -182,15 +182,9 @@
         <div class="form-row">
           <div class="field"><label>Poziție text</label>
             <select name="align"><option value="left">Stânga</option><option value="center">Centru</option><option value="right">Dreapta</option></select></div>
-          <div class="field"><label>Înălțime banner</label>
-            <select name="height"><option value="sm">Mică</option><option value="md" selected>Medie</option><option value="lg">Mare</option></select></div>
-        </div>
-        <div class="form-row">
           <div class="field"><label>Ordine</label><input name="sort" type="number" value="0"></div>
-          <div class="field" style="display:flex;align-items:flex-end">
-            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:600"><input type="checkbox" name="active" checked> Activ (afișat pe site)</label>
-          </div>
         </div>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:600;margin-top:4px"><input type="checkbox" name="active" checked> Activ (afișat pe site)</label>
         <div style="display:flex;gap:10px;margin-top:14px">
           <button class="btn btn-primary" style="flex:1">Salvează</button>
           <button type="button" class="btn btn-outline" onclick="closeBanner()">Anulează</button>
@@ -316,17 +310,18 @@
       reader.onload = () => {
         const img = new Image();
         img.onload = () => {
-          const maxW = 1920;
-          const scale = Math.min(1, maxW / img.width);
-          const w = Math.round(img.width * scale), h = Math.round(img.height * scale);
+          // Încadrează imaginea exact la formatul 1920×720 (decupare centrată, tip „cover")
+          const TW = 1920, TH = 720;
           const canvas = document.createElement('canvas');
-          canvas.width = w; canvas.height = h;
-          canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+          canvas.width = TW; canvas.height = TH;
+          const scale = Math.max(TW / img.width, TH / img.height);
+          const w = img.width * scale, h = img.height * scale;
+          canvas.getContext('2d').drawImage(img, (TW - w) / 2, (TH - h) / 2, w, h);
           bannerImage = canvas.toDataURL('image/jpeg', 0.82);
           document.getElementById('banner-form').image.value = bannerImage;
           document.getElementById('banner-preview').innerHTML =
-            `<img src="${bannerImage}" style="width:100%;max-height:200px;object-fit:cover;border-radius:8px;border:1px solid var(--line)">
-             <div class="muted-sm" style="margin-top:4px">Dimensiune: ~${Math.round(bannerImage.length / 1024)} KB</div>`;
+            `<img src="${bannerImage}" style="width:100%;aspect-ratio:1920/720;object-fit:cover;border-radius:8px;border:1px solid var(--line)">
+             <div class="muted-sm" style="margin-top:4px">Încadrat la 1920×720 px · ~${Math.round(bannerImage.length / 1024)} KB</div>`;
         };
         img.src = reader.result;
       };
@@ -344,7 +339,6 @@
       f.ctaLabel.value = ed ? ed.ctaLabel : '';
       f.ctaHref.value = ed ? ed.ctaHref : '';
       f.align.value = ed ? (ed.align || 'left') : 'left';
-      f.height.value = ed ? (ed.height || 'md') : 'md';
       f.sort.value = ed ? (ed.sort || 0) : 0;
       f.active.checked = ed ? !!ed.active : true;
       bannerImage = ed ? ed.image : '';
@@ -363,7 +357,7 @@
       const body = {
         image: bannerImage, title: f.title.value.trim(), subtitle: f.subtitle.value.trim(),
         ctaLabel: f.ctaLabel.value.trim(), ctaHref: f.ctaHref.value.trim(),
-        align: f.align.value, height: f.height.value,
+        align: f.align.value, height: 'md',
         sort: Number(f.sort.value) || 0, active: f.active.checked,
       };
       if (f.id.value) body.id = Number(f.id.value);
