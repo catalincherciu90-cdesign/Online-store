@@ -1122,17 +1122,40 @@
 
     // ── Comenzi ──
     let ordersData = [];
+    // Statusuri comandă (id → etichetă + culoare badge)
+    const ORDER_ST = {
+      'nou':        { label: 'Nou',        color: '#0099cc' },
+      'confirmata': { label: 'Confirmată', color: '#b8860b' },
+      'in-livrare': { label: 'În livrare', color: '#7a4bbf' },
+      'livrata':    { label: 'Livrată',    color: '#1a8f4c' },
+      'anulata':    { label: 'Anulată',    color: '#cf3d3d' },
+    };
+    function statusBadge(s) {
+      const st = ORDER_ST[s] || ORDER_ST['nou'];
+      return `<span style="display:inline-block;padding:3px 10px;border-radius:100px;font-size:.74rem;font-weight:700;color:#fff;background:${st.color};white-space:nowrap">${st.label}</span>`;
+    }
+    async function setOrderStatus(id) {
+      const status = document.getElementById('order-status-sel').value;
+      const msg = document.getElementById('order-status-msg');
+      try {
+        await api('/orders/' + id + '/status', { method: 'PUT', body: JSON.stringify({ status }) });
+        const o = ordersData.find(x => x.id === id); if (o) o.status = status;
+        msg.textContent = '✓ Salvat'; msg.style.color = '#1a8f4c';
+        loadOrders();
+      } catch (e) { msg.textContent = 'Eroare: ' + e.message; msg.style.color = '#cf3d3d'; }
+    }
     async function loadOrders() {
       const box = document.getElementById('orders-box');
       try {
         const res = await api('/orders'); ordersData = await res.json();
         if (!ordersData.length) { box.innerHTML = `<div class="a-empty">Nicio comandă încă.</div>`; return; }
-        box.innerHTML = `<table class="a-table"><thead><tr><th>Ref</th><th>Client</th><th>Contact</th><th>Total</th><th>Data</th><th></th></tr></thead><tbody>${
+        box.innerHTML = `<table class="a-table"><thead><tr><th>Ref</th><th>Client</th><th>Contact</th><th>Total</th><th>Status</th><th>Data</th><th></th></tr></thead><tbody>${
           ordersData.map((o, i) => `<tr style="cursor:pointer" onclick="openOrder(${i})">
             <td><b>${esc(o.ref)}</b></td>
             <td>${esc(o.prenume)} ${esc(o.nume)}<br><span class="muted-sm">${esc(o.oras)}</span></td>
             <td>${esc(o.telefon)}<br><span class="muted-sm">${esc(o.email)}</span></td>
             <td><b>${fmt(o.total)}</b></td>
+            <td>${statusBadge(o.status || 'nou')}</td>
             <td class="muted-sm">${esc((o.created_at || '').replace('T', ' ').slice(0, 16))}</td>
             <td><button class="a-btn-sm" onclick="event.stopPropagation();openOrder(${i})">Deschide</button></td></tr>`).join('')
         }</tbody></table>`;
@@ -1147,7 +1170,15 @@
         <td style="text-align:right">${fmt((Number(it.pret) || 0) * (Number(it.cant) || 0))}</td></tr>`).join('');
       document.getElementById('order-view-body').innerHTML = `
         <h3 style="margin-bottom:2px">Comandă ${esc(o.ref)}</h3>
-        <p class="muted-sm" style="margin-bottom:18px">${esc((o.created_at || '').replace('T', ' ').slice(0, 16))} · status: ${esc(o.status || 'nou')}</p>
+        <p class="muted-sm" style="margin-bottom:12px">${esc((o.created_at || '').replace('T', ' ').slice(0, 16))}</p>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:18px;padding:12px;background:var(--bg);border-radius:10px">
+          <span style="font-weight:600">Status:</span>
+          <select id="order-status-sel" style="padding:7px 10px;border:1px solid var(--line-strong);border-radius:8px">
+            ${Object.keys(ORDER_ST).map(k => `<option value="${k}" ${(o.status || 'nou') === k ? 'selected' : ''}>${ORDER_ST[k].label}</option>`).join('')}
+          </select>
+          <button class="btn btn-primary" style="padding:7px 16px" onclick="setOrderStatus(${o.id})">Salvează status</button>
+          <span id="order-status-msg" class="muted-sm"></span>
+        </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px 20px;margin-bottom:20px">
           <div><div class="muted-sm">Client</div><b>${esc(o.prenume)} ${esc(o.nume)}</b></div>
           <div><div class="muted-sm">Telefon</div><b>${esc(o.telefon)}</b></div>

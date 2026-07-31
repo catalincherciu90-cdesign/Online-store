@@ -168,6 +168,15 @@ async function ordersList(request, env) {
   const r = await env.DB.prepare('SELECT * FROM orders ORDER BY id DESC LIMIT 200').all();
   return json((r.results || []).map(o => ({ ...o, items: o.items ? JSON.parse(o.items) : [] })));
 }
+const ORDER_STATUSES = ['nou', 'confirmata', 'in-livrare', 'livrata', 'anulata'];
+async function orderStatusUpdate(request, env, id) {
+  if (!await requireAdmin(request, env)) return json({ error: 'Neautorizat' }, 401);
+  if (!env.DB) return json({ error: 'Baza de date nu este configurată.' }, 500);
+  const { status } = await request.json().catch(() => ({}));
+  if (!ORDER_STATUSES.includes(status)) return json({ error: 'Status invalid.' }, 400);
+  await env.DB.prepare('UPDATE orders SET status=? WHERE id=?').bind(status, id).run();
+  return json({ ok: true, status });
+}
 async function quotesList(request, env) {
   if (!await requireAdmin(request, env)) return json({ error: 'Neautorizat' }, 401);
   if (!env.DB) return json([]);
@@ -496,6 +505,8 @@ async function api(request, env, url) {
   const rv = p.match(/^\/api\/reviews\/(\d+)$/);
   if (rv && m === 'DELETE') return reviewDelete(request, env, Number(rv[1]));
   if (p === '/api/orders' && m === 'GET') return ordersList(request, env);
+  const osm = p.match(/^\/api\/orders\/(\d+)\/status$/);
+  if (osm && (m === 'PUT' || m === 'POST')) return orderStatusUpdate(request, env, Number(osm[1]));
   if (p === '/api/quotes' && m === 'GET') return quotesList(request, env);
   if (p === '/api/order' && m === 'POST') return orderCreate(request, env);
   if (p === '/api/quote' && m === 'POST') return quoteCreate(request, env);
