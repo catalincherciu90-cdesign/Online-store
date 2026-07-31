@@ -171,6 +171,21 @@
         <p class="muted-sm" style="margin-bottom:14px">Adaugă producătorii cu logo. Numele trebuie scris identic cu cel din produse ca logo-ul să apară pe banda de branduri și pe pagini.</p>
         <div id="producers-box"></div>
       </div>
+
+      <div style="background:#fff;border:1px solid var(--line);border-radius:12px;padding:20px;margin-top:20px">
+        <h3 style="font-size:1.05rem;margin-bottom:6px">Administratori</h3>
+        <p class="muted-sm" style="margin-bottom:14px">Adaugă conturi de administrator suplimentare. Contul principal (din configurarea serverului) rămâne mereu activ, nu apare aici și nu poate fi șters — așa nu rămâi niciodată blocat.</p>
+        <div id="admins-box" style="margin-bottom:16px"></div>
+        <form id="admin-form" class="checkout-form" onsubmit="saveAdmin(event)">
+          <div class="form-row">
+            <div class="field"><label>Utilizator *</label><input name="username" required placeholder="ex: maria"></div>
+            <div class="field"><label>Nume (opțional)</label><input name="name" placeholder="Maria Popescu"></div>
+          </div>
+          <div class="field full"><label>Parolă * (min. 6 caractere)</label><input name="password" type="password" minlength="6" required autocomplete="new-password"></div>
+          <div style="margin-top:6px"><button class="btn btn-primary" style="padding:9px 18px">Adaugă / actualizează administrator</button></div>
+          <div class="form-status" id="admin-status"></div>
+        </form>
+      </div>
     </div>
 
     <div id="tab-blog" style="display:none">
@@ -426,6 +441,37 @@
           ? `<img src="${siteLogo}" style="height:56px;background:#0c1a30;padding:8px 12px;border-radius:8px">` : '';
       } catch (e) { /* neconfigurat */ }
       loadProducers();
+      loadAdmins();
+    }
+    // ── Administratori ──
+    async function loadAdmins() {
+      const box = document.getElementById('admins-box');
+      if (!box) return;
+      try {
+        const res = await api('/admins'); const list = await res.json();
+        box.innerHTML = (Array.isArray(list) && list.length)
+          ? `<table class="a-table"><tbody>${list.map(a => `<tr>
+              <td><b>${esc(a.username)}</b>${a.name ? ` <span class="muted-sm">· ${esc(a.name)}</span>` : ''}</td>
+              <td style="text-align:right"><button class="a-btn-sm danger" onclick="delAdmin('${esc(a.username)}')">Șterge</button></td></tr>`).join('')}</tbody></table>`
+          : `<div class="muted-sm">Niciun administrator suplimentar. Contul principal rămâne activ.</div>`;
+      } catch (e) { box.innerHTML = `<div class="muted-sm">Nu am putut încărca lista.</div>`; }
+    }
+    async function saveAdmin(e) {
+      e.preventDefault();
+      const f = e.target;
+      const body = { username: f.username.value.trim(), name: f.name.value.trim(), password: f.password.value };
+      const st = document.getElementById('admin-status');
+      try {
+        const res = await api('/admins', { method: 'POST', body: JSON.stringify(body) });
+        const d = await res.json();
+        if (d.ok) { f.reset(); st.className = 'form-status'; st.style.color = '#1a8f4c'; st.textContent = '✓ Salvat.'; loadAdmins(); }
+        else { st.className = 'form-status err'; st.style.color = ''; st.textContent = d.error || 'Eroare.'; }
+      } catch (err) { st.className = 'form-status err'; st.style.color = ''; st.textContent = err.message; }
+    }
+    async function delAdmin(u) {
+      if (!confirm('Ștergi administratorul „' + u + '"?')) return;
+      try { await api('/admins/' + encodeURIComponent(u), { method: 'DELETE' }); loadAdmins(); }
+      catch (e) { alert('Eroare: ' + e.message); }
     }
     function onLogoFile(file) {
       if (!file) return;

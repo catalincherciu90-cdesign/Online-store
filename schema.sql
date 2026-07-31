@@ -54,6 +54,15 @@ CREATE TABLE IF NOT EXISTS posts (
   created_at TEXT DEFAULT (datetime('now'))
 );
 
+-- Administratori suplimentari (parole hash-uite PBKDF2). Contul principal e din env.
+CREATE TABLE IF NOT EXISTS admins (
+  username   TEXT PRIMARY KEY,
+  pass_hash  TEXT NOT NULL,
+  pass_salt  TEXT NOT NULL,
+  name       TEXT,
+  created_at TEXT DEFAULT (datetime('now'))
+);
+
 -- Setări site (logo magazin + date de contact) — cheie/valoare
 CREATE TABLE IF NOT EXISTS settings (
   key   TEXT PRIMARY KEY,

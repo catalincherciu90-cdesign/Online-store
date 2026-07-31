@@ -44,6 +44,15 @@ function safeEqual(a, b) {
   for (let i = 0; i < a.length; i++) r |= a.charCodeAt(i) ^ b.charCodeAt(i);
   return r === 0;
 }
+// Hashing parolă (PBKDF2-SHA256, salt aleator) pentru adminii din baza de date
+const toHex = b => [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, '0')).join('');
+const fromHex = h => new Uint8Array((h.match(/.{1,2}/g) || []).map(x => parseInt(x, 16)));
+async function hashPassword(password, saltHex) {
+  const salt = saltHex ? fromHex(saltHex) : crypto.getRandomValues(new Uint8Array(16));
+  const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveBits']);
+  const bits = await crypto.subtle.deriveBits({ name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' }, key, 256);
+  return { hash: toHex(bits), salt: toHex(salt) };
+}
 async function requireAdmin(request, env) {
   if (!env.JWT_SECRET) return null; // fail-closed: fără secret, niciun token nu e valid
   const token = (request.headers.get('Authorization') || '').replace(/^Bearer\s+/, '');
@@ -67,6 +76,7 @@ async function ensureSchema(env) {
         `CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT)`,
         `CREATE TABLE IF NOT EXISTS producers (id TEXT PRIMARY KEY, name TEXT NOT NULL, logo TEXT, sort INTEGER DEFAULT 0)`,
         `CREATE TABLE IF NOT EXISTS posts (id INTEGER PRIMARY KEY AUTOINCREMENT, slug TEXT UNIQUE, title TEXT NOT NULL, excerpt TEXT, content TEXT, image TEXT, active INTEGER NOT NULL DEFAULT 1, created_at TEXT DEFAULT (datetime('now')))`,
+        `CREATE TABLE IF NOT EXISTS admins (username TEXT PRIMARY KEY, pass_hash TEXT NOT NULL, pass_salt TEXT NOT NULL, name TEXT, created_at TEXT DEFAULT (datetime('now')))`,
       ];
       for (const s of stmts) { try { await env.DB.prepare(s).run(); } catch (e) { console.error('ensureSchema', e); } }
       // Coloane adăugate ulterior pe produse (ALTER nu e idempotent → ignoră „duplicate column").
@@ -109,15 +119,56 @@ async function upsertProduct(env, p) {
 
 /* ── Handlere API ──────────────────────────────────────────────────────── */
 async function login(request, env) {
-  // Fail-closed: fără secretele configurate, nu emitem niciodată un token.
-  if (!env.JWT_SECRET || !env.ADMIN_PASSWORD) return json({ ok: false, error: 'Autentificare neconfigurată pe server (lipsește JWT_SECRET / ADMIN_PASSWORD).' }, 500);
+  if (!env.JWT_SECRET) return json({ ok: false, error: 'Autentificare neconfigurată pe server (lipsește JWT_SECRET).' }, 500);
   const { user, password } = await request.json().catch(() => ({}));
+  if (!user || !password) return json({ ok: false, error: 'Credențiale invalide.' }, 401);
+  // 1) Contul principal (din configurarea serverului) — nu poate fi șters
   const U = env.ADMIN_USER || 'admin';
-  if (user === U && password && safeEqual(password, env.ADMIN_PASSWORD)) {
-    const token = await signJWT({ admin: true, user: U }, env.JWT_SECRET);
-    return json({ ok: true, token });
+  if (env.ADMIN_PASSWORD && user === U && safeEqual(password, env.ADMIN_PASSWORD)) {
+    return json({ ok: true, token: await signJWT({ admin: true, user: U }, env.JWT_SECRET) });
+  }
+  // 2) Administratori suplimentari (din baza de date, parole hash-uite)
+  if (env.DB) {
+    const row = await env.DB.prepare('SELECT * FROM admins WHERE username=?').bind((user || '').toLowerCase()).first();
+    if (row) {
+      const { hash } = await hashPassword(password, row.pass_salt);
+      if (safeEqual(hash, row.pass_hash)) {
+        return json({ ok: true, token: await signJWT({ admin: true, user: row.username }, env.JWT_SECRET) });
+      }
+    }
   }
   return json({ ok: false, error: 'Credențiale invalide.' }, 401);
+}
+async function adminsList(request, env) {
+  if (!await requireAdmin(request, env)) return json({ error: 'Neautorizat' }, 401);
+  if (!env.DB) return json([]);
+  const r = await env.DB.prepare('SELECT username, name, created_at FROM admins ORDER BY username').all();
+  return json(r.results || []);
+}
+async function adminUpsert(request, env) {
+  if (!await requireAdmin(request, env)) return json({ error: 'Neautorizat' }, 401);
+  if (!env.DB) return json({ error: 'Baza de date nu este configurată.' }, 500);
+  const v = await request.json().catch(() => null);
+  const username = ((v && v.username) || '').trim().toLowerCase();
+  if (!username || !/^[a-z0-9._-]{3,32}$/.test(username)) return json({ error: 'Utilizator invalid (3-32 caractere: litere, cifre, . _ -).' }, 400);
+  if (username === (env.ADMIN_USER || 'admin').toLowerCase()) return json({ error: 'Acest nume e rezervat contului principal.' }, 400);
+  const existing = await env.DB.prepare('SELECT username FROM admins WHERE username=?').bind(username).first();
+  if (v.password) {
+    if (String(v.password).length < 6) return json({ error: 'Parola trebuie să aibă minim 6 caractere.' }, 400);
+    const { hash, salt } = await hashPassword(v.password);
+    await env.DB.prepare('INSERT OR REPLACE INTO admins (username, pass_hash, pass_salt, name) VALUES (?,?,?,?)').bind(username, hash, salt, v.name || '').run();
+  } else if (existing) {
+    await env.DB.prepare('UPDATE admins SET name=? WHERE username=?').bind(v.name || '', username).run();
+  } else {
+    return json({ error: 'Parola e obligatorie pentru un administrator nou.' }, 400);
+  }
+  return json({ ok: true, username });
+}
+async function adminDelete(request, env, username) {
+  if (!await requireAdmin(request, env)) return json({ error: 'Neautorizat' }, 401);
+  if (!env.DB) return json({ error: 'Baza de date nu este configurată.' }, 500);
+  await env.DB.prepare('DELETE FROM admins WHERE username=?').bind((username || '').toLowerCase()).run();
+  return json({ ok: true });
 }
 
 async function productsList(env) {
@@ -563,6 +614,10 @@ async function api(request, env, url) {
   if (p === '/api/options/seed' && m === 'POST') return optionsSeed(request, env);
   const ov = p.match(/^\/api\/options\/([^/]+)\/(.+)$/);
   if (ov && m === 'DELETE') return optionDelete(request, env, decodeURIComponent(ov[1]), decodeURIComponent(ov[2]));
+  if (p === '/api/admins' && m === 'GET') return adminsList(request, env);
+  if (p === '/api/admins' && m === 'POST') return adminUpsert(request, env);
+  const adm = p.match(/^\/api\/admins\/(.+)$/);
+  if (adm && m === 'DELETE') return adminDelete(request, env, decodeURIComponent(adm[1]));
   if (p === '/api/posts' && m === 'GET') return postsList(request, env, url);
   if (p === '/api/posts' && m === 'POST') return postUpsert(request, env);
   const pm = p.match(/^\/api\/posts\/(.+)$/);
