@@ -36,10 +36,19 @@ async function verifyJWT(token, secret) {
   if (p.exp && p.exp < Date.now() / 1000) throw new Error('token expirat');
   return p;
 }
+// Comparație în timp constant (evită timing attacks pe parolă)
+function safeEqual(a, b) {
+  a = String(a); b = String(b);
+  if (a.length !== b.length) return false;
+  let r = 0;
+  for (let i = 0; i < a.length; i++) r |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return r === 0;
+}
 async function requireAdmin(request, env) {
+  if (!env.JWT_SECRET) return null; // fail-closed: fără secret, niciun token nu e valid
   const token = (request.headers.get('Authorization') || '').replace(/^Bearer\s+/, '');
   if (!token) return null;
-  try { const p = await verifyJWT(token, env.JWT_SECRET || 'dev-secret-change-me'); return p && p.admin ? p : null; }
+  try { const p = await verifyJWT(token, env.JWT_SECRET); return p && p.admin ? p : null; }
   catch { return null; }
 }
 
@@ -98,10 +107,12 @@ async function upsertProduct(env, p) {
 
 /* ── Handlere API ──────────────────────────────────────────────────────── */
 async function login(request, env) {
+  // Fail-closed: fără secretele configurate, nu emitem niciodată un token.
+  if (!env.JWT_SECRET || !env.ADMIN_PASSWORD) return json({ ok: false, error: 'Autentificare neconfigurată pe server (lipsește JWT_SECRET / ADMIN_PASSWORD).' }, 500);
   const { user, password } = await request.json().catch(() => ({}));
   const U = env.ADMIN_USER || 'admin';
-  if (user === U && password && env.ADMIN_PASSWORD && password === env.ADMIN_PASSWORD) {
-    const token = await signJWT({ admin: true, user: U }, env.JWT_SECRET || 'dev-secret-change-me');
+  if (user === U && password && safeEqual(password, env.ADMIN_PASSWORD)) {
+    const token = await signJWT({ admin: true, user: U }, env.JWT_SECRET);
     return json({ ok: true, token });
   }
   return json({ ok: false, error: 'Credențiale invalide.' }, 401);
