@@ -104,6 +104,19 @@ document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('.js-year').forEach(el => el.textContent = new Date().getFullYear());
 });
 
+/* Comută câmpurile de firmă (persoană juridică) în formularele de comandă/ofertă */
+function toggleCompany(form) {
+  if (!form) return;
+  const sel = form.querySelector('input[name="tip_client"]:checked');
+  const isJur = sel && sel.value === 'juridica';
+  const box = form.querySelector('.company-fields');
+  if (!box) return;
+  box.hidden = !isJur;
+  const firma = box.querySelector('[name="firma"]'), cui = box.querySelector('[name="cui"]');
+  if (firma) firma.required = isJur;
+  if (cui) cui.required = isJur;
+}
+
 /* Toast reutilizabil */
 let toastTimer;
 function showToast(message) {

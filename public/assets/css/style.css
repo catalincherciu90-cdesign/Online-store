@@ -347,6 +347,12 @@ h2 { font-size: clamp(1.6rem, 3vw, 2.35rem); letter-spacing: -0.028em; }
   background: var(--bg-alt); border: 1px solid var(--line); border-radius: var(--radius);
   padding: 22px; position: sticky; top: 94px; box-shadow: var(--shadow-sm);
 }
+.ctype-toggle { display: flex; gap: 10px; flex-wrap: wrap; }
+.ctype-toggle label { display: inline-flex; align-items: center; gap: 8px; padding: 10px 14px; border: 1px solid var(--line-strong); border-radius: var(--radius-sm); cursor: pointer; font-weight: 500; flex: 1; min-width: 140px; }
+.ctype-toggle label:has(input:checked) { border-color: var(--terra-700); background: var(--accent-soft); color: var(--navy); font-weight: 600; }
+.ctype-toggle input { accent-color: var(--terra-700); }
+.company-fields { margin-top: 4px; }
+
 .filters-toggle { display: none; align-items: center; gap: 8px; padding: 11px 16px; border: 1px solid var(--line-strong); background: #fff; border-radius: var(--radius-sm); font-weight: 700; color: var(--navy); cursor: pointer; }
 .filters-toggle svg { width: 18px; height: 18px; }
 .filters h4 { font-size: .8rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin-bottom: 14px; }

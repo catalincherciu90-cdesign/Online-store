@@ -1466,6 +1466,9 @@
           <div><div class="muted-sm">Telefon</div><b>${esc(o.telefon)}</b></div>
           <div><div class="muted-sm">Email</div>${esc(o.email)}</div>
           <div><div class="muted-sm">Adresă</div>${esc(o.adresa)}, ${esc(o.oras)}, ${esc(o.judet)}</div>
+          <div style="grid-column:1/-1"><div class="muted-sm">Tip client</div>${o.tip_client === 'juridica'
+            ? `<b>Persoană juridică</b> — ${esc(o.firma || '')} · CUI ${esc(o.cui || '')}${o.reg_com ? ` · Reg. Com. ${esc(o.reg_com)}` : ''}`
+            : 'Persoană fizică'}</div>
           ${o.obs ? `<div style="grid-column:1/-1"><div class="muted-sm">Observații</div>${esc(o.obs)}</div>` : ''}
         </div>
         <table class="a-table"><thead><tr><th>Produs</th><th style="text-align:center">Cant.</th><th style="text-align:right">Preț</th><th style="text-align:right">Total</th></tr></thead><tbody>${items}</tbody></table>

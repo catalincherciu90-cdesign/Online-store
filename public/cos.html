@@ -180,6 +180,20 @@
             <h3 style="margin-bottom:4px">Date de livrare</h3>
             <p class="muted" style="margin-bottom:22px">Completează datele pentru livrare. Plata se face ramburs.</p>
             <form class="checkout-form" id="checkout-form" onsubmit="placeOrder(event)">
+              <div class="field full">
+                <label>Tip client</label>
+                <div class="ctype-toggle">
+                  <label><input type="radio" name="tip_client" value="fizica" checked onchange="toggleCompany(this.form)"> Persoană fizică</label>
+                  <label><input type="radio" name="tip_client" value="juridica" onchange="toggleCompany(this.form)"> Persoană juridică</label>
+                </div>
+              </div>
+              <div class="company-fields" hidden>
+                <div class="field full"><label>Denumire firmă *</label><input name="firma" placeholder="SC Exemplu SRL"></div>
+                <div class="form-row">
+                  <div class="field"><label>CUI *</label><input name="cui" placeholder="RO12345678"></div>
+                  <div class="field"><label>Nr. Reg. Com.</label><input name="reg_com" placeholder="J40/1234/2020"></div>
+                </div>
+              </div>
               <div class="form-row">
                 <div class="field"><label>Nume *</label><input name="nume" required></div>
                 <div class="field"><label>Prenume *</label><input name="prenume" required></div>

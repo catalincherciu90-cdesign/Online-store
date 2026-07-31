@@ -87,6 +87,10 @@ async function ensureSchema(env) {
         try { await env.DB.prepare(`ALTER TABLE banners ADD COLUMN ${col}`).run(); } catch (e) { /* există deja */ }
       }
       try { await env.DB.prepare('ALTER TABLE orders ADD COLUMN status_log TEXT').run(); } catch (e) { /* există deja */ }
+      for (const col of ['tip_client TEXT', 'firma TEXT', 'cui TEXT', 'reg_com TEXT']) {
+        try { await env.DB.prepare(`ALTER TABLE orders ADD COLUMN ${col}`).run(); } catch (e) { /* există deja */ }
+        try { await env.DB.prepare(`ALTER TABLE quotes ADD COLUMN ${col}`).run(); } catch (e) { /* există deja */ }
+      }
     })();
   }
   return SCHEMA_READY;
@@ -515,6 +519,12 @@ async function orderCreate(request, env) {
   // Validare de lungime pe câmpuri
   nume = clip(nume, 120); prenume = clip(prenume, 120); telefon = clip(telefon, 40);
   email = clip(email, 160); adresa = clip(adresa, 300); oras = clip(oras, 120); judet = clip(judet, 120); obs = clip(obs, 2000);
+  // Tip client (persoană fizică / juridică) + date firmă
+  const tipClient = body.tip_client === 'juridica' ? 'juridica' : 'fizica';
+  const firma = tipClient === 'juridica' ? clip(body.firma, 160) : '';
+  const cui = tipClient === 'juridica' ? clip(body.cui, 40) : '';
+  const regCom = tipClient === 'juridica' ? clip(body.reg_com, 60) : '';
+  if (tipClient === 'juridica' && (!firma || !cui)) return json({ ok: false, error: 'Pentru persoană juridică, denumirea firmei și CUI-ul sunt obligatorii.' }, 400);
 
   // Recalcul preț SERVER-SIDE: prețul din client e ignorat, folosim prețurile reale din DB.
   const priced = []; let subtotal = 0;
@@ -536,8 +546,8 @@ async function orderCreate(request, env) {
   let saved = false;
   if (env.DB) {
     try {
-      await env.DB.prepare(`INSERT INTO orders (ref,nume,prenume,telefon,email,adresa,oras,judet,obs,items,total) VALUES (?,?,?,?,?,?,?,?,?,?,?)`)
-        .bind(ref, nume, prenume || '', telefon, email || '', adresa, oras || '', judet || '', obs || '', JSON.stringify(priced), total).run();
+      await env.DB.prepare(`INSERT INTO orders (ref,nume,prenume,telefon,email,adresa,oras,judet,obs,items,total,tip_client,firma,cui,reg_com) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`)
+        .bind(ref, nume, prenume || '', telefon, email || '', adresa, oras || '', judet || '', obs || '', JSON.stringify(priced), total, tipClient, firma, cui, regCom).run();
       saved = true;
     } catch (e) { console.error('DB order', e); }
   }
@@ -545,7 +555,7 @@ async function orderCreate(request, env) {
   const to = env.ORDER_TO_EMAIL || env.QUOTE_TO_EMAIL;
   let mail = { delivered: false };
   if (to) mail = await sendEmail(env, { to: [to], reply_to: email || undefined, subject: `Comandă ${ref} — ${prenume || ''} ${nume}`,
-    html: `<h2>Comandă ${esc(ref)}</h2><p>${esc(prenume)} ${esc(nume)} · ${esc(telefon)} · ${esc(email)}<br>${esc(adresa)}, ${esc(oras)}, ${esc(judet)}</p><table border="1" cellpadding="6" style="border-collapse:collapse">${rows}</table><p>Subtotal: ${fmtLei(subtotal)} · Livrare: ${delivery ? fmtLei(delivery) : 'gratuită'}<br><b>Total: ${fmtLei(total)}</b> (ramburs)</p>` });
+    html: `<h2>Comandă ${esc(ref)}</h2><p>${esc(prenume)} ${esc(nume)} · ${esc(telefon)} · ${esc(email)}<br>${esc(adresa)}, ${esc(oras)}, ${esc(judet)}</p>${tipClient === 'juridica' ? `<p><b>Persoană juridică:</b> ${esc(firma)} · CUI ${esc(cui)}${regCom ? ` · Reg. Com. ${esc(regCom)}` : ''}</p>` : '<p>Persoană fizică</p>'}<table border="1" cellpadding="6" style="border-collapse:collapse">${rows}</table><p>Subtotal: ${fmtLei(subtotal)} · Livrare: ${delivery ? fmtLei(delivery) : 'gratuită'}<br><b>Total: ${fmtLei(total)}</b> (ramburs)</p>` });
   // Fail loud: nu confirma o comandă care nu s-a înregistrat nicăieri.
   if (env.DB && !saved) return json({ ok: false, error: 'Nu am putut înregistra comanda. Te rugăm sună-ne pentru confirmare.' }, 500);
   if (!env.DB && !mail.delivered) return json({ ok: false, error: 'Comanda nu a putut fi înregistrată. Te rugăm contactează-ne telefonic.' }, 500);
@@ -569,6 +579,11 @@ async function quoteCreate(request, env) {
   const nume = g('nume', 120), telefon = g('telefon', 40), email = g('email', 160),
     tip = g('tip', 80), suprafata = g('suprafata', 40), mesaj = g('mesaj', 3000);
   if (!nume || !telefon || !email || !mesaj) return json({ ok: false, error: 'Completează câmpurile obligatorii.' }, 400);
+  const tipClient = form.get('tip_client') === 'juridica' ? 'juridica' : 'fizica';
+  const firma = tipClient === 'juridica' ? g('firma', 160) : '';
+  const cui = tipClient === 'juridica' ? g('cui', 40) : '';
+  const regCom = tipClient === 'juridica' ? g('reg_com', 60) : '';
+  if (tipClient === 'juridica' && (!firma || !cui)) return json({ ok: false, error: 'Pentru persoană juridică, denumirea firmei și CUI-ul sunt obligatorii.' }, 400);
   const file = form.get('plan');
   let attachment = null, planInfo = 'Fără plan atașat.';
   if (file && typeof file === 'object' && file.size > 0) {
@@ -583,8 +598,8 @@ async function quoteCreate(request, env) {
   let saved = false;
   if (env.DB) {
     try {
-      await env.DB.prepare(`INSERT INTO quotes (ref,nume,telefon,email,tip,suprafata,mesaj,plan) VALUES (?,?,?,?,?,?,?,?)`)
-        .bind(ref, nume, telefon, email, tip, suprafata, mesaj, planInfo).run();
+      await env.DB.prepare(`INSERT INTO quotes (ref,nume,telefon,email,tip,suprafata,mesaj,plan,tip_client,firma,cui,reg_com) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`)
+        .bind(ref, nume, telefon, email, tip, suprafata, mesaj, planInfo, tipClient, firma, cui, regCom).run();
       saved = true;
     } catch (e) { console.error('DB quote', e); }
   }
@@ -592,7 +607,7 @@ async function quoteCreate(request, env) {
   let mail = { delivered: false };
   if (to) {
     const payload = { to: [to], reply_to: email, subject: `Cerere ofertă ${ref} — ${nume}`,
-      html: `<h2>Cerere ofertă ${esc(ref)}</h2><p>${esc(nume)} · ${esc(telefon)} · ${esc(email)}</p><p>Tip: ${esc(tip)} · ${esc(suprafata)} mp · Plan: ${esc(planInfo)}</p><p>${esc(mesaj)}</p>` };
+      html: `<h2>Cerere ofertă ${esc(ref)}</h2><p>${esc(nume)} · ${esc(telefon)} · ${esc(email)}</p>${tipClient === 'juridica' ? `<p><b>Persoană juridică:</b> ${esc(firma)} · CUI ${esc(cui)}${regCom ? ` · Reg. Com. ${esc(regCom)}` : ''}</p>` : '<p>Persoană fizică</p>'}<p>Tip: ${esc(tip)} · ${esc(suprafata)} mp · Plan: ${esc(planInfo)}</p><p>${esc(mesaj)}</p>` };
     if (attachment) payload.attachments = [attachment];
     mail = await sendEmail(env, payload);
   }

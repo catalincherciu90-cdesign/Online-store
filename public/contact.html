@@ -66,6 +66,20 @@
       <div class="contact-form">
         <h3 style="margin-bottom:18px">Cere o ofertă</h3>
         <form class="checkout-form" id="contact-form" onsubmit="sendContact(event)">
+          <div class="field full">
+            <label>Tip client</label>
+            <div class="ctype-toggle">
+              <label><input type="radio" name="tip_client" value="fizica" checked onchange="toggleCompany(this.form)"> Persoană fizică</label>
+              <label><input type="radio" name="tip_client" value="juridica" onchange="toggleCompany(this.form)"> Persoană juridică</label>
+            </div>
+          </div>
+          <div class="company-fields" hidden>
+            <div class="field full"><label>Denumire firmă *</label><input name="firma" placeholder="SC Exemplu SRL"></div>
+            <div class="form-row">
+              <div class="field"><label>CUI *</label><input name="cui" placeholder="RO12345678"></div>
+              <div class="field"><label>Nr. Reg. Com.</label><input name="reg_com" placeholder="J40/1234/2020"></div>
+            </div>
+          </div>
           <div class="form-row">
             <div class="field"><label>Nume complet *</label><input name="nume" required></div>
             <div class="field"><label>Telefon *</label><input name="telefon" type="tel" required></div>
