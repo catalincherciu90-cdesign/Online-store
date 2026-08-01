@@ -57,12 +57,10 @@ function injectAnpc() {
   wrap.className = 'footer-anpc';
   wrap.innerHTML = `
     <a href="https://anpc.ro/ce-este-sal/" target="_blank" rel="noopener" aria-label="ANPC – Soluționarea Alternativă a Litigiilor">
-      <img src="https://anpc.ro/wp-content/uploads/2022/07/SAL.png" alt="ANPC – SAL" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex'">
-      <span class="anpc-fallback" style="display:none">ANPC · SAL</span>
+      <img src="assets/img/anpc-sal.svg" alt="ANPC – Soluționarea Alternativă a Litigiilor" width="244" height="60" loading="lazy">
     </a>
     <a href="https://ec.europa.eu/consumers/odr" target="_blank" rel="noopener" aria-label="Soluționarea Online a Litigiilor (SOL)">
-      <img src="https://anpc.ro/wp-content/uploads/2022/07/SOL.png" alt="ANPC – SOL" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex'">
-      <span class="anpc-fallback" style="display:none">ANPC · SOL</span>
+      <img src="assets/img/anpc-sol.svg" alt="SOL – Soluționarea Online a Litigiilor" width="244" height="60" loading="lazy">
     </a>`;
   bottom.insertBefore(wrap, bottom.firstChild);
 }
