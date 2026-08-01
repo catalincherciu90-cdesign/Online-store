@@ -15,9 +15,19 @@ function injectTopbar() {
       <span class="tb-hide"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 5L2 7"/></svg><span data-site="email">oferte@acoperispro.ro</span></span>
       <span class="tb-hide"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg><span data-site="schedule">Luni–Vineri 08:00–18:00</span></span>
     </div>
-    <div class="topbar-right"><a href="contact.html">Cerere ofertă rapidă →</a></div>
   </div>`;
   header.parentNode.insertBefore(bar, header);
+}
+
+/* CTA „Cerere ofertă rapidă" mutat direct în antet (bara de navigare) */
+function injectHeaderCta() {
+  const actions = document.querySelector('.site-header .header-actions');
+  if (!actions || actions.querySelector('.header-cta')) return;
+  const a = document.createElement('a');
+  a.className = 'btn btn-primary header-cta';
+  a.href = 'contact.html';
+  a.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span class="cta-label">Cerere ofertă rapidă</span>';
+  actions.insertBefore(a, actions.firstChild);
 }
 
 /* Umbră pe header la scroll (aspect mai curat) */
@@ -135,6 +145,7 @@ function skeletonCards(n) {
 /* Meniu mobil */
 document.addEventListener('DOMContentLoaded', () => {
   injectTopbar();
+  injectHeaderCta();
   loadSiteSettings();
   headerScrollShadow();
   initReveal();

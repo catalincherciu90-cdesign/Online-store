@@ -171,6 +171,8 @@ h2 { font-size: clamp(1.6rem, 3vw, 2.35rem); letter-spacing: -0.028em; }
   font-size: .74rem; font-weight: 700; display: flex; align-items: center;
   justify-content: center; border: 2px solid #fff;
 }
+.header-cta { padding: 10px 18px; font-size: .93rem; gap: 8px; white-space: nowrap; }
+.header-cta svg { width: 17px; height: 17px; }
 .menu-toggle { display: none; background: none; border: 0; cursor: pointer; color: var(--navy); }
 .menu-toggle svg { width: 28px; height: 28px; }
 
@@ -754,10 +756,20 @@ h2 { font-size: clamp(1.6rem, 3vw, 2.35rem); letter-spacing: -0.028em; }
   /* Coș mai compact (fără total, ca să încapă în antet) */
   .cart-total { display: none !important; }
   .cart-btn { padding: 10px 14px; }
+  /* CTA compact (doar iconiță) pe telefon, ca să încapă în antet */
+  .header-cta { padding: 10px 13px; }
+  .header-cta .cta-label { display: none; }
 }
 @media (max-width: 540px) {
   .cat-grid, .product-grid, .feature-grid, .footer-grid { grid-template-columns: 1fr; }
   .form-row { grid-template-columns: 1fr; }
+  /* Antet compact: coș doar cu iconiță, ca să încapă CTA + coș + meniu */
+  .cart-btn span:not(.cart-count) { display: none; }
+  .cart-btn { padding: 10px 12px; }
+  .header-inner { gap: 10px; }
+  .header-actions { gap: 8px; }
+  .logo { font-size: 1.12rem; }
+  .header-cta { padding: 10px 12px; }
   .cart-item { grid-template-columns: 70px 1fr; }
   .cart-item .ci-controls { grid-column: 1 / -1; justify-content: space-between; }
   .hero-stats { gap: 22px; }
