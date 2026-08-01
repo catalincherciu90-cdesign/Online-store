@@ -271,6 +271,7 @@
         <button data-tab="faq" onclick="showTab('faq')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12" y2="17"/></svg>FAQ</button>
         <div class="nav-cap">Sistem</div>
         <button data-tab="integrari" onclick="showTab('integrari')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/></svg>Integrări</button>
+        <button data-tab="utilizatori" onclick="showTab('utilizatori')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Utilizatori</button>
         <button data-tab="setari" onclick="showTab('setari')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.6 1.6 0 0 0-1-1.5 1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.6 1.6 0 0 0 1.5-1 1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H9a1.6 1.6 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a1.6 1.6 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1Z"/></svg>Setări</button>
       </nav>
       <div class="side-user" id="whoami" style="display:none">
@@ -450,10 +451,12 @@
         <p class="muted-sm" style="margin-bottom:14px">Adaugă producătorii cu logo. Numele trebuie scris identic cu cel din produse ca logo-ul să apară pe banda de branduri și pe pagini.</p>
         <div id="producers-box"></div>
       </div>
+    </div>
 
-      <div style="background:var(--em-card);border:1px solid var(--em-border);border-radius:12px;padding:20px;margin-top:20px">
-        <h3 style="font-size:1.05rem;margin-bottom:6px">Administratori</h3>
-        <p class="muted-sm" style="margin-bottom:14px">Adaugă conturi de administrator suplimentare. Contul principal (din configurarea serverului) rămâne mereu activ, nu apare aici și nu poate fi șters — așa nu rămâi niciodată blocat.</p>
+    <div id="tab-utilizatori" style="display:none">
+      <h2 style="font-size:1.3rem;margin-bottom:16px">Utilizatori (administratori)</h2>
+      <div style="background:var(--em-card);border:1px solid var(--em-border);border-radius:12px;padding:20px;max-width:820px">
+        <p class="muted-sm" style="margin-bottom:14px">Adaugă conturi de administrator suplimentare, ca să poată intra și alți colegi în panou. Contul principal (din configurarea serverului) rămâne mereu activ, nu apare aici și nu poate fi șters — așa nu rămâi niciodată blocat.</p>
         <div id="admins-box" style="margin-bottom:16px"></div>
         <form id="admin-form" class="checkout-form" onsubmit="saveAdmin(event)">
           <div class="form-row">
@@ -785,6 +788,7 @@
       comenzi: 'Toate comenzile primite. Apasă pe o comandă ca să-i vezi detaliile și să-i schimbi statusul (nou → confirmată → în livrare → livrată). Filtrează după status cu butoanele de sus.',
       cereri: 'Cererile de ofertă trimise din site. Contactează clientul folosind datele afișate și trimite-i oferta pe telefon sau email.',
       setari: 'Setează logo-ul, datele de contact, datele firmei (pentru subsol), linkurile de social media, producătorii și administratorii. Apasă <b>„Salvează setările"</b> după modificări.',
+      utilizatori: 'Creează conturi de administrator pentru colegi: pune un utilizator și o parolă (min. 6 caractere) și apasă „Adaugă". Poți șterge oricând un cont. Contul principal rămâne mereu activ.',
       integrari: 'Lipește aici codurile de la Google (Analytics, Tag Manager, Search Console) și Meta (Pixel), plus orice alt cod în &lt;head&gt; sau &lt;body&gt;. Se aplică automat pe toate paginile site-ului (în ~1 minut după salvare). Pentru Google/Meta e suficient să pui ID-ul; restul îl generăm noi.',
     };
     function injectHelp() {
@@ -819,7 +823,7 @@
     }
 
     function showTab(t) {
-      ['dashboard', 'produse', 'proprietati', 'bannere', 'recenzii', 'blog', 'meniu', 'social', 'comenzi', 'cereri', 'despre', 'howto', 'livrare', 'termeni', 'privacy', 'cookies', 'faq', 'integrari', 'setari'].forEach(x => {
+      ['dashboard', 'produse', 'proprietati', 'bannere', 'recenzii', 'blog', 'meniu', 'social', 'comenzi', 'cereri', 'despre', 'howto', 'livrare', 'termeni', 'privacy', 'cookies', 'faq', 'integrari', 'utilizatori', 'setari'].forEach(x => {
         document.getElementById('tab-' + x).style.display = x === t ? 'block' : 'none';
         document.querySelector(`.side-nav [data-tab="${x}"]`).classList.toggle('active', x === t);
       });
