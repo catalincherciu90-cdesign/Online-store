@@ -173,6 +173,32 @@ h2 { font-size: clamp(1.6rem, 3vw, 2.35rem); letter-spacing: -0.028em; }
 }
 .header-cta { padding: 10px 18px; font-size: .93rem; gap: 8px; white-space: nowrap; }
 .header-cta svg { width: 17px; height: 17px; }
+/* Buton căutare în antet */
+.search-btn { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: var(--radius-sm); border: 1px solid var(--line-strong); background: #fff; color: var(--navy); cursor: pointer; transition: border-color .15s, color .15s; }
+.search-btn:hover { border-color: var(--terra); color: var(--terra); }
+.search-btn svg { width: 20px; height: 20px; }
+/* Overlay căutare produse */
+.search-overlay { position: fixed; inset: 0; z-index: 200; background: rgba(11,22,38,.5); backdrop-filter: blur(3px); display: none; padding: 78px 16px 16px; }
+.search-overlay.open { display: block; }
+.search-panel { max-width: 640px; margin: 0 auto; background: #fff; border-radius: var(--radius); box-shadow: var(--shadow-lg); overflow: hidden; }
+.search-bar { display: flex; align-items: center; gap: 12px; padding: 15px 18px; border-bottom: 1px solid var(--line); }
+.search-bar svg { width: 20px; height: 20px; color: var(--muted); flex-shrink: 0; }
+.search-bar input { flex: 1; border: 0; outline: 0; background: none; font-family: inherit; font-size: 1.05rem; color: var(--text); min-width: 0; }
+.search-bar input::-webkit-search-cancel-button, .catalog-search input::-webkit-search-cancel-button { -webkit-appearance: none; appearance: none; }
+.search-close { border: 0; background: none; font-size: 1.7rem; line-height: 1; color: var(--muted); cursor: pointer; padding: 0 4px; }
+.search-close:hover { color: var(--navy); }
+.search-results { max-height: 62vh; overflow-y: auto; }
+.search-hint { padding: 26px 20px; color: var(--muted); text-align: center; }
+.search-hint a { color: var(--terra-dark); font-weight: 600; }
+.search-item { display: flex; align-items: center; gap: 14px; padding: 13px 18px; border-bottom: 1px solid var(--line); }
+.search-item:last-of-type { border-bottom: 0; }
+.search-item:hover { background: var(--bg); }
+.si-info { flex: 1; min-width: 0; }
+.si-name { font-weight: 600; color: var(--navy); }
+.si-cat { font-size: .82rem; color: var(--muted); margin-top: 2px; }
+.si-price { font-weight: 700; color: var(--terra-dark); white-space: nowrap; }
+.search-all { display: block; padding: 14px 18px; text-align: center; font-weight: 600; color: var(--terra-dark); background: var(--bg); border-top: 1px solid var(--line); }
+.search-all:hover { background: var(--accent-soft); }
 .menu-toggle { display: none; background: none; border: 0; cursor: pointer; color: var(--navy); }
 .menu-toggle svg { width: 28px; height: 28px; }
 
@@ -366,7 +392,11 @@ h2 { font-size: clamp(1.6rem, 3vw, 2.35rem); letter-spacing: -0.028em; }
 .filter-opt:has(input:checked) { color: var(--terra-700); font-weight: 600; }
 
 .products-toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 22px; gap: 16px; flex-wrap: wrap; }
-.products-toolbar .count { color: var(--muted); font-size: .95rem; }
+.products-toolbar .count { color: var(--muted); font-size: .95rem; margin-left: auto; }
+.catalog-search { display: inline-flex; align-items: center; gap: 8px; background: #fff; border: 1px solid var(--line-strong); border-radius: var(--radius-sm); padding: 9px 13px; min-width: 240px; flex: 1 1 260px; max-width: 380px; }
+.catalog-search svg { width: 17px; height: 17px; color: var(--muted); flex-shrink: 0; }
+.catalog-search input { border: 0; outline: 0; background: none; font-family: inherit; font-size: .95rem; color: var(--text); width: 100%; }
+.catalog-search:focus-within { border-color: var(--terra); box-shadow: 0 0 0 3px var(--accent-soft); }
 .products-toolbar select { padding: 9px 14px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: #fff; font-family: inherit; color: var(--text); cursor: pointer; }
 
 .product-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
@@ -767,13 +797,14 @@ h2 { font-size: clamp(1.6rem, 3vw, 2.35rem); letter-spacing: -0.028em; }
 @media (max-width: 540px) {
   .cat-grid, .product-grid, .feature-grid, .footer-grid { grid-template-columns: 1fr; }
   .form-row { grid-template-columns: 1fr; }
-  /* Antet compact: coș doar cu iconiță, ca să încapă CTA + coș + meniu */
+  /* Antet compact: coș doar cu iconiță, ca să încapă căutare + CTA + coș + meniu */
   .cart-btn span:not(.cart-count) { display: none; }
   .cart-btn { padding: 10px 12px; }
   .header-inner { gap: 10px; }
-  .header-actions { gap: 8px; }
+  .header-actions { gap: 7px; }
   .logo { font-size: 1.12rem; }
   .header-cta { padding: 10px 12px; }
+  .search-btn { width: 40px; height: 40px; }
   .cart-item { grid-template-columns: 70px 1fr; }
   .cart-item .ci-controls { grid-column: 1 / -1; justify-content: space-between; }
   .hero-stats { gap: 22px; }

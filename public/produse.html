@@ -78,6 +78,10 @@
       <!-- LISTA -->
       <div>
         <div class="products-toolbar">
+          <div class="catalog-search">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+            <input id="q-input" type="search" placeholder="Caută în produse…" aria-label="Caută produse">
+          </div>
           <span class="count" id="result-count"></span>
           <select id="sort">
             <option value="default">Sortare: implicită</option>
@@ -134,6 +138,26 @@
     let activeCat = params.get('cat') || 'all';
     let activePrice = 'all';
     let activeSort = 'default';
+    let activeQuery = (params.get('q') || '').trim();
+    // Normalizare fără diacritice, pentru căutare (ex. „tigla" găsește „țiglă")
+    const norm = s => String(s == null ? '' : s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+
+    // Câmp de căutare din toolbar
+    const qInput = document.getElementById('q-input');
+    if (qInput) {
+      qInput.value = activeQuery;
+      let t;
+      qInput.addEventListener('input', () => {
+        clearTimeout(t);
+        t = setTimeout(() => {
+          activeQuery = qInput.value.trim();
+          const u = new URL(location.href);
+          if (activeQuery) u.searchParams.set('q', activeQuery); else u.searchParams.delete('q');
+          history.replaceState(null, '', u);
+          updateHeader(); render();
+        }, 180);
+      });
+    }
 
     // Construiește filtrele de categorie
     const catFilters = document.getElementById('cat-filters');
@@ -183,6 +207,11 @@
     });
 
     function updateHeader() {
+      if (activeQuery) {
+        document.getElementById('catalog-title').textContent = 'Rezultate căutare';
+        document.getElementById('catalog-sub').textContent = `Produse care conțin „${activeQuery}".`;
+        return;
+      }
       if (activeProducer !== 'all') {
         document.getElementById('catalog-title').textContent = activeProducer;
         document.getElementById('catalog-sub').textContent = 'Toate produsele de la ' + activeProducer + '.';
@@ -214,6 +243,10 @@
       }
       if (activeThickness !== 'all') list = list.filter(p => productHasThickness(p, activeThickness));
       if (activeColor !== 'all') list = list.filter(p => productHasColor(p, activeColor));
+      if (activeQuery) {
+        const nq = norm(activeQuery);
+        list = list.filter(p => norm(`${p.name} ${p.desc || ''} ${categoryName(p.cat)} ${p.producator || ''}`).includes(nq));
+      }
       if (activeSort === 'price-asc') list.sort((a,b) => a.price - b.price);
       else if (activeSort === 'price-desc') list.sort((a,b) => b.price - a.price);
       else if (activeSort === 'name') list.sort((a,b) => a.name.localeCompare(b.name, 'ro'));

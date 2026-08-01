@@ -48,6 +48,74 @@ function injectFooterLegal() {
   }
 }
 
+/* Căutare produse — buton în antet + overlay cu sugestii live (pe toate paginile) */
+const escBasic = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+const searchNorm = s => String(s == null ? '' : s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+function injectSearch() {
+  const actions = document.querySelector('.site-header .header-actions');
+  if (!actions || document.getElementById('site-search-overlay')) return;
+  const btn = document.createElement('button');
+  btn.className = 'search-btn';
+  btn.type = 'button';
+  btn.setAttribute('aria-label', 'Caută produse');
+  btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>';
+  btn.addEventListener('click', openSearch);
+  actions.insertBefore(btn, actions.firstChild);
+
+  const ov = document.createElement('div');
+  ov.id = 'site-search-overlay';
+  ov.className = 'search-overlay';
+  ov.innerHTML = `<div class="search-panel" role="dialog" aria-label="Căutare produse">
+      <div class="search-bar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        <input id="site-search-input" type="search" placeholder="Caută produse (ex. țiglă, panou, jgheab)…" autocomplete="off">
+        <button class="search-close" type="button" aria-label="Închide">&times;</button>
+      </div>
+      <div class="search-results" id="site-search-results"></div>
+    </div>`;
+  document.body.appendChild(ov);
+  ov.addEventListener('click', e => { if (e.target === ov) closeSearch(); });
+  ov.querySelector('.search-close').addEventListener('click', closeSearch);
+  const input = ov.querySelector('#site-search-input');
+  let t;
+  input.addEventListener('input', () => { clearTimeout(t); t = setTimeout(runSearch, 140); });
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeSearch();
+    else if (e.key === 'Enter') { const q = input.value.trim(); if (q) location.href = 'produse.html?q=' + encodeURIComponent(q); }
+  });
+}
+function openSearch() {
+  const ov = document.getElementById('site-search-overlay'); if (!ov) return;
+  ov.classList.add('open'); document.body.style.overflow = 'hidden';
+  setTimeout(() => { const i = document.getElementById('site-search-input'); if (i) i.focus(); }, 30);
+  if (typeof loadCatalog === 'function') loadCatalog().then(runSearch); else runSearch();
+}
+function closeSearch() {
+  const ov = document.getElementById('site-search-overlay'); if (!ov) return;
+  ov.classList.remove('open'); document.body.style.overflow = '';
+}
+function runSearch() {
+  const input = document.getElementById('site-search-input');
+  const box = document.getElementById('site-search-results');
+  if (!input || !box) return;
+  const q = input.value.trim();
+  const products = (typeof PRODUCTS !== 'undefined' && Array.isArray(PRODUCTS)) ? PRODUCTS : [];
+  if (!q) { box.innerHTML = '<div class="search-hint">Scrie ca să cauți în catalog…</div>'; return; }
+  const nq = searchNorm(q);
+  const cat = p => (typeof categoryName === 'function' ? categoryName(p.cat) : '');
+  const matches = products.filter(p => searchNorm(`${p.name} ${p.desc || ''} ${cat(p)} ${p.producator || ''}`).includes(nq));
+  if (!matches.length) {
+    box.innerHTML = `<div class="search-hint">Niciun produs pentru „${escBasic(q)}". <a href="contact.html">Cere ofertă →</a></div>`;
+    return;
+  }
+  const top = matches.slice(0, 6);
+  const price = p => (typeof formatPrice === 'function' && typeof displayPrice === 'function') ? formatPrice(displayPrice(p)) : '';
+  box.innerHTML = top.map(p => `<a class="search-item" href="produs.html?id=${encodeURIComponent(p.id)}">
+      <div class="si-info"><div class="si-name">${escBasic(p.name)}</div><div class="si-cat">${escBasic(cat(p))}${p.producator ? ' · ' + escBasic(p.producator) : ''}</div></div>
+      <div class="si-price">${price(p)}</div></a>`).join('') +
+    `<a class="search-all" href="produse.html?q=${encodeURIComponent(q)}">Vezi toate rezultatele (${matches.length}) →</a>`;
+}
+
 /* CTA „Cerere ofertă rapidă" mutat direct în antet (bara de navigare) */
 function injectHeaderCta() {
   const actions = document.querySelector('.site-header .header-actions');
@@ -174,6 +242,7 @@ function skeletonCards(n) {
 /* Meniu mobil */
 document.addEventListener('DOMContentLoaded', () => {
   injectTopbar();
+  injectSearch();
   injectHeaderCta();
   injectFooterLegal();
   loadSiteSettings();
