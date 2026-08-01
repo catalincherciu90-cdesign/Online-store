@@ -168,6 +168,10 @@
     .ord-tab.active { background: var(--em-accent); border-color: var(--em-accent); color: #06231a; }
     .ord-tab.active .ord-tab-n { background: rgba(0,0,0,.18); }
     .ord-tab-n { background: rgba(255,255,255,.1); }
+    /* Casetă tutorial sub fiecare secțiune */
+    .admin-help { display: flex; gap: 12px; align-items: flex-start; background: rgba(52,211,153,.08); border: 1px solid rgba(52,211,153,.22); border-radius: 12px; padding: 13px 16px; margin: 0 0 20px; font-size: .9rem; line-height: 1.6; color: #cfe6db; }
+    .admin-help svg { width: 18px; height: 18px; color: var(--em-accent-2); flex-shrink: 0; margin-top: 2px; }
+    .admin-help b { color: #fff; font-weight: 700; }
 
     /* Stat carduri cu grafice */
     .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px; margin-bottom: 18px; }
@@ -727,7 +731,33 @@
       document.getElementById('login-view').style.display = 'none';
       document.getElementById('dash-view').style.display = 'grid';
       document.getElementById('whoami').style.display = 'flex';
-      loadProps().then(loadProducts); loadOrders(); loadQuotes(); loadReviews(); loadBanners(); loadSettings(); loadPosts(); loadNav(); loadTerms(); loadHowto(); loadPage('livrare'); loadPage('privacy'); loadPage('cookies'); loadPage('faq'); loadDashboard();
+      loadProps().then(loadProducts); loadOrders(); loadQuotes(); loadReviews(); loadBanners(); loadSettings(); loadPosts(); loadNav(); loadTerms(); loadHowto(); loadPage('livrare'); loadPage('privacy'); loadPage('cookies'); loadPage('faq'); loadDashboard(); injectHelp();
+    }
+
+    // Mic tutorial afișat sub titlul fiecărei secțiuni
+    const TAB_HELP = {
+      dashboard: 'Aici vezi pe scurt cum stă magazinul: comenzi noi, comenzi întârziate, cel mai vândut produs și brand, plus graficul de vânzări. Apasă pe un card ca să sari direct la lista respectivă.',
+      produse: 'Adaugă produse cu <b>„+ Produs nou"</b> sau importă-le în masă din Excel/CSV (descarcă întâi template-ul). Fiecare produs poate avea finisaje, culori și grosimi cu prețuri diferite. <b>„Importă din catalog"</b> încarcă produsele demo ca punct de plecare.',
+      proprietati: 'Definește o singură dată finisajele, grosimile și culorile — apar automat în editorul fiecărui produs și în filtrele de pe site. Dacă lista e goală, apasă <b>„Inițializează cu valorile implicite"</b>.',
+      bannere: 'Bannerele apar în partea de sus a paginii principale (slider). Încarcă o imagine (ideal 1920×720), poți adăuga titlu, subtitlu și buton. Cu mai multe bannere, se rotesc automat. Poți pune și o imagine separată pentru mobil.',
+      recenzii: 'Adaugă recenziile clienților — apar pe pagina principală, într-o bandă care se derulează. Bifează <b>„activă"</b> ca o recenzie să fie vizibilă pe site.',
+      blog: 'Scrie articole (ghiduri, sfaturi) care apar pe pagina Blog — utile și pentru Google. Doar articolele marcate <b>active</b> sunt publicate.',
+      meniu: 'Ordonează, redenumește sau ascunde elementele din bara de navigare de sus. Mută-le cu <b>↑/↓</b>, apoi apasă <b>„Salvează meniul"</b>.',
+      comenzi: 'Toate comenzile primite. Apasă pe o comandă ca să-i vezi detaliile și să-i schimbi statusul (nou → confirmată → în livrare → livrată). Filtrează după status cu butoanele de sus.',
+      cereri: 'Cererile de ofertă trimise din site. Contactează clientul folosind datele afișate și trimite-i oferta pe telefon sau email.',
+      setari: 'Setează logo-ul, datele de contact, datele firmei (pentru subsol), linkurile de social media, producătorii și administratorii. Apasă <b>„Salvează setările"</b> după modificări.',
+    };
+    function injectHelp() {
+      const icon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>';
+      Object.entries(TAB_HELP).forEach(([id, text]) => {
+        const panel = document.getElementById('tab-' + id);
+        if (!panel || panel.querySelector(':scope > .admin-help')) return;
+        const box = document.createElement('div');
+        box.className = 'admin-help';
+        box.innerHTML = icon + '<div>' + text + '</div>';
+        const anchor = panel.querySelector(':scope > .toolbar') || panel.querySelector(':scope > h2');
+        if (anchor) anchor.after(box); else panel.prepend(box);
+      });
     }
 
     // Comută sidebar-ul pe mobil
