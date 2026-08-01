@@ -350,7 +350,8 @@ async function reviewDelete(request, env, id) {
 // Chei expuse public prin GET /api/settings (allowlist — orice cheie nouă rămâne privată implicit)
 const PUBLIC_SETTINGS = ['logo', 'brandName', 'phone', 'email', 'email2', 'schedule', 'address', 'company_name', 'company_cui', 'company_reg', 'company_seat', 'facebook', 'instagram', 'tiktok', 'youtube', 'whatsapp',
   'about_title', 'about_lead', 'about_story_title', 'about_story', 'about_mission', 'terms_title', 'terms_content', 'howto_title', 'howto_content',
-  'livrare_title', 'livrare_content', 'privacy_title', 'privacy_content', 'cookies_title', 'cookies_content', 'faq_title', 'faq_content', 'nav'];
+  'livrare_title', 'livrare_content', 'privacy_title', 'privacy_content', 'cookies_title', 'cookies_content', 'faq_title', 'faq_content',
+  'ga4_id', 'gtm_id', 'meta_pixel', 'gsc_verification', 'head_code', 'body_code', 'nav'];
 async function settingsGet(env) {
   if (!env.DB) return json({});
   const r = await env.DB.prepare('SELECT key, value FROM settings').all();
@@ -699,6 +700,40 @@ async function api(request, env, url) {
   return json({ error: 'Ruta nu există.' }, 404);
 }
 
+// ── Coduri de tracking / verificare (Google, Meta etc.) injectate în pagini ──
+let TRACK_CACHE = null, TRACK_TS = 0;
+async function getTracking(env) {
+  if (!env.DB) return {};
+  const now = Date.now();
+  if (TRACK_CACHE && now - TRACK_TS < 60000) return TRACK_CACHE;
+  const keys = ['ga4_id', 'gtm_id', 'meta_pixel', 'gsc_verification', 'head_code', 'body_code'];
+  const out = {};
+  try {
+    const r = await env.DB.prepare(`SELECT key,value FROM settings WHERE key IN (${keys.map(() => '?').join(',')})`).bind(...keys).all();
+    for (const row of (r.results || [])) if (row.value) out[row.key] = row.value;
+  } catch (e) { /* fără DB → fără injecție */ }
+  TRACK_CACHE = out; TRACK_TS = now;
+  return out;
+}
+function buildHeadCode(t) {
+  let h = '';
+  if (t.gsc_verification) {
+    h += t.gsc_verification.includes('<meta') ? t.gsc_verification
+      : `<meta name="google-site-verification" content="${esc(t.gsc_verification)}">`;
+  }
+  if (t.ga4_id) h += `<script async src="https://www.googletagmanager.com/gtag/js?id=${esc(t.ga4_id)}"></script><script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${esc(t.ga4_id)}');</script>`;
+  if (t.gtm_id) h += `<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','${esc(t.gtm_id)}');</script>`;
+  if (t.meta_pixel) h += `<script>!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','${esc(t.meta_pixel)}');fbq('track','PageView');</script>`;
+  if (t.head_code) h += t.head_code;
+  return h;
+}
+function buildBodyCode(t) {
+  let b = '';
+  if (t.gtm_id) b += `<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=${esc(t.gtm_id)}" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>`;
+  if (t.body_code) b += t.body_code;
+  return b;
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -706,6 +741,15 @@ export default {
       try { return await api(request, env, url); }
       catch (e) { console.error(e); return json({ error: 'Eroare internă.' }, 500); }
     }
-    return env.ASSETS.fetch(request);
+    const res = await env.ASSETS.fetch(request);
+    const ct = res.headers.get('content-type') || '';
+    if (!ct.includes('text/html')) return res;
+    const t = await getTracking(env);
+    const head = buildHeadCode(t), body = buildBodyCode(t);
+    if (!head && !body) return res;
+    let rw = new HTMLRewriter();
+    if (head) rw = rw.on('head', { element(el) { el.append(head, { html: true }); } });
+    if (body) rw = rw.on('body', { element(el) { el.prepend(body, { html: true }); } });
+    return rw.transform(res);
   },
 };
