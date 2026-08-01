@@ -260,7 +260,9 @@
         <button data-tab="recenzii" onclick="showTab('recenzii')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 2.9 5.9 6.1.9-4.4 4.3 1 6.1-5.6-2.9-5.6 2.9 1-6.1L3 9.8l6.1-.9Z"/></svg>Recenzii</button>
         <button data-tab="blog" onclick="showTab('blog')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v5h5"/><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8Z"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg>Blog</button>
         <button data-tab="meniu" onclick="showTab('meniu')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg>Meniu</button>
+        <button data-tab="social" onclick="showTab('social')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="10.7" x2="15.4" y2="6.3"/><line x1="8.6" y1="13.3" x2="15.4" y2="17.7"/></svg>Social media</button>
         <div class="nav-cap">Pagini</div>
+        <button data-tab="despre" onclick="showTab('despre')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>Despre noi</button>
         <button data-tab="howto" onclick="showTab('howto')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12" y2="17"/></svg>Cum cumpăr</button>
         <button data-tab="livrare" onclick="showTab('livrare')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>Livrare & retur</button>
         <button data-tab="termeni" onclick="showTab('termeni')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v5h5"/><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8Z"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg>Termeni</button>
@@ -350,6 +352,36 @@
       <button class="a-btn-sm" style="margin-top:12px" onclick="addNavItem()">+ Adaugă element</button>
     </div>
 
+    <div id="tab-social" style="display:none">
+      <h2 style="font-size:1.3rem;margin-bottom:6px">Social media</h2>
+      <p class="muted-sm" style="margin-bottom:18px">Linkurile completate apar ca iconițe în subsolul site-ului. Lasă gol rețelele pe care nu le folosești.</p>
+      <form id="social-form" class="checkout-form" onsubmit="saveSocial(event)" style="max-width:820px">
+        <div class="form-row">
+          <div class="field"><label>Facebook (link)</label><input name="facebook" placeholder="https://facebook.com/..."></div>
+          <div class="field"><label>Instagram (link)</label><input name="instagram" placeholder="https://instagram.com/..."></div>
+        </div>
+        <div class="form-row">
+          <div class="field"><label>TikTok (link)</label><input name="tiktok" placeholder="https://tiktok.com/@..."></div>
+          <div class="field"><label>YouTube (link)</label><input name="youtube" placeholder="https://youtube.com/@..."></div>
+        </div>
+        <div class="field full"><label>WhatsApp (link)</label><input name="whatsapp" placeholder="https://wa.me/407xxxxxxxx"></div>
+        <div style="display:flex;align-items:center;gap:14px"><button class="btn btn-primary" style="padding:11px 22px">Salvează</button><span class="form-status" id="social-status"></span></div>
+      </form>
+    </div>
+
+    <div id="tab-despre" style="display:none">
+      <h2 style="font-size:1.3rem;margin-bottom:6px">Despre noi</h2>
+      <p class="muted-sm" style="margin-bottom:18px">Apare pe pagina <a href="despre.html" target="_blank" rel="noopener" style="color:var(--em-accent-2)">despre.html</a>. Lasă gol pentru a păstra textul implicit; lasă un rând liber între paragrafe.</p>
+      <form id="despre-form" class="checkout-form" onsubmit="saveDespre(event)" style="max-width:820px">
+        <div class="field"><label>Titlu principal</label><input name="about_title" placeholder="Sisteme de acoperiș, de la oameni care le știu pe ale lor"></div>
+        <div class="field"><label>Text intro</label><textarea name="about_lead" rows="3" placeholder="Scurtă prezentare care apare sub titlu."></textarea></div>
+        <div class="field"><label>Titlu secțiune poveste</label><input name="about_story_title" placeholder="Povestea din spatele ExpoTigla"></div>
+        <div class="field"><label>Poveste (Cine suntem)</label><textarea name="about_story" rows="6" placeholder="Povestea afacerii. Lasă un rând liber între paragrafe."></textarea></div>
+        <div class="field"><label>Misiune</label><textarea name="about_mission" rows="3" placeholder="Declarația de misiune."></textarea></div>
+        <div style="display:flex;align-items:center;gap:14px"><button class="btn btn-primary" style="padding:11px 22px">Salvează</button><span class="form-status" id="despre-status"></span></div>
+      </form>
+    </div>
+
     <div id="tab-integrari" style="display:none">
       <h2 style="font-size:1.3rem;margin-bottom:16px">Integrări marketing & tracking</h2>
       <form id="tracking-form" class="checkout-form" onsubmit="saveTracking(event)" style="max-width:820px">
@@ -407,27 +439,7 @@
             <div class="field"><label>Nr. Reg. Com.</label><input name="company_reg" placeholder="J40/1234/2020"></div>
             <div class="field"><label>Sediu social</label><input name="company_seat" placeholder="Str. ..., Oraș, județ"></div>
           </div>
-          <div class="form-row">
-            <div class="field"><label>Facebook (link)</label><input name="facebook" placeholder="https://facebook.com/..."></div>
-            <div class="field"><label>Instagram (link)</label><input name="instagram" placeholder="https://instagram.com/..."></div>
-          </div>
-          <div class="form-row">
-            <div class="field"><label>TikTok (link)</label><input name="tiktok" placeholder="https://tiktok.com/@..."></div>
-            <div class="field"><label>YouTube (link)</label><input name="youtube" placeholder="https://youtube.com/@..."></div>
-          </div>
-          <div class="field full"><label>WhatsApp (link)</label><input name="whatsapp" placeholder="https://wa.me/407xxxxxxxx"></div>
-
-          <div style="border-top:1px solid var(--line);margin:18px 0 4px;padding-top:16px">
-            <h3 style="font-size:1.02rem;margin-bottom:4px">Conținut pagina „Despre noi"</h3>
-            <p class="muted-sm" style="margin-bottom:12px">Lasă gol pentru a păstra textul implicit. Pentru paragrafe, lasă un rând liber între ele.</p>
-          </div>
-          <div class="field full"><label>Titlu principal</label><input name="about_title" placeholder="Sisteme de acoperiș, de la oameni care le știu pe ale lor"></div>
-          <div class="field full"><label>Text intro</label><textarea name="about_lead" rows="3" placeholder="Scurtă prezentare care apare sub titlu."></textarea></div>
-          <div class="field full"><label>Titlu secțiune poveste</label><input name="about_story_title" placeholder="Povestea din spatele ExpoTigla"></div>
-          <div class="field full"><label>Poveste (Cine suntem)</label><textarea name="about_story" rows="6" placeholder="Povestea afacerii. Lasă un rând liber între paragrafe."></textarea></div>
-          <div class="field full"><label>Misiune</label><textarea name="about_mission" rows="3" placeholder="Declarația de misiune."></textarea></div>
-
-          <div style="margin-top:10px"><button class="btn btn-primary" style="padding:9px 20px">Salvează setările</button></div>
+          <div style="margin-top:16px"><button class="btn btn-primary" style="padding:9px 20px">Salvează setările</button></div>
           <div class="form-status" id="settings-status"></div>
         </form>
       </div>
@@ -758,7 +770,7 @@
       document.getElementById('login-view').style.display = 'none';
       document.getElementById('dash-view').style.display = 'grid';
       document.getElementById('whoami').style.display = 'flex';
-      loadProps().then(loadProducts); loadOrders(); loadQuotes(); loadReviews(); loadBanners(); loadSettings(); loadPosts(); loadNav(); loadTerms(); loadHowto(); loadPage('livrare'); loadPage('privacy'); loadPage('cookies'); loadPage('faq'); loadTracking(); loadDashboard(); injectHelp();
+      loadProps().then(loadProducts); loadOrders(); loadQuotes(); loadReviews(); loadBanners(); loadSettings(); loadPosts(); loadNav(); loadTerms(); loadHowto(); loadPage('livrare'); loadPage('privacy'); loadPage('cookies'); loadPage('faq'); loadTracking(); loadSocial(); loadDespre(); loadDashboard(); injectHelp();
     }
 
     // Mic tutorial afișat sub titlul fiecărei secțiuni
@@ -807,7 +819,7 @@
     }
 
     function showTab(t) {
-      ['dashboard', 'produse', 'proprietati', 'bannere', 'recenzii', 'blog', 'meniu', 'comenzi', 'cereri', 'howto', 'livrare', 'termeni', 'privacy', 'cookies', 'faq', 'integrari', 'setari'].forEach(x => {
+      ['dashboard', 'produse', 'proprietati', 'bannere', 'recenzii', 'blog', 'meniu', 'social', 'comenzi', 'cereri', 'despre', 'howto', 'livrare', 'termeni', 'privacy', 'cookies', 'faq', 'integrari', 'setari'].forEach(x => {
         document.getElementById('tab-' + x).style.display = x === t ? 'block' : 'none';
         document.querySelector(`.side-nav [data-tab="${x}"]`).classList.toggle('active', x === t);
       });
@@ -1008,6 +1020,52 @@
       } catch (err) { st.className = 'form-status err'; st.style.color = ''; st.textContent = err.message; }
     }
 
+    // ── Social media ──
+    const SOCIAL_KEYS = ['facebook', 'instagram', 'tiktok', 'youtube', 'whatsapp'];
+    async function loadSocial() {
+      const f = document.getElementById('social-form');
+      if (!f) return;
+      try {
+        const s = await (await api('/settings')).json();
+        SOCIAL_KEYS.forEach(k => { if (f[k]) f[k].value = s[k] || ''; });
+      } catch (e) { /* neconfigurat */ }
+    }
+    async function saveSocial(e) {
+      e.preventDefault();
+      const f = e.target;
+      const st = document.getElementById('social-status');
+      const body = {};
+      SOCIAL_KEYS.forEach(k => { body[k] = f[k] ? f[k].value.trim() : ''; });
+      try {
+        const d = await (await api('/settings', { method: 'POST', body: JSON.stringify(body) })).json();
+        if (d.ok) { st.className = 'form-status'; st.style.color = '#1a8f4c'; st.textContent = '✓ Salvat.'; }
+        else { st.className = 'form-status err'; st.style.color = ''; st.textContent = d.error || 'Eroare.'; }
+      } catch (err) { st.className = 'form-status err'; st.style.color = ''; st.textContent = err.message; }
+    }
+
+    // ── Despre noi ──
+    const DESPRE_KEYS = ['about_title', 'about_lead', 'about_story_title', 'about_story', 'about_mission'];
+    async function loadDespre() {
+      const f = document.getElementById('despre-form');
+      if (!f) return;
+      try {
+        const s = await (await api('/settings')).json();
+        DESPRE_KEYS.forEach(k => { if (f[k]) f[k].value = s[k] || ''; });
+      } catch (e) { /* neconfigurat */ }
+    }
+    async function saveDespre(e) {
+      e.preventDefault();
+      const f = e.target;
+      const st = document.getElementById('despre-status');
+      const body = {};
+      DESPRE_KEYS.forEach(k => { body[k] = f[k] ? f[k].value.trim() : ''; });
+      try {
+        const d = await (await api('/settings', { method: 'POST', body: JSON.stringify(body) })).json();
+        if (d.ok) { st.className = 'form-status'; st.style.color = '#1a8f4c'; st.textContent = '✓ Salvat.'; }
+        else { st.className = 'form-status err'; st.style.color = ''; st.textContent = d.error || 'Eroare.'; }
+      } catch (err) { st.className = 'form-status err'; st.style.color = ''; st.textContent = err.message; }
+    }
+
     // ── Integrări (coduri tracking / verificare) ──
     const TRACK_KEYS = ['ga4_id', 'gtm_id', 'meta_pixel', 'gsc_verification', 'head_code', 'body_code'];
     async function loadTracking() {
@@ -1082,7 +1140,7 @@
       try {
         const res = await api('/settings'); const s = await res.json();
         const f = document.getElementById('settings-form');
-        ['phone', 'email', 'email2', 'schedule', 'address', 'company_name', 'company_cui', 'company_reg', 'company_seat', 'facebook', 'instagram', 'tiktok', 'youtube', 'whatsapp', 'about_title', 'about_lead', 'about_story_title', 'about_story', 'about_mission'].forEach(k => { if (f[k]) f[k].value = s[k] || ''; });
+        ['phone', 'email', 'email2', 'schedule', 'address', 'company_name', 'company_cui', 'company_reg', 'company_seat'].forEach(k => { if (f[k]) f[k].value = s[k] || ''; });
         siteLogo = s.logo || '';
         document.getElementById('logo-preview').innerHTML = siteLogo
           ? `<img src="${siteLogo}" style="height:56px;display:block">` : '';
@@ -1131,7 +1189,7 @@
       e.preventDefault();
       const f = e.target;
       const body = { logo: siteLogo };
-      ['phone', 'email', 'email2', 'schedule', 'address', 'company_name', 'company_cui', 'company_reg', 'company_seat', 'facebook', 'instagram', 'tiktok', 'youtube', 'whatsapp', 'about_title', 'about_lead', 'about_story_title', 'about_story', 'about_mission'].forEach(k => { body[k] = f[k] ? f[k].value.trim() : ''; });
+      ['phone', 'email', 'email2', 'schedule', 'address', 'company_name', 'company_cui', 'company_reg', 'company_seat'].forEach(k => { body[k] = f[k] ? f[k].value.trim() : ''; });
       const st = document.getElementById('settings-status');
       try {
         const res = await api('/settings', { method: 'POST', body: JSON.stringify(body) });
