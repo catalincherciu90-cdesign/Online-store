@@ -233,6 +233,32 @@
       .content { padding: 18px; }
       .nav-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 79; display: none; }
       .admin-shell.nav-open .nav-backdrop { display: block; }
+      /* Topbar mai compact */
+      .topbar { padding: 11px 14px; gap: 10px; }
+      .topbar-search { max-width: none; }
+      /* Tabelele se derulează orizontal, nu strică layout-ul */
+      .content [id$="-box"] { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+      .content .a-table { min-width: 620px; }
+    }
+    @media (max-width: 560px) {
+      .content { padding: 14px; }
+      .content h2 { font-size: 1.15rem; }
+      /* Ascunde scurtătura „deschide site" din topbar ca să încapă restul */
+      .topbar-actions a.tb-ic { display: none; }
+      .topbar-search { padding: 8px 12px; }
+      .topbar-search input { font-size: .88rem; }
+      /* Detaliile din modale pe o coloană */
+      #order-view-body > div[style*="grid-template-columns"], #quote-view-body > div[style*="grid-template-columns"] { grid-template-columns: 1fr !important; }
+      .modal { padding: 20px 16px; }
+      .overlay { padding: 20px 10px; }
+      /* Grafice + panouri mai joase */
+      .bc-bars { height: 200px; }
+      .analysis { padding: 18px 15px; }
+      .analysis-stats { gap: 20px; }
+      .stat-val { font-size: 1.8rem; }
+      /* Butoanele din toolbar-uri pe toată lățimea, ușor de apăsat */
+      .toolbar { gap: 8px; }
+      .notif-panel { top: 46px; }
     }
   </style>
 </head>
