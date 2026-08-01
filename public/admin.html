@@ -759,6 +759,16 @@
     </div>
   </div>
 
+  <!-- DETALII CERERE DE OFERTĂ -->
+  <div class="overlay" id="quote-view">
+    <div class="modal" style="max-width:600px">
+      <div id="quote-view-body"></div>
+      <div style="text-align:right;margin-top:20px">
+        <button type="button" class="btn btn-outline" onclick="closeQuoteView()">Închide</button>
+      </div>
+    </div>
+  </div>
+
   <script src="assets/js/data.js"></script>
   <script>
     const TKEY = 'acoperispro_admin_token';
@@ -2255,17 +2265,43 @@
         quotesData = Array.isArray(list) ? list : [];
         renderNotifs();
         if (!list.length) { box.innerHTML = `<div class="a-empty">Nicio cerere încă.</div>`; return; }
-        box.innerHTML = `<table class="a-table"><thead><tr><th>Ref</th><th>Nume</th><th>Contact</th><th>Proiect</th><th>Plan</th><th>Data</th></tr></thead><tbody>${
-          list.map(q => `<tr>
+        box.innerHTML = `<table class="a-table"><thead><tr><th>Ref</th><th>Nume</th><th>Contact</th><th>Proiect</th><th>Plan</th><th>Data</th><th></th></tr></thead><tbody>${
+          list.map((q, i) => `<tr style="cursor:pointer" onclick="openQuote(${i})">
             <td><b>${esc(q.ref)}</b></td>
             <td>${esc(q.nume)}</td>
             <td>${esc(q.telefon)}<br><span class="muted-sm">${esc(q.email)}</span></td>
             <td>${esc(q.tip)} ${q.suprafata ? `<span class="muted-sm">· ${esc(q.suprafata)} mp</span>` : ''}<br><span class="muted-sm">${esc((q.mesaj || '').slice(0, 80))}</span></td>
             <td class="muted-sm">${esc(q.plan || '—')}</td>
-            <td class="muted-sm">${esc((q.created_at || '').replace('T', ' ').slice(0, 16))}</td></tr>`).join('')
+            <td class="muted-sm">${esc((q.created_at || '').replace('T', ' ').slice(0, 16))}</td>
+            <td><button class="a-btn-sm" onclick="event.stopPropagation();openQuote(${i})">Deschide</button></td></tr>`).join('')
         }</tbody></table>`;
       } catch (e) { box.innerHTML = `<div class="a-empty">Eroare la încărcare.</div>`; }
     }
+    function openQuote(i) {
+      const q = quotesData[i]; if (!q) return;
+      const tel = String(q.telefon || '').replace(/\s+/g, '');
+      document.getElementById('quote-view-body').innerHTML = `
+        <h3 style="margin-bottom:2px">Cerere ${esc(q.ref)}</h3>
+        <p class="muted-sm" style="margin-bottom:16px">${esc((q.created_at || '').replace('T', ' ').slice(0, 16))}</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px 20px;margin-bottom:18px">
+          <div><div class="muted-sm">Nume</div><b>${esc(q.nume)}</b></div>
+          <div><div class="muted-sm">Telefon</div><b>${esc(q.telefon || '—')}</b></div>
+          <div style="grid-column:1/-1"><div class="muted-sm">Email</div>${esc(q.email || '—')}</div>
+          <div><div class="muted-sm">Tip proiect</div>${esc(q.tip || '—')}</div>
+          <div><div class="muted-sm">Suprafață</div>${q.suprafata ? esc(q.suprafata) + ' mp' : '—'}</div>
+          <div><div class="muted-sm">Plan atașat</div>${esc(q.plan || '—')}</div>
+          <div style="grid-column:1/-1"><div class="muted-sm">Tip client</div>${q.tip_client === 'juridica'
+            ? `<b>Persoană juridică</b> — ${esc(q.firma || '')} · CUI ${esc(q.cui || '')}${q.reg_com ? ` · Reg. Com. ${esc(q.reg_com)}` : ''}`
+            : 'Persoană fizică'}</div>
+        </div>
+        ${q.mesaj ? `<div style="margin-bottom:18px"><div class="muted-sm" style="margin-bottom:4px">Mesaj</div><div style="background:rgba(255,255,255,.05);border-radius:10px;padding:12px 14px;white-space:pre-wrap">${esc(q.mesaj)}</div></div>` : ''}
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          ${tel ? `<a class="btn btn-primary" style="padding:9px 16px" href="tel:${esc(tel)}">Sună clientul</a>` : ''}
+          ${q.email ? `<a class="btn btn-outline" style="padding:9px 16px" href="mailto:${esc(q.email)}?subject=Ofertă ExpoTigla — ${esc(q.ref)}">Trimite ofertă pe email</a>` : ''}
+        </div>`;
+      document.getElementById('quote-view').classList.add('open');
+    }
+    function closeQuoteView() { document.getElementById('quote-view').classList.remove('open'); }
 
     // init
     if (token()) enterDash();
