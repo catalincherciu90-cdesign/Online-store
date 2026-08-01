@@ -19,17 +19,19 @@ function injectTopbar() {
   header.parentNode.insertBefore(bar, header);
 }
 
-/* Link „Termeni și condiții" în footer (coloana Companie), pe toate paginile */
+/* Linkuri utile („Cum cumpăr", „Termeni și condiții") în footer, pe toate paginile */
 function injectFooterLegal() {
   const cols = document.querySelectorAll('.site-footer .footer-col');
   for (const col of cols) {
     const h = col.querySelector('h4');
     if (h && /companie/i.test(h.textContent)) {
-      if (!col.querySelector('a[href="termeni.html"]')) {
-        const a = document.createElement('a');
-        a.href = 'termeni.html';
-        a.textContent = 'Termeni și condiții';
-        col.appendChild(a);
+      const links = [['cum-cumpar.html', 'Cum cumpăr'], ['termeni.html', 'Termeni și condiții']];
+      for (const [href, label] of links) {
+        if (!col.querySelector(`a[href="${href}"]`)) {
+          const a = document.createElement('a');
+          a.href = href; a.textContent = label;
+          col.appendChild(a);
+        }
       }
       return;
     }
