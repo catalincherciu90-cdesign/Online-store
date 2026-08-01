@@ -19,6 +19,23 @@ function injectTopbar() {
   header.parentNode.insertBefore(bar, header);
 }
 
+/* Link „Termeni și condiții" în footer (coloana Companie), pe toate paginile */
+function injectFooterLegal() {
+  const cols = document.querySelectorAll('.site-footer .footer-col');
+  for (const col of cols) {
+    const h = col.querySelector('h4');
+    if (h && /companie/i.test(h.textContent)) {
+      if (!col.querySelector('a[href="termeni.html"]')) {
+        const a = document.createElement('a');
+        a.href = 'termeni.html';
+        a.textContent = 'Termeni și condiții';
+        col.appendChild(a);
+      }
+      return;
+    }
+  }
+}
+
 /* CTA „Cerere ofertă rapidă" mutat direct în antet (bara de navigare) */
 function injectHeaderCta() {
   const actions = document.querySelector('.site-header .header-actions');
@@ -146,6 +163,7 @@ function skeletonCards(n) {
 document.addEventListener('DOMContentLoaded', () => {
   injectTopbar();
   injectHeaderCta();
+  injectFooterLegal();
   loadSiteSettings();
   headerScrollShadow();
   initReveal();
