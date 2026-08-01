@@ -48,6 +48,25 @@ function injectFooterLegal() {
   }
 }
 
+/* Banner-ele obligatorii ANPC (SAL) + SOL în subsol, pe toate paginile.
+   Se folosesc imaginile oficiale; dacă nu se încarcă, apare un badge text. */
+function injectAnpc() {
+  const bottom = document.querySelector('.site-footer .footer-bottom');
+  if (!bottom || document.querySelector('.footer-anpc')) return;
+  const wrap = document.createElement('div');
+  wrap.className = 'footer-anpc';
+  wrap.innerHTML = `
+    <a href="https://anpc.ro/ce-este-sal/" target="_blank" rel="noopener" aria-label="ANPC – Soluționarea Alternativă a Litigiilor">
+      <img src="https://anpc.ro/wp-content/uploads/2022/07/SAL.png" alt="ANPC – SAL" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex'">
+      <span class="anpc-fallback" style="display:none">ANPC · SAL</span>
+    </a>
+    <a href="https://ec.europa.eu/consumers/odr" target="_blank" rel="noopener" aria-label="Soluționarea Online a Litigiilor (SOL)">
+      <img src="https://anpc.ro/wp-content/uploads/2022/07/SOL.png" alt="ANPC – SOL" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex'">
+      <span class="anpc-fallback" style="display:none">ANPC · SOL</span>
+    </a>`;
+  bottom.insertBefore(wrap, bottom.firstChild);
+}
+
 /* Căutare produse — buton în antet + overlay cu sugestii live (pe toate paginile) */
 const escBasic = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 const searchNorm = s => String(s == null ? '' : s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
@@ -245,6 +264,7 @@ document.addEventListener('DOMContentLoaded', () => {
   injectSearch();
   injectHeaderCta();
   injectFooterLegal();
+  injectAnpc();
   loadSiteSettings();
   headerScrollShadow();
   initReveal();
