@@ -19,22 +19,32 @@ function injectTopbar() {
   header.parentNode.insertBefore(bar, header);
 }
 
-/* Linkuri utile („Cum cumpăr", „Termeni și condiții") în footer, pe toate paginile */
+/* Linkuri utile + legale în footer, injectate pe toate paginile */
 function injectFooterLegal() {
+  // Linkuri de ajutor în coloana „Companie"
   const cols = document.querySelectorAll('.site-footer .footer-col');
   for (const col of cols) {
     const h = col.querySelector('h4');
     if (h && /companie/i.test(h.textContent)) {
-      const links = [['cum-cumpar.html', 'Cum cumpăr'], ['termeni.html', 'Termeni și condiții']];
-      for (const [href, label] of links) {
+      const help = [['cum-cumpar.html', 'Cum cumpăr'], ['livrare.html', 'Livrare & retur'], ['faq.html', 'Întrebări frecvente']];
+      for (const [href, label] of help) {
         if (!col.querySelector(`a[href="${href}"]`)) {
           const a = document.createElement('a');
           a.href = href; a.textContent = label;
           col.appendChild(a);
         }
       }
-      return;
+      break;
     }
+  }
+  // Linkuri legale pe rândul de jos (copyright)
+  const bottom = document.querySelector('.site-footer .footer-bottom');
+  if (bottom && !bottom.querySelector('.footer-legal')) {
+    const legal = [['termeni.html', 'Termeni și condiții'], ['confidentialitate.html', 'Confidențialitate'], ['cookies.html', 'Cookies']];
+    const wrap = document.createElement('div');
+    wrap.className = 'footer-legal';
+    wrap.innerHTML = legal.map(([href, label]) => `<a href="${href}">${label}</a>`).join('<span>·</span>');
+    bottom.appendChild(wrap);
   }
 }
 

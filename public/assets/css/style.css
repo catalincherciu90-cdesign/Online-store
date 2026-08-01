@@ -725,6 +725,10 @@ h2 { font-size: clamp(1.6rem, 3vw, 2.35rem); letter-spacing: -0.028em; }
 .footer-col a:hover { color: var(--terra); transform: translateX(3px); }
 .footer-col p { font-size: .92rem; margin-bottom: 10px; }
 .footer-bottom { border-top: 1px solid rgba(255,255,255,.1); padding-top: 22px; text-align: center; font-size: .85rem; color: #7f92a3; }
+.footer-legal { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; align-items: center; }
+.footer-legal a { color: #9fb0be; }
+.footer-legal a:hover { color: var(--terra); }
+.footer-legal span { color: #4f6070; }
 
 /* ---------- Responsive ---------- */
 @media (max-width: 960px) {
