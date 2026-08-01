@@ -293,6 +293,7 @@
         <div class="nav-cap">Magazin</div>
         <button data-tab="produse" onclick="showTab('produse')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8 12 3 3 8l9 5 9-5Z"/><path d="M3 8v8l9 5 9-5V8"/><path d="m12 13 0 8"/></svg>Produse</button>
         <button data-tab="proprietati" onclick="showTab('proprietati')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><circle cx="9" cy="6" r="2.4"/><line x1="4" y1="12" x2="20" y2="12"/><circle cx="15" cy="12" r="2.4"/><line x1="4" y1="18" x2="20" y2="18"/><circle cx="8" cy="18" r="2.4"/></svg>Proprietăți</button>
+        <button data-tab="producatori" onclick="showTab('producatori')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20h20"/><path d="M4 20V8l5-3 5 3"/><path d="M14 20V11l6-3v12"/><path d="M8 20v-4h2v4"/></svg>Producători</button>
         <button data-tab="comenzi" onclick="showTab('comenzi')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M2 3h2.2l2.1 12.4a1.5 1.5 0 0 0 1.5 1.2h9.2a1.5 1.5 0 0 0 1.5-1.2L21 7H5"/></svg>Comenzi</button>
         <button data-tab="cereri" onclick="showTab('cereri')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/><line x1="9" y1="11" x2="15" y2="11"/><line x1="9" y1="15" x2="13" y2="15"/></svg>Cereri ofertă</button>
         <div class="nav-cap">Conținut</div>
@@ -490,13 +491,14 @@
           <div class="form-status" id="settings-status"></div>
         </form>
       </div>
+    </div>
 
-      <div style="background:var(--em-card);border:1px solid var(--em-border);border-radius:12px;padding:20px">
-        <div class="toolbar"><h3 class="grow" style="font-size:1.05rem">Producători (logo)</h3>
-          <button class="btn btn-primary" style="padding:8px 14px" onclick="openProducer()">+ Producător</button></div>
-        <p class="muted-sm" style="margin-bottom:14px">Adaugă producătorii cu logo. Numele trebuie scris identic cu cel din produse ca logo-ul să apară pe banda de branduri și pe pagini.</p>
-        <div id="producers-box"></div>
+    <div id="tab-producatori" style="display:none">
+      <div class="toolbar">
+        <h2 class="grow" style="font-size:1.3rem">Producători (logo)</h2>
+        <button class="btn btn-primary" style="padding:9px 16px" onclick="openProducer()">+ Producător</button>
       </div>
+      <div id="producers-box"></div>
     </div>
 
     <div id="tab-utilizatori" style="display:none">
@@ -836,6 +838,7 @@
     const TAB_HELP = {
       dashboard: 'Aici vezi pe scurt cum stă magazinul: comenzi noi, comenzi întârziate, cel mai vândut produs și brand, plus graficul de vânzări. Apasă pe un card ca să sari direct la lista respectivă.',
       produse: 'Adaugă produse cu <b>„+ Produs nou"</b> sau importă-le în masă din Excel/CSV (descarcă întâi template-ul). Fiecare produs poate avea finisaje, culori și grosimi cu prețuri diferite. <b>„Importă din catalog"</b> încarcă produsele demo ca punct de plecare.',
+      producatori: 'Adaugă producătorii cu logo. Numele trebuie scris <b>identic</b> cu cel din produse, ca logo-ul să apară pe banda de branduri de pe pagina principală și pe paginile de producător.',
       proprietati: 'Definește o singură dată finisajele, grosimile și culorile — apar automat în editorul fiecărui produs și în filtrele de pe site. Dacă lista e goală, apasă <b>„Inițializează cu valorile implicite"</b>.',
       bannere: 'Bannerele apar în partea de sus a paginii principale (slider). Încarcă o imagine (ideal 1920×720), poți adăuga titlu, subtitlu și buton. Cu mai multe bannere, se rotesc automat. Poți pune și o imagine separată pentru mobil.',
       recenzii: 'Adaugă recenziile clienților — apar pe pagina principală, într-o bandă care se derulează. Bifează <b>„activă"</b> ca o recenzie să fie vizibilă pe site.',
@@ -879,7 +882,7 @@
     }
 
     function showTab(t) {
-      ['dashboard', 'produse', 'proprietati', 'bannere', 'recenzii', 'blog', 'meniu', 'social', 'comenzi', 'cereri', 'despre', 'howto', 'livrare', 'termeni', 'privacy', 'cookies', 'faq', 'integrari', 'utilizatori', 'setari'].forEach(x => {
+      ['dashboard', 'produse', 'proprietati', 'producatori', 'bannere', 'recenzii', 'blog', 'meniu', 'social', 'comenzi', 'cereri', 'despre', 'howto', 'livrare', 'termeni', 'privacy', 'cookies', 'faq', 'integrari', 'utilizatori', 'setari'].forEach(x => {
         document.getElementById('tab-' + x).style.display = x === t ? 'block' : 'none';
         document.querySelector(`.side-nav [data-tab="${x}"]`).classList.toggle('active', x === t);
       });
