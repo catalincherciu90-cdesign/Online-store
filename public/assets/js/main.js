@@ -209,6 +209,20 @@ function applySettings(s) {
     div.innerHTML = socials.map(([name, url, icon]) => `<a href="${url}" target="_blank" rel="noopener" aria-label="${name}">${icon}</a>`).join('');
     col.appendChild(div);
   }
+  // Rând dedicat cu datele firmei în subsol (doar câmpurile completate)
+  const cparts = [];
+  if (s.company_name) cparts.push(escBasic(s.company_name));
+  if (s.company_cui) cparts.push('CUI ' + escBasic(s.company_cui));
+  if (s.company_reg) cparts.push(escBasic(s.company_reg));
+  if (s.company_seat) cparts.push('Sediu: ' + escBasic(s.company_seat));
+  const bottom = document.querySelector('.site-footer .footer-bottom');
+  if (bottom && cparts.length && !bottom.querySelector('.footer-company')) {
+    const cdiv = document.createElement('div');
+    cdiv.className = 'footer-company';
+    cdiv.innerHTML = cparts.join(' <span>·</span> ');
+    const anpc = bottom.querySelector('.footer-anpc');
+    if (anpc) anpc.after(cdiv); else bottom.insertBefore(cdiv, bottom.firstChild);
+  }
 }
 function loadSiteSettings() {
   fetch('/api/settings').then(r => r.ok ? r.json() : {}).then(applySettings).catch(() => {});

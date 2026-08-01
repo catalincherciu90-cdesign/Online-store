@@ -366,6 +366,16 @@
             <div class="field"><label>Program</label><input name="schedule" placeholder="Luni–Vineri 08:00–18:00"></div>
           </div>
           <div class="field full"><label>Adresă</label><input name="address" placeholder="Str. ..., Oraș, județ"></div>
+          <h3 style="font-size:1rem;margin:20px 0 4px">Date firmă (rândul din subsol)</h3>
+          <div class="muted-sm" style="margin-bottom:6px">Apar pe un rând dedicat în subsol, pe toate paginile. Lasă gol ce nu vrei să afișezi.</div>
+          <div class="form-row">
+            <div class="field"><label>Denumire firmă</label><input name="company_name" placeholder="SC Exemplu SRL"></div>
+            <div class="field"><label>CUI</label><input name="company_cui" placeholder="RO12345678"></div>
+          </div>
+          <div class="form-row">
+            <div class="field"><label>Nr. Reg. Com.</label><input name="company_reg" placeholder="J40/1234/2020"></div>
+            <div class="field"><label>Sediu social</label><input name="company_seat" placeholder="Str. ..., Oraș, județ"></div>
+          </div>
           <div class="form-row">
             <div class="field"><label>Facebook (link)</label><input name="facebook" placeholder="https://facebook.com/..."></div>
             <div class="field"><label>Instagram (link)</label><input name="instagram" placeholder="https://instagram.com/..."></div>
@@ -991,7 +1001,7 @@
       try {
         const res = await api('/settings'); const s = await res.json();
         const f = document.getElementById('settings-form');
-        ['phone', 'email', 'email2', 'schedule', 'address', 'facebook', 'instagram', 'tiktok', 'youtube', 'whatsapp', 'about_title', 'about_lead', 'about_story_title', 'about_story', 'about_mission'].forEach(k => { if (f[k]) f[k].value = s[k] || ''; });
+        ['phone', 'email', 'email2', 'schedule', 'address', 'company_name', 'company_cui', 'company_reg', 'company_seat', 'facebook', 'instagram', 'tiktok', 'youtube', 'whatsapp', 'about_title', 'about_lead', 'about_story_title', 'about_story', 'about_mission'].forEach(k => { if (f[k]) f[k].value = s[k] || ''; });
         siteLogo = s.logo || '';
         document.getElementById('logo-preview').innerHTML = siteLogo
           ? `<img src="${siteLogo}" style="height:56px;display:block">` : '';
@@ -1040,7 +1050,7 @@
       e.preventDefault();
       const f = e.target;
       const body = { logo: siteLogo };
-      ['phone', 'email', 'email2', 'schedule', 'address', 'facebook', 'instagram', 'tiktok', 'youtube', 'whatsapp', 'about_title', 'about_lead', 'about_story_title', 'about_story', 'about_mission'].forEach(k => { body[k] = f[k] ? f[k].value.trim() : ''; });
+      ['phone', 'email', 'email2', 'schedule', 'address', 'company_name', 'company_cui', 'company_reg', 'company_seat', 'facebook', 'instagram', 'tiktok', 'youtube', 'whatsapp', 'about_title', 'about_lead', 'about_story_title', 'about_story', 'about_mission'].forEach(k => { body[k] = f[k] ? f[k].value.trim() : ''; });
       const st = document.getElementById('settings-status');
       try {
         const res = await api('/settings', { method: 'POST', body: JSON.stringify(body) });
