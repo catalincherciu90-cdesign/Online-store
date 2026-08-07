@@ -393,6 +393,26 @@ h2 { font-size: clamp(1.6rem, 3vw, 2.35rem); letter-spacing: -0.028em; }
 .brand-card-info { padding: 13px 18px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
 .brand-card-info b { color: var(--navy); }
 .brand-card-info span { color: var(--muted); font-size: .85rem; white-space: nowrap; }
+/* Pagina produs: montaj, completează sistemul, documente */
+.pd-inuse { margin: 14px 0 0; }
+.pd-inuse img { width: 100%; display: block; border-radius: var(--radius); border: 1px solid var(--line); }
+.pd-inuse figcaption { color: var(--muted); font-size: .85rem; margin-top: 8px; text-align: center; }
+.pd-section { margin-top: 46px; }
+.pd-section h2 { font-size: 1.45rem; margin-bottom: 4px; }
+.pd-section .pd-sub { color: var(--muted); margin-bottom: 4px; }
+.pd-system { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+.pd-sys-chip { display: inline-flex; align-items: center; gap: 9px; padding: 12px 16px; border: 1px solid var(--line-strong); border-radius: 10px; background: var(--bg-alt); color: var(--navy); font-weight: 600; transition: border-color .15s, color .15s, transform .15s; }
+.pd-sys-chip svg { width: 16px; height: 16px; color: var(--terra); }
+.pd-sys-chip:hover { border-color: var(--terra); color: var(--terra-dark); transform: translateY(-1px); }
+.pd-docs { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; margin-top: 16px; }
+.pd-doc { display: flex; align-items: center; gap: 11px; padding: 13px 15px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg-alt); color: var(--navy); }
+.pd-doc svg { width: 20px; height: 20px; flex-shrink: 0; color: var(--terra); }
+.pd-doc > span:first-of-type { flex: 1; font-weight: 600; }
+.pd-doc-dl { font-size: .78rem; font-weight: 700; color: var(--terra-dark); white-space: nowrap; }
+a.pd-doc:hover { border-color: var(--terra); }
+.pd-doc.muted { color: var(--muted); }
+.pd-doc.muted svg { color: var(--muted); }
+.pd-doc.muted .pd-doc-dl { color: var(--muted); }
 
 /* ---------- Product grid ---------- */
 .products-layout { display: grid; grid-template-columns: 250px 1fr; gap: 32px; align-items: start; }

@@ -100,10 +100,41 @@
       const specsRows = Object.entries(p.specs).map(([k,v]) =>
         `<div class="row"><span class="k">${k}</span><span class="v">${v}</span></div>`).join('');
 
+      // „Completează sistemul" — accesorii recomandate (doar la produsele de acoperiș)
+      const roofing = ['tigla-metalica', 'tabla-faltuita', 'panouri-sandwich'];
+      const sysChip = (label, cat) => `<a class="pd-sys-chip" href="produse.html?cat=${cat}"><span>${label}</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg></a>`;
+      const systemHtml = roofing.includes(p.cat) ? `
+        <section class="pd-section">
+          <h2>Completează sistemul</h2>
+          <p class="pd-sub">Tot ce îți trebuie pentru un acoperiș montat corect, alături de ${p.name}.</p>
+          <div class="pd-system">
+            ${sysChip('Coamă', 'accesorii')}${sysChip('Bordură', 'accesorii')}${sysChip('Șorț', 'accesorii')}
+            ${sysChip('Folie', 'folii-membrane')}${sysChip('Șuruburi', 'accesorii')}${sysChip('Sistem pluvial', 'sistem-pluvial')}
+          </div>
+        </section>` : '';
+
+      // „Documente" — linkuri dacă produsul are documente (p.docs), altfel „la cerere"
+      const DOCS = [['fisa', 'Fișă tehnică'], ['dop', 'Declarație de performanță'], ['garantie', 'Garanție'], ['montaj', 'Instrucțiuni montaj']];
+      const docs = p.docs || {};
+      const docIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v5h5"/><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8Z"/></svg>';
+      const docsHtml = `
+        <section class="pd-section">
+          <h2>Documente</h2>
+          <div class="pd-docs">
+            ${DOCS.map(([k, label]) => docs[k]
+              ? `<a class="pd-doc" href="${docs[k]}" target="_blank" rel="noopener">${docIcon}<span>${label}</span><span class="pd-doc-dl">Descarcă</span></a>`
+              : `<div class="pd-doc muted">${docIcon}<span>${label}</span><span class="pd-doc-dl">La cerere</span></div>`).join('')}
+          </div>
+          <p class="pd-sub" style="margin-top:12px">Ai nevoie de un document care nu apare aici? <a href="contact.html" style="color:var(--terra-dark);font-weight:600">Scrie-ne</a> și ți-l trimitem.</p>
+        </section>`;
+
       root.innerHTML = `
         <div class="breadcrumb"><a href="index.html">Acasă</a><span>/</span><a href="produse.html?cat=${p.cat}">${categoryName(p.cat)}</a><span>/</span> ${p.name}</div>
         <div class="product-detail">
-          <div class="product-gallery">${productMedia(p)}</div>
+          <div class="product-gallery">
+            ${productMedia(p)}
+            <figure class="pd-inuse"><img src="assets/img/products/${p.id}-montaj.jpg" alt="Exemplu de montaj — ${p.name}" loading="lazy" onerror="this.closest('figure').remove()"><figcaption>Exemplu de montaj</figcaption></figure>
+          </div>
           <div class="pd-info">
             <span class="cat-tag">${categoryName(p.cat)}</span>
             <h1>${p.name}</h1>
@@ -131,9 +162,11 @@
               <div class="perk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> Consultanță tehnică gratuită</div>
             </div>
           </div>
-        </div>`;
+        </div>
+        ${systemHtml}
+        ${docsHtml}`;
 
-      // Produse similare (aceeași categorie)
+      // Produse similare (aceeası categorie)
       const related = PRODUCTS.filter(x => x.cat === p.cat && x.id !== p.id).slice(0, 3);
       const fallback = PRODUCTS.filter(x => x.id !== p.id).slice(0, 3);
       const list = related.length ? related : fallback;
