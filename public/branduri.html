@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Livrare și retur | ExpoTigla</title>
-  <meta name="description" content="Condiții de livrare și retur ExpoTigla — livrare în toată țara, termene, costuri de transport și dreptul de retragere.">
+  <title>Branduri | ExpoTigla</title>
+  <meta name="description" content="Producătorii cu care lucrăm — branduri de încredere pentru sisteme de acoperiș, cu specificații tehnice clare, documentație și garanții conforme.">
   <link rel="stylesheet" href="assets/css/style.css">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%230099cc' d='M12 3 2 12h3v8h14v-8h3z'/%3E%3C/svg%3E">
 </head>
@@ -16,7 +16,7 @@
       <nav class="nav">
         <a href="index.html">Acasă</a>
         <a href="produse.html">Produse</a>
-        <a href="branduri.html">Branduri</a>
+        <a href="branduri.html" class="active">Branduri</a>
         <a href="blog.html">Ghidul acoperișului</a>
         <a href="despre.html">Despre noi</a>
         <a href="contact.html">Contact</a>
@@ -35,39 +35,19 @@
 
   <section class="hero hero-simple" style="padding:56px 0 60px">
     <div class="container">
-      <span class="eyebrow" style="color:#bfe6f4">Informații</span>
-      <h1 data-site="livrare_title">Livrare și retur</h1>
+      <span class="eyebrow" style="color:#bfe6f4">Branduri</span>
+      <h1>Producători de încredere</h1>
+      <p style="max-width:730px;margin:16px auto 0;color:#dbe8f0;font-size:1.1rem">Selectăm produse de la producători consacrați, cu specificații tehnice clare, documentație și garanții conforme fiecărei game.</p>
     </div>
   </section>
 
   <section class="section">
-    <div class="container" style="max-width:820px">
-      <div data-site="livrare_content" style="color:var(--text);font-size:1.03rem;line-height:1.75;white-space:pre-line">Livrare
-
-Livrăm în toată țara, prin curier sau transport dedicat pentru materialele voluminoase (tablă, panouri, jgheaburi).
-
-Termene estimative:
-- Produse din stoc: 24–72h lucrătoare de la confirmarea comenzii.
-- Produse configurate la comandă (finisaj, culoare, grosime, debitare la dimensiune): termenul se comunică la confirmare.
-
-Costuri de transport: se calculează în funcție de greutate, volum și localitate și se comunică înainte de confirmarea comenzii. Pentru comenzi mari, transportul poate fi inclus — te anunțăm în ofertă.
-
-La primirea coletului, verifică integritatea produselor. Dacă observi deteriorări din transport, semnalează-le curierului și nouă în maxim 24 de ore, cu fotografii.
-
-Retur
-
-Conform OUG nr. 34/2014, ai dreptul de a te retrage din contract în termen de 14 zile de la primire, fără a invoca un motiv.
-
-Excepții (nu pot fi returnate): produsele confecționate sau personalizate după specificațiile tale — de exemplu tablă debitată la dimensiune, finisaje și culori realizate la comandă.
-
-Cum returnezi: anunță-ne intenția la datele de contact, în termenul de 14 zile. Produsele trebuie să fie în starea inițială, nemontate și în ambalajul original. Costul returului este suportat de client, dacă nu s-a convenit altfel.
-
-Rambursare: contravaloarea produselor returnate se restituie în cel mult 14 zile de la primirea returului, prin aceeași metodă de plată.
-
-Notă: acest text este un model orientativ. Completează-l cu politica reală a firmei tale.</div>
+    <div class="container">
+      <div id="brands-page"><div class="a-empty" style="text-align:center;color:var(--muted);padding:40px">Se încarcă…</div></div>
     </div>
   </section>
 
+  <!-- FOOTER -->
   <footer class="site-footer">
     <div class="container">
       <div class="footer-grid">
@@ -80,9 +60,9 @@ Notă: acest text este un model orientativ. Completează-l cu politica reală a 
           <a href="produse.html?cat=tigla-metalica">Țiglă metalică</a>
           <a href="produse.html?cat=tabla-faltuita">Tablă fălțuită</a>
           <a href="produse.html?cat=panouri-sandwich">Panouri sandwich</a>
-          <a href="produse.html?cat=sistem-pluvial">Sistem pluvial</a>
-          <a href="produse.html?cat=accesorii">Accesorii montaj</a>
-          <a href="produse.html?cat=folii-membrane">Folii &amp; membrane</a>
+          <a href="produse.html?cat=sistem-pluvial">Sisteme pluviale</a>
+          <a href="produse.html?cat=accesorii">Accesorii</a>
+          <a href="produse.html?cat=folii-membrane">Folii și membrane</a>
         </div>
         <div class="footer-col">
           <h4>Companie</h4>
@@ -106,5 +86,32 @@ Notă: acest text este un model orientativ. Completează-l cu politica reală a 
   <script src="assets/js/data.js"></script>
   <script src="assets/js/cart.js"></script>
   <script src="assets/js/main.js"></script>
+  <script>
+    const esc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    (async () => {
+      let prods = [];
+      try { prods = await (await fetch('/api/producers')).json(); } catch (e) {}
+      await loadCatalog();
+      const byName = {}; (prods || []).forEach(p => byName[p.name.trim().toLowerCase()] = p);
+      const fromProducts = [...new Set(PRODUCTS.map(p => (p.producator || '').trim()).filter(Boolean))];
+      const names = [];
+      (prods || []).slice().sort((a, b) => (a.sort - b.sort) || a.name.localeCompare(b.name, 'ro')).forEach(p => names.push(p.name));
+      fromProducts.forEach(n => { if (!byName[n.toLowerCase()]) names.push(n); });
+      const box = document.getElementById('brands-page');
+      if (!names.length) {
+        box.innerHTML = `<div style="text-align:center;color:var(--muted);padding:30px">Producătorii vor apărea aici în curând.</div>`;
+        return;
+      }
+      box.innerHTML = `<div class="brand-cards">${names.map(n => {
+        const p = byName[n.trim().toLowerCase()];
+        const count = PRODUCTS.filter(x => (x.producator || '').trim() === n).length;
+        const inner = p && p.logo ? `<img src="${p.logo}" alt="${esc(n)}" class="brand-card-logo">` : `<span class="brand-card-name">${esc(n)}</span>`;
+        return `<a class="brand-card" href="produse.html?producator=${encodeURIComponent(n)}">
+          <div class="brand-card-media">${inner}</div>
+          <div class="brand-card-info"><b>${esc(n)}</b><span>${count} ${count === 1 ? 'produs' : 'produse'}</span></div>
+        </a>`;
+      }).join('')}</div>`;
+    })();
+  </script>
 </body>
 </html>

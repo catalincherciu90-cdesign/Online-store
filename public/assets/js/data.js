@@ -77,17 +77,17 @@ const SVG = {
 
 const CATEGORIES = [
   { id: 'tigla-metalica', name: 'Țiglă metalică', icon: 'tigla', tag: 'clasic, modular',
-    desc: 'Panouri de țiglă metalică cu aspect clasic, ușoare și rezistente la intemperii.' },
+    desc: 'Soluții pentru acoperișuri rezidențiale, într-o varietate de profile, finisaje și culori.' },
   { id: 'tabla-faltuita', name: 'Tablă fălțuită', icon: 'falt', tag: 'standing seam, click',
-    desc: 'Sistem de tablă prefălțuită tip standing seam pentru un look modern, elegant.' },
+    desc: 'Aspect modern și linii curate pentru proiecte rezidențiale și arhitectură contemporană.' },
   { id: 'panouri-sandwich', name: 'Panouri sandwich', icon: 'panou', tag: 'PUR, PIR',
-    desc: 'Panouri termoizolante pentru acoperiș, montaj rapid, izolare superioară.' },
-  { id: 'sistem-pluvial', name: 'Sistem pluvial', icon: 'pluvial', tag: 'jgheaburi, burlane',
-    desc: 'Jgheaburi, burlane și accesorii pentru un drenaj eficient al apei.' },
-  { id: 'accesorii', name: 'Accesorii montaj', icon: 'accesoriu', tag: 'coame, parazăpezi',
-    desc: 'Coame, parazăpezi, șuruburi autoforante și elemente de finisaj.' },
-  { id: 'folii-membrane', name: 'Folii & membrane', icon: 'folie', tag: 'anticondens, difuzie',
-    desc: 'Folii anticondens și membrane difuzie pentru protecția șarpantei.' },
+    desc: 'Soluții eficiente pentru hale, spații industriale și construcții comerciale.' },
+  { id: 'sistem-pluvial', name: 'Sisteme pluviale', icon: 'pluvial', tag: 'jgheaburi, burlane',
+    desc: 'Jgheaburi, burlane și accesorii pentru evacuarea eficientă a apei.' },
+  { id: 'folii-membrane', name: 'Folii și membrane', icon: 'folie', tag: 'anticondens, difuzie',
+    desc: 'Protecție suplimentară și control al umidității pentru sistemul de acoperiș.' },
+  { id: 'accesorii', name: 'Accesorii', icon: 'accesoriu', tag: 'coame, parazăpezi',
+    desc: 'Elementele necesare pentru un sistem complet și un montaj corect.' },
 ];
 
 let PRODUCTS = [

@@ -19,7 +19,8 @@
       <nav class="nav">
         <a href="index.html" class="active">Acasă</a>
         <a href="produse.html">Produse</a>
-        <a href="blog.html">Blog</a>
+        <a href="branduri.html">Branduri</a>
+        <a href="blog.html">Ghidul acoperișului</a>
         <a href="despre.html">Despre noi</a>
         <a href="contact.html">Contact</a>
       </nav>
@@ -46,8 +47,8 @@
   <!-- Hero de rezervă (afișat doar când nu există bannere încărcate) -->
   <section class="hero hero-simple" id="hero-default" style="display:none">
     <div class="container">
-      <h1>Sisteme complete de acoperiș, direct de la producător</h1>
-      <p>Țiglă metalică, tablă fălțuită, panouri sandwich și sistem pluvial — cu garanție până la 30 de ani și livrare în toată țara.</p>
+      <h1>Sisteme complete de acoperiș, alese pentru proiectul tău.</h1>
+      <p>Țiglă metalică, tablă fălțuită, panouri sandwich, sisteme pluviale și accesorii de la producători de încredere. Te ajutăm să alegi soluția potrivită, calculăm necesarul și îți pregătim o ofertă personalizată pentru proiectul tău.</p>
       <div class="hero-cta">
         <a href="produse.html" class="btn btn-primary btn-lg">Vezi produsele</a>
         <a href="contact.html" class="btn btn-ghost btn-lg">Cere ofertă</a>
@@ -58,10 +59,10 @@
   <!-- Bară de încredere (fâșie independentă, sub banner) -->
   <section class="trust-strip">
     <div class="container trust-bar">
-      <div class="trust-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg> Produse certificate CE</div>
-      <div class="trust-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg> Livrare în toată țara</div>
-      <div class="trust-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> Garanție până la 30 ani</div>
-      <div class="trust-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> Consultanță tehnică gratuită</div>
+      <div class="trust-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> Consultanță tehnică</div>
+      <div class="trust-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 7h6M9 11h6M9 15h4"/><rect x="4" y="3" width="16" height="18" rx="2"/></svg> Calcul de necesar</div>
+      <div class="trust-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg> Livrare națională</div>
+      <div class="trust-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg> Produse cu garanție</div>
     </div>
   </section>
 
@@ -70,8 +71,8 @@
     <div class="container">
       <div class="section-head">
         <span class="eyebrow">Ce vindem</span>
-        <h2>Sisteme de acoperiș pentru orice proiect</h2>
-        <p>De la case de familie la hale industriale — găsești tot ce ai nevoie pentru un acoperiș complet.</p>
+        <h2>Tot ce ai nevoie pentru un acoperiș complet</h2>
+        <p>Alege categoria potrivită proiectului tău sau trimite-ne planul și te ajutăm noi să identifici soluția.</p>
       </div>
       <div class="cat-grid" id="home-categories"></div>
     </div>
@@ -98,7 +99,7 @@
       <div class="section-head">
         <span class="eyebrow">Producători</span>
         <h2>Branduri de încredere</h2>
-        <p>Lucrăm doar cu producători verificați, cu garanție și calitate certificată.</p>
+        <p>Selectăm produse de la producători consacrați, cu specificații tehnice clare, documentație și garanții conforme fiecărei game.</p>
       </div>
       <div class="brands-strip" id="home-brands"></div>
     </div>
@@ -254,7 +255,7 @@
         <div class="cat-tile-media">${categoryMedia(c)}</div>
         <div class="cat-tile-overlay">
           <div class="cat-tile-name">${c.name}</div>
-          ${c.tag ? `<div class="cat-tile-tag">${c.tag}</div>` : ''}
+          ${c.desc ? `<div class="cat-tile-desc">${c.desc}</div>` : ''}
         </div></a>`;
     }).join('');
     hydrateImages();

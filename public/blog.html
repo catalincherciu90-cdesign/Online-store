@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Blog & ghiduri | ExpoTigla</title>
+  <title>Ghidul acoperișului | ExpoTigla</title>
   <meta name="description" content="Ghiduri și sfaturi despre sisteme de acoperiș: cum alegi țigla metalică, montaj, întreținere și calcul necesar.">
   <link rel="stylesheet" href="assets/css/style.css">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%230099cc' d='M12 3 2 12h3v8h14v-8h3z'/%3E%3C/svg%3E">
@@ -18,7 +18,8 @@
       <nav class="nav">
         <a href="index.html">Acasă</a>
         <a href="produse.html">Produse</a>
-        <a href="blog.html" class="active">Blog</a>
+        <a href="branduri.html">Branduri</a>
+        <a href="blog.html" class="active">Ghidul acoperișului</a>
         <a href="despre.html">Despre noi</a>
         <a href="contact.html">Contact</a>
       </nav>
@@ -55,7 +56,7 @@
         <div class="footer-col">
           <h4>Companie</h4>
           <a href="produse.html">Catalog</a>
-          <a href="blog.html">Blog</a>
+          <a href="blog.html">Ghidul acoperișului</a>
           <a href="contact.html">Contact</a>
           <a href="contact.html">Cere ofertă</a>
         </div>
@@ -91,7 +92,7 @@
         }
         document.title = post.title + ' | ExpoTigla';
         root.innerHTML = `<article class="blog-article">
-          <div class="breadcrumb"><a href="index.html">Acasă</a><span>/</span><a href="blog.html">Blog</a><span>/</span> ${bEsc(post.title)}</div>
+          <div class="breadcrumb"><a href="index.html">Acasă</a><span>/</span><a href="blog.html">Ghidul acoperișului</a><span>/</span> ${bEsc(post.title)}</div>
           <h1>${bEsc(post.title)}</h1>
           <div class="blog-date">${fmtDate(post.created_at)}</div>
           ${post.image ? `<img class="blog-cover" src="${bEsc(post.image)}" alt="${bEsc(post.title)}">` : ''}
@@ -101,7 +102,7 @@
       }).catch(() => { root.innerHTML = `<div class="empty-state" style="text-align:center;padding:60px"><p>Eroare la încărcare.</p></div>`; });
     } else {
       root.innerHTML = `<div class="blog-head">
-        <span class="eyebrow">Blog</span>
+        <span class="eyebrow">Ghidul acoperișului</span>
         <h1>Ghiduri & sfaturi pentru acoperișul tău</h1>
         <p class="muted">Articole utile despre alegerea, montajul și întreținerea sistemelor de acoperiș.</p>
       </div><div class="blog-grid" id="blog-grid"></div>`;
