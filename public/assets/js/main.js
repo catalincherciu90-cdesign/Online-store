@@ -247,7 +247,12 @@ function applySettings(s) {
   }
 }
 function loadSiteSettings() {
-  fetch('/api/settings').then(r => r.ok ? r.json() : {}).then(applySettings).catch(() => {});
+  // Ascunde meniul până se aplică setările, ca să nu pâlpâie meniul din HTML
+  // înainte de a fi reconstruit din configurația salvată în admin.
+  const nav = document.querySelector('.site-header .nav');
+  if (nav) nav.classList.add('nav-pending');
+  fetch('/api/settings').then(r => r.ok ? r.json() : {}).then(applySettings).catch(() => {})
+    .finally(() => { if (nav) nav.classList.remove('nav-pending'); });
 }
 
 /* ==========================================================================
