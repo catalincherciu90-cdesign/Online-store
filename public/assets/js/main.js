@@ -19,6 +19,27 @@ function injectTopbar() {
   header.parentNode.insertBefore(bar, header);
 }
 
+/* Dropdown „Produse" cu categoriile — injectat în meniu, pe toate paginile */
+function injectProduseDropdown() {
+  const nav = document.querySelector('.site-header .nav');
+  if (!nav) return;
+  const link = nav.querySelector('a[href="produse.html"]');
+  if (!link || link.closest('.has-dropdown')) return;
+  const cats = (typeof CATEGORIES !== 'undefined' && Array.isArray(CATEGORIES)) ? CATEGORIES : [];
+  if (!cats.length) return;
+  const wrap = document.createElement('div');
+  wrap.className = 'has-dropdown';
+  link.parentNode.insertBefore(wrap, link);
+  wrap.appendChild(link);
+  link.insertAdjacentHTML('beforeend', ' <svg class="nav-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>');
+  const menu = document.createElement('div');
+  menu.className = 'nav-submenu';
+  const esc = t => String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  menu.innerHTML = cats.map(c => `<a href="produse.html?cat=${c.id}">${esc(c.name)}</a>`).join('') +
+    `<a href="produse.html" class="submenu-all">Vezi toate produsele</a>`;
+  wrap.appendChild(menu);
+}
+
 /* Linkuri utile + legale în footer, injectate pe toate paginile */
 function injectFooterLegal() {
   // Linkuri de ajutor în coloana „Companie"
@@ -180,6 +201,7 @@ function applySettings(s) {
         }).join('');
       }
     } catch (e) { /* config invalid → păstrează meniul implicit */ }
+    injectProduseDropdown(); // re-aplică dropdown-ul după reconstruirea meniului
   }
   // Câmpuri marcate cu data-site (telefon, email, adresă, program, social…)
   document.querySelectorAll('[data-site]').forEach(el => {
@@ -273,6 +295,7 @@ function skeletonCards(n) {
 /* Meniu mobil */
 document.addEventListener('DOMContentLoaded', () => {
   injectTopbar();
+  injectProduseDropdown();
   injectSearch();
   injectHeaderCta();
   injectFooterLegal();
