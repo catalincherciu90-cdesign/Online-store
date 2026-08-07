@@ -86,9 +86,13 @@
     let p = null;
     let sel = {}; // opțiuni selectate (finisaj/grosime/culoare)
 
-    loadCatalog().then(() => {
+    loadCatalog().then(async () => {
     p = getProduct(id);
     sel = p ? defaultOpts(p) : {};
+
+    // Fișiere produs (poză montaj + documente) încărcate din admin
+    let pfMap = {};
+    if (p) { try { const list = await (await fetch('/api/pf/' + encodeURIComponent(id))).json(); (list || []).forEach(x => pfMap[x.kind] = x.url); } catch (e) {} }
 
     if (!p) {
       root.innerHTML = `<div class="empty-state" style="padding:100px 20px">
@@ -115,7 +119,7 @@
 
       // „Documente" — linkuri dacă produsul are documente (p.docs), altfel „la cerere"
       const DOCS = [['fisa', 'Fișă tehnică'], ['dop', 'Declarație de performanță'], ['garantie', 'Garanție'], ['montaj', 'Instrucțiuni montaj']];
-      const docs = p.docs || {};
+      const docs = { fisa: pfMap.doc_fisa, dop: pfMap.doc_dop, garantie: pfMap.doc_garantie, montaj: pfMap.doc_montaj };
       const docIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v5h5"/><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8Z"/></svg>';
       const docsHtml = `
         <section class="pd-section">
@@ -133,7 +137,7 @@
         <div class="product-detail">
           <div class="product-gallery">
             ${productMedia(p)}
-            <figure class="pd-inuse"><img src="assets/img/products/${p.id}-montaj.jpg" alt="Exemplu de montaj — ${p.name}" loading="lazy" onerror="this.closest('figure').remove()"><figcaption>Exemplu de montaj</figcaption></figure>
+            <figure class="pd-inuse"><img src="${pfMap.montaj || 'assets/img/products/' + p.id + '-montaj.jpg'}" alt="Exemplu de montaj — ${p.name}" loading="lazy" onerror="this.closest('figure').remove()"><figcaption>Exemplu de montaj</figcaption></figure>
           </div>
           <div class="pd-info">
             <span class="cat-tag">${categoryName(p.cat)}</span>

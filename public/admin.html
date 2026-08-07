@@ -186,6 +186,11 @@
     .admin-help { display: flex; gap: 12px; align-items: flex-start; background: rgba(52,211,153,.08); border: 1px solid rgba(52,211,153,.22); border-radius: 12px; padding: 13px 16px; margin: 0 0 20px; font-size: .9rem; line-height: 1.6; color: #cfe6db; }
     .admin-help svg { width: 18px; height: 18px; color: var(--em-accent-2); flex-shrink: 0; margin-top: 2px; }
     .admin-help b { color: #fff; font-weight: 700; }
+    .pf-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 10px 0; border-bottom: 1px solid var(--em-border); }
+    .pf-row:last-child { border-bottom: 0; }
+    .pf-name { font-size: .9rem; color: #dcebe3; }
+    .pf-ok { color: var(--em-accent-2); font-weight: 700; font-size: .82rem; margin-left: 4px; }
+    .pf-actions { display: flex; gap: 8px; }
 
     /* Stat carduri cu grafice */
     .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px; margin-bottom: 18px; }
@@ -639,6 +644,11 @@
         </div>
         <div class="field full"><label>Descriere</label><textarea name="desc" rows="2"></textarea></div>
         <div class="field full"><label>Specificații (câte una pe linie: „Cheie: valoare")</label><textarea name="specs" rows="4" placeholder="Grosime: 0.5 mm&#10;Garanție: 15 ani"></textarea></div>
+        <div class="field full">
+          <label style="font-weight:600">Poză montaj & documente</label>
+          <div class="muted-sm" style="margin-bottom:8px">Poza „punere în operă" apare pe pagina produsului; documentele (PDF) apar la secțiunea „Documente". Fișier max ~3 MB. Salvează întâi produsul dacă e nou, apoi încarcă-le.</div>
+          <div id="pf-box"></div>
+        </div>
         <div class="field full">
           <label style="display:flex;align-items:center;gap:8px;font-weight:600;cursor:pointer">
             <input type="checkbox" id="f-hasfin" onchange="toggleFinishes()"> Produs configurabil pe finisaje (finisaj → culorile și grosimile lui, cu preț pe combinație)
@@ -2104,9 +2114,73 @@
         document.getElementById('f-hasfin').checked = !!(p.finishes && p.finishes.length);
       } else { document.getElementById('f-hasfin').checked = false; }
       toggleFinishes();
+      if (p) reloadPF(p.id); else renderPFSlots('');
       document.getElementById('editor').classList.add('open');
     }
     function closeEditor() { document.getElementById('editor').classList.remove('open'); }
+
+    // ── Poză montaj & documente per produs ──
+    const PF_KINDS = [
+      { kind: 'montaj', label: 'Poză montaj (punere în operă)', img: true },
+      { kind: 'doc_fisa', label: 'Fișă tehnică (PDF)', img: false },
+      { kind: 'doc_dop', label: 'Declarație de performanță (PDF)', img: false },
+      { kind: 'doc_garantie', label: 'Garanție (PDF)', img: false },
+      { kind: 'doc_montaj', label: 'Instrucțiuni montaj (PDF)', img: false },
+    ];
+    function renderPFSlots(pid, available) {
+      const box = document.getElementById('pf-box'); if (!box) return;
+      if (!pid) { box.innerHTML = `<div class="muted-sm">Completează câmpul <b>ID</b> (și salvează produsul) ca să poți încărca fișiere.</div>`; return; }
+      const has = {}; (available || []).forEach(a => has[a.kind] = a);
+      box.innerHTML = PF_KINDS.map(s => {
+        const up = has[s.kind];
+        const accept = s.img ? 'image/*' : 'application/pdf,image/*';
+        return `<div class="pf-row">
+          <div class="pf-name">${s.label} ${up ? '<span class="pf-ok">✓ încărcat</span>' : '<span class="muted-sm">—</span>'}</div>
+          <div class="pf-actions">
+            ${up ? `<a class="a-btn-sm" href="${up.url}" target="_blank" rel="noopener">Vezi</a><button type="button" class="a-btn-sm danger" onclick="delPF('${esc(pid)}','${s.kind}')">Șterge</button>` : ''}
+            <label class="a-btn-sm" style="cursor:pointer">${up ? 'Înlocuiește' : 'Încarcă'}<input type="file" accept="${accept}" hidden onchange="onPFFile('${esc(pid)}','${s.kind}',${s.img},this.files[0]);this.value=''"></label>
+          </div>
+        </div>`;
+      }).join('');
+    }
+    async function reloadPF(pid) {
+      try { const list = await (await api('/pf/' + encodeURIComponent(pid))).json(); renderPFSlots(pid, list); }
+      catch (e) { renderPFSlots(pid, []); }
+    }
+    function onPFFile(pid, kind, isImg, file) {
+      if (!file) return;
+      if (!pid) { alert('Salvează întâi produsul (completează ID-ul).'); return; }
+      const send = (dataUrl, mime, name) => {
+        if (dataUrl.length > 4200000) { alert('Fișier prea mare (max ~3 MB). Comprimă-l și încearcă din nou.'); return; }
+        api('/product-files', { method: 'POST', body: JSON.stringify({ product_id: pid, kind, mime, data: dataUrl, name }) })
+          .then(r => r.json()).then(d => { if (d.ok) reloadPF(pid); else alert(d.error || 'Eroare.'); })
+          .catch(err => alert('Eroare: ' + err.message));
+      };
+      if (isImg && file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const img = new Image();
+          img.onload = () => {
+            const maxW = 1600, scale = Math.min(1, maxW / img.width);
+            const w = Math.round(img.width * scale), h = Math.round(img.height * scale);
+            const c = document.createElement('canvas'); c.width = w; c.height = h;
+            c.getContext('2d').drawImage(img, 0, 0, w, h);
+            send(c.toDataURL('image/jpeg', 0.82), 'image/jpeg', file.name);
+          };
+          img.src = reader.result;
+        };
+        reader.readAsDataURL(file);
+      } else {
+        const reader = new FileReader();
+        reader.onload = () => send(reader.result, file.type || 'application/pdf', file.name);
+        reader.readAsDataURL(file);
+      }
+    }
+    async function delPF(pid, kind) {
+      if (!confirm('Ștergi acest fișier?')) return;
+      try { await api('/product-files/' + encodeURIComponent(pid) + '/' + kind, { method: 'DELETE' }); reloadPF(pid); }
+      catch (e) { alert('Eroare: ' + e.message); }
+    }
 
     async function saveProduct(e) {
       e.preventDefault();

@@ -77,6 +77,7 @@ async function ensureSchema(env) {
         `CREATE TABLE IF NOT EXISTS producers (id TEXT PRIMARY KEY, name TEXT NOT NULL, logo TEXT, sort INTEGER DEFAULT 0)`,
         `CREATE TABLE IF NOT EXISTS posts (id INTEGER PRIMARY KEY AUTOINCREMENT, slug TEXT UNIQUE, title TEXT NOT NULL, excerpt TEXT, content TEXT, image TEXT, active INTEGER NOT NULL DEFAULT 1, created_at TEXT DEFAULT (datetime('now')))`,
         `CREATE TABLE IF NOT EXISTS admins (username TEXT PRIMARY KEY, pass_hash TEXT NOT NULL, pass_salt TEXT NOT NULL, name TEXT, created_at TEXT DEFAULT (datetime('now')))`,
+        `CREATE TABLE IF NOT EXISTS product_files (product_id TEXT NOT NULL, kind TEXT NOT NULL, mime TEXT, data TEXT, name TEXT, updated_at TEXT DEFAULT (datetime('now')), PRIMARY KEY (product_id, kind))`,
       ];
       for (const s of stmts) { try { await env.DB.prepare(s).run(); } catch (e) { console.error('ensureSchema', e); } }
       // Coloane adăugate ulterior pe produse (ALTER nu e idempotent → ignoră „duplicate column").
@@ -479,6 +480,40 @@ async function bannerImage(env, id, mobile) {
   if (!dec) return new Response('Not found', { status: 404 });
   return new Response(dec.bytes, { headers: { 'Content-Type': dec.mime, 'Cache-Control': 'public, max-age=31536000, immutable' } });
 }
+
+// ── Fișiere produs (poză montaj + documente), stocate în D1, servite binar ──
+const PRODUCT_FILE_KINDS = ['montaj', 'doc_fisa', 'doc_dop', 'doc_garantie', 'doc_montaj'];
+async function productFilesList(env, pid) {
+  if (!env.DB) return json([]);
+  const r = await env.DB.prepare('SELECT kind, name, LENGTH(data) AS len FROM product_files WHERE product_id=?').bind(pid).all();
+  return json((r.results || []).map(x => ({ kind: x.kind, name: x.name || '', url: `/api/pf/${encodeURIComponent(pid)}/${x.kind}?v=${x.len || 0}` })));
+}
+async function productFileServe(env, pid, kind) {
+  if (!env.DB) return new Response('Not found', { status: 404 });
+  const row = await env.DB.prepare('SELECT mime, data, name FROM product_files WHERE product_id=? AND kind=?').bind(pid, kind).first();
+  const dec = row && row.data ? decodeDataUrl(row.data) : null;
+  if (!dec) return new Response('Not found', { status: 404 });
+  const headers = { 'Content-Type': dec.mime || row.mime || 'application/octet-stream', 'Cache-Control': 'public, max-age=31536000, immutable' };
+  if (kind.startsWith('doc_')) headers['Content-Disposition'] = `inline; filename="${String(row.name || kind).replace(/[^\w.\- ]/g, '_')}"`;
+  return new Response(dec.bytes, { headers });
+}
+async function productFileUpsert(request, env) {
+  if (!await requireAdmin(request, env)) return json({ error: 'Neautorizat' }, 401);
+  if (!env.DB) return json({ error: 'Baza de date nu este configurată.' }, 500);
+  const v = await request.json().catch(() => null);
+  if (!v || !v.product_id || !PRODUCT_FILE_KINDS.includes(v.kind) || !v.data) return json({ error: 'Date lipsă sau tip invalid.' }, 400);
+  if (String(v.data).length > 4200000) return json({ error: 'Fișier prea mare (max ~3 MB).' }, 413);
+  await env.DB.prepare('INSERT OR REPLACE INTO product_files (product_id, kind, mime, data, name, updated_at) VALUES (?,?,?,?,?,datetime(\'now\'))')
+    .bind(v.product_id, v.kind, v.mime || '', v.data, v.name || '').run();
+  return json({ ok: true });
+}
+async function productFileDelete(request, env, pid, kind) {
+  if (!await requireAdmin(request, env)) return json({ error: 'Neautorizat' }, 401);
+  if (!env.DB) return json({ error: 'Baza de date nu este configurată.' }, 500);
+  await env.DB.prepare('DELETE FROM product_files WHERE product_id=? AND kind=?').bind(pid, kind).run();
+  return json({ ok: true });
+}
+
 async function bannersList(request, env, url) {
   if (!env.DB) return json([]);
   if (url.searchParams.get('all')) {
@@ -657,6 +692,14 @@ async function api(request, env, url) {
   if (p === '/api/admin/login' && m === 'POST') return login(request, env);
   if (p === '/api/products' && m === 'GET') return productsList(env);
   if (p === '/api/products' && m === 'POST') return productsCreate(request, env);
+  // Fișiere produs (poză montaj + documente)
+  const pfServe = p.match(/^\/api\/pf\/([^/]+)\/([\w-]+)$/);
+  if (pfServe && m === 'GET') return productFileServe(env, decodeURIComponent(pfServe[1]), pfServe[2]);
+  const pfList = p.match(/^\/api\/pf\/([^/]+)$/);
+  if (pfList && m === 'GET') return productFilesList(env, decodeURIComponent(pfList[1]));
+  if (p === '/api/product-files' && m === 'POST') return productFileUpsert(request, env);
+  const pfDel = p.match(/^\/api\/product-files\/([^/]+)\/([\w-]+)$/);
+  if (pfDel && m === 'DELETE') return productFileDelete(request, env, decodeURIComponent(pfDel[1]), pfDel[2]);
   const pid = p.match(/^\/api\/products\/(.+)$/);
   if (pid && m === 'PUT') return productUpdate(request, env, decodeURIComponent(pid[1]));
   if (pid && m === 'DELETE') return productDelete(request, env, decodeURIComponent(pid[1]));
