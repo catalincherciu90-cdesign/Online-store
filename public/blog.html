@@ -87,7 +87,7 @@
     if (slug) {
       fetch('/api/posts/' + encodeURIComponent(slug)).then(r => r.ok ? r.json() : null).then(post => {
         if (!post || post.error) {
-          root.innerHTML = `<div class="empty-state" style="padding:80px 20px;text-align:center"><h2>Articolul nu a fost găsit</h2><a href="blog.html" class="btn btn-primary" style="margin-top:16px">Înapoi la blog</a></div>`;
+          root.innerHTML = `<div class="empty-state" style="padding:80px 20px;text-align:center"><h2>Articolul nu a fost găsit</h2><a href="blog.html" class="btn btn-primary" style="margin-top:16px">Înapoi la Ghidul acoperișului</a></div>`;
           return;
         }
         document.title = post.title + ' | ExpoTigla';
