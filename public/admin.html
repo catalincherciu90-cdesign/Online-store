@@ -185,6 +185,10 @@
     .a-pager-nav { display: flex; align-items: center; gap: 10px; }
     .a-pager-page { font-size: .86rem; color: #c4d6cd; min-width: 100px; text-align: center; }
     .a-btn-sm:disabled { opacity: .4; cursor: not-allowed; }
+    /* Bară de progres import */
+    .imp-bar { height: 12px; border-radius: 999px; background: rgba(255,255,255,.08); overflow: hidden; border: 1px solid var(--em-border); }
+    .imp-bar-fill { height: 100%; width: 0; border-radius: 999px; background: linear-gradient(90deg,#34d399,#1c9e70); transition: width .35s ease; }
+    .imp-status { margin-top: 12px; font-size: .9rem; color: var(--em-muted); }
     .toolbar h2 { color: #fff; }
     .badge-pill { background: rgba(52,211,153,.16); color: var(--em-accent-2); }
     .ord-tab { background: rgba(255,255,255,.04); border: 1px solid var(--em-border); color: #c4d6cd; }
@@ -633,6 +637,15 @@
       </div><!-- .content -->
     </div><!-- .main -->
   </div><!-- .admin-shell -->
+
+  <!-- PROGRES IMPORT -->
+  <div class="overlay" id="import-progress" style="align-items:center">
+    <div class="modal" style="max-width:420px;text-align:center">
+      <h3 style="margin-bottom:16px">Import produse</h3>
+      <div class="imp-bar"><div class="imp-bar-fill" id="imp-fill"></div></div>
+      <div class="imp-status" id="imp-status">Se pregătește…</div>
+    </div>
+  </div>
 
   <!-- EDITOR PRODUS -->
   <div class="overlay" id="editor">
@@ -1888,16 +1901,30 @@
       for (const k in NAME) if (n === k || n.startsWith(k)) return NAME[k];
       return undefined;
     }
+    // ── Bară de progres pentru import ──
+    let impCreepTimer = null;
+    function impShow(pct, text) {
+      const ov = document.getElementById('import-progress'); if (ov) ov.classList.add('open');
+      const f = document.getElementById('imp-fill'); if (f && pct != null) f.style.width = Math.max(0, Math.min(100, pct)) + '%';
+      const s = document.getElementById('imp-status'); if (s && text) s.textContent = text;
+    }
+    function impCreep(from, to) {
+      clearInterval(impCreepTimer); let cur = from;
+      impCreepTimer = setInterval(() => { cur = Math.min(cur + 2, to); impShow(cur); if (cur >= to) clearInterval(impCreepTimer); }, 200);
+    }
+    function impHide() { clearInterval(impCreepTimer); const ov = document.getElementById('import-progress'); if (ov) ov.classList.remove('open'); }
     async function importFile(file) {
       if (!file) return;
       let rows;
+      impShow(5, 'Se citește fișierul…');
       try {
         rows = file.name.toLowerCase().endsWith('.csv') ? parseCSV(await file.text()) : await parseXlsx(await file.arrayBuffer());
-      } catch (e) { alert('Nu am putut citi fișierul: ' + e.message); return; }
+      } catch (e) { impHide(); alert('Nu am putut citi fișierul: ' + e.message); return; }
+      impShow(22, 'Se analizează produsele…');
       importNewOpts = { finisaj: {}, culoare: {}, grosime: {} }; // colectăm valorile noi de creat
       const norm = r => (r || []).map(x => (x == null ? '' : x).toString().trim());
       const hIdx = rows.findIndex(r => { const n = norm(r).map(x => x.toLowerCase()); return n.includes('cod') && n.includes('denumire'); });
-      if (hIdx < 0) { alert('Nu am găsit antetul (coloanele cod, denumire...). Verifică fișierul.'); return; }
+      if (hIdx < 0) { impHide(); alert('Nu am găsit antetul (coloanele cod, denumire...). Verifică fișierul.'); return; }
       const header = norm(rows[hIdx]).map(x => x.toLowerCase());
       const col = n => header.indexOf(n);
       const catIds = new Set(CATEGORIES.map(c => c.id));
@@ -1980,17 +2007,20 @@
         }
       }
 
-      if (!products.length) { importNewOpts = null; alert('Niciun produs valid găsit (verifică coloana „categorie”).'); return; }
+      if (!products.length) { importNewOpts = null; impHide(); alert('Niciun produs valid găsit (verifică coloana „categorie”).'); return; }
       const newCount = ['finisaj', 'culoare', 'grosime'].reduce((s, g) => s + Object.keys(importNewOpts[g]).length, 0);
       let msg = 'Se importă ' + products.length + ' produse. Cele cu același cod se suprascriu.';
       if (newCount) msg += '\n\nSe vor CREA automat ' + newCount + ' valori noi în Proprietăți (finisaje/culori/grosimi care nu existau încă).';
       msg += '\n\nContinui?';
-      if (!confirm(msg)) { importNewOpts = null; return; }
+      if (!confirm(msg)) { importNewOpts = null; impHide(); return; }
+      impShow(32, 'Se importă produsele…'); impCreep(32, 60);
       try {
         const res = await api('/admin/seed', { method: 'POST', body: JSON.stringify({ products }) });
         const d = await res.json();
-        if (!d.ok) { alert(d.error || 'Eroare la import.'); return; }
+        clearInterval(impCreepTimer);
+        if (!d.ok) { impHide(); alert(d.error || 'Eroare la import.'); return; }
         // Creează valorile noi de opțiuni în Proprietăți (păstrează existentul, adaugă noile).
+        impShow(68, newCount ? 'Se creează valorile noi în Proprietăți…' : 'Se finalizează…');
         let extra = '';
         const optionsPayload = {};
         ['finisaj', 'culoare', 'grosime'].forEach(g => {
@@ -2009,9 +2039,11 @@
             if (typeof loadProps === 'function') loadProps();
           } catch (e) { extra = '\n⚠ Produsele s-au importat, dar crearea valorilor noi a eșuat: ' + e.message; }
         }
-        alert('✓ Importate: ' + d.imported + ' produse.' + extra);
+        impShow(90, 'Se reîncarcă lista…');
         loadProducts();
-      } catch (e) { alert('Eroare: ' + e.message); }
+        impShow(100, 'Gata ✓');
+        setTimeout(() => { impHide(); alert('✓ Importate: ' + d.imported + ' produse.' + extra); }, 650);
+      } catch (e) { impHide(); alert('Eroare: ' + e.message); }
       finally { importNewOpts = null; }
     }
 
