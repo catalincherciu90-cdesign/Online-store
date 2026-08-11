@@ -831,11 +831,15 @@ a.pd-doc:hover { border-color: var(--terra); }
   .trust-bar { flex-direction: column; align-items: flex-start; justify-content: flex-start; gap: 13px; padding: 18px 22px; }
   /* Dropdown Produse: inline (indentat) pe telefon */
   .has-dropdown { display: block; }
-  .nav-submenu { position: static; display: flex; box-shadow: none; border: 0; padding: 2px 0 6px 16px; min-width: 0; }
+  /* Submeniul Produse: pliabil pe telefon (închis implicit, se deschide la atingere) */
+  .nav-submenu { position: static; display: none; box-shadow: none; border: 0; padding: 2px 0 6px 16px; min-width: 0; }
+  .has-dropdown.open .nav-submenu { display: flex; }
   .nav-submenu a { padding: 8px 12px; }
-  .nav-caret { display: none; }
+  .nav-caret { display: inline-block; transition: transform .2s; }
+  .has-dropdown.open .nav-caret { transform: rotate(180deg); }
   .nav { display: none; position: absolute; top: 100%; left: 0; right: 0; flex-direction: column;
-    background: #fff; border-bottom: 1px solid var(--line); padding: 12px; box-shadow: var(--shadow); }
+    background: #fff; border-bottom: 1px solid var(--line); padding: 12px; box-shadow: var(--shadow);
+    max-height: calc(100vh - 62px); max-height: calc(100dvh - 62px); overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
   .nav a.active::after { display: none; }
   .nav.open { display: flex; }
   .nav a { padding: 12px 14px; }

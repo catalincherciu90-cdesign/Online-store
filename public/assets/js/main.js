@@ -38,6 +38,11 @@ function injectProduseDropdown() {
   menu.innerHTML = cats.map(c => `<a href="produse.html?cat=${c.id}">${esc(c.name)}</a>`).join('') +
     `<a href="produse.html" class="submenu-all">Vezi toate produsele</a>`;
   wrap.appendChild(menu);
+  // Pe telefon, atingerea „Produse" pliază/depliază submeniul în loc să navigheze
+  // (categoriile și „Vezi toate produsele" rămân pentru navigare).
+  link.addEventListener('click', (e) => {
+    if (window.matchMedia('(max-width: 720px)').matches) { e.preventDefault(); wrap.classList.toggle('open'); }
+  });
 }
 
 /* Linkuri utile + legale în footer, injectate pe toate paginile */
