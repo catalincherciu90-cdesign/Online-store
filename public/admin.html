@@ -1860,8 +1860,11 @@
       if (cur !== '' || row.length) { row.push(cur); rows.push(row); }
       return rows;
     }
+    // Valorile noi (finisaj/culoare/grosime) întâlnite la import, ca să le creăm
+    // automat în Proprietăți. Structură: { finisaj:{id:nume}, culoare:{}, grosime:{} }.
+    let importNewOpts = null;
     // Rezolvă un nume (finisaj/grosime/culoare) la id-ul din Proprietăți; dacă nu
-    // există, generează un slug și îl notează în `unknown` ca să avertizăm userul.
+    // există, generează un slug, îl notează în `unknown` și îl reține ca valoare nouă.
     function optIdByName(grp, nm, unknown) {
       nm = (nm || '').trim(); if (!nm) return '';
       const low = nm.toLowerCase();
@@ -1872,7 +1875,18 @@
       });
       if (v) return v.id;
       if (unknown) unknown.add((OPTIONS[grp] ? OPTIONS[grp].label : grp) + ': „' + nm + '”');
-      return slug(nm);
+      const id = slug(nm);
+      if (importNewOpts && importNewOpts[grp] && !(id in importNewOpts[grp])) importNewOpts[grp][id] = nm;
+      return id;
+    }
+    // Ghicește o culoare (hex) din cod RAL sau nume, ca pastila să nu fie gri.
+    function guessHex(name) {
+      const n = (name || '').toLowerCase().trim();
+      const RAL = { '7016': '#383e42', '7024': '#45494e', '9005': '#0a0a0a', '9006': '#a5a8a6', '9002': '#e7ebda', '8017': '#442f29', '8019': '#3d3635', '8004': '#8a3a2a', '3000': '#a72920', '3005': '#5e2129', '3011': '#792423', '5010': '#0e294b', '6020': '#39352a', '6005': '#114232', '1015': '#e6d2b5', '7035': '#c5c7c4', '7037': '#7d7f7d', '9010': '#f1ece1' };
+      for (const k in RAL) if (n.includes(k)) return RAL[k];
+      const NAME = { 'maro': '#4b3621', 'mros': '#7a2e28', 'car': '#8a3a2a', 'caramiziu': '#8a3a2a', 'cardinal': '#7a2e28', 'gran': '#5b5148', 'granit': '#5b5148', 'negru': '#111111', 'brun': '#3d2b1f', 'grii': '#6b6f72', 'gri': '#808387', 'graf': '#383a3c', 'grafit': '#383a3c', 'silv': '#9a9da0', 'silver': '#9a9da0', 'argintiu': '#a6a9ac', 'alb': '#eceae3', 'rosu': '#a72920', 'verde': '#2f5233', 'antracit': '#31363b', 'teak': '#6b4423', 'mage': '#6b4423' };
+      for (const k in NAME) if (n === k || n.startsWith(k)) return NAME[k];
+      return undefined;
     }
     async function importFile(file) {
       if (!file) return;
@@ -1880,6 +1894,7 @@
       try {
         rows = file.name.toLowerCase().endsWith('.csv') ? parseCSV(await file.text()) : await parseXlsx(await file.arrayBuffer());
       } catch (e) { alert('Nu am putut citi fișierul: ' + e.message); return; }
+      importNewOpts = { finisaj: {}, culoare: {}, grosime: {} }; // colectăm valorile noi de creat
       const norm = r => (r || []).map(x => (x == null ? '' : x).toString().trim());
       const hIdx = rows.findIndex(r => { const n = norm(r).map(x => x.toLowerCase()); return n.includes('cod') && n.includes('denumire'); });
       if (hIdx < 0) { alert('Nu am găsit antetul (coloanele cod, denumire...). Verifică fișierul.'); return; }
@@ -1965,16 +1980,39 @@
         }
       }
 
-      if (!products.length) { alert('Niciun produs valid găsit (verifică coloana „categorie”).'); return; }
-      let msg = 'Se importă ' + products.length + ' produse. Cele cu același cod se suprascriu. Continui?';
-      if (unknown.size) msg = '⚠ Valori care nu există încă în Proprietăți (le import oricum, dar adaugă-le în tabul Proprietăți ca să apară numele/culoarea corect):\n  • ' + [...unknown].join('\n  • ') + '\n\n' + msg;
-      if (!confirm(msg)) return;
+      if (!products.length) { importNewOpts = null; alert('Niciun produs valid găsit (verifică coloana „categorie”).'); return; }
+      const newCount = ['finisaj', 'culoare', 'grosime'].reduce((s, g) => s + Object.keys(importNewOpts[g]).length, 0);
+      let msg = 'Se importă ' + products.length + ' produse. Cele cu același cod se suprascriu.';
+      if (newCount) msg += '\n\nSe vor CREA automat ' + newCount + ' valori noi în Proprietăți (finisaje/culori/grosimi care nu existau încă).';
+      msg += '\n\nContinui?';
+      if (!confirm(msg)) { importNewOpts = null; return; }
       try {
         const res = await api('/admin/seed', { method: 'POST', body: JSON.stringify({ products }) });
         const d = await res.json();
-        alert(d.ok ? ('✓ Importate: ' + d.imported + ' produse.') : (d.error || 'Eroare la import.'));
+        if (!d.ok) { alert(d.error || 'Eroare la import.'); return; }
+        // Creează valorile noi de opțiuni în Proprietăți (păstrează existentul, adaugă noile).
+        let extra = '';
+        const optionsPayload = {};
+        ['finisaj', 'culoare', 'grosime'].forEach(g => {
+          const additions = Object.entries(importNewOpts[g] || {});
+          if (!additions.length) return;
+          const existing = ((OPTIONS[g] && OPTIONS[g].values) || []).map(v => ({ id: v.id, name: v.name, delta: v.delta || 0, hex: v.hex }));
+          const existIds = new Set(existing.map(v => v.id));
+          const news = additions.filter(([id]) => !existIds.has(id))
+            .map(([id, name]) => ({ id, name, delta: 0, hex: g === 'culoare' ? guessHex(name) : undefined }));
+          if (news.length) optionsPayload[g] = existing.concat(news);
+        });
+        if (Object.keys(optionsPayload).length) {
+          try {
+            await api('/options/seed', { method: 'POST', body: JSON.stringify({ options: optionsPayload }) });
+            extra = '\n✓ Create ' + newCount + ' valori noi în Proprietăți.';
+            if (typeof loadProps === 'function') loadProps();
+          } catch (e) { extra = '\n⚠ Produsele s-au importat, dar crearea valorilor noi a eșuat: ' + e.message; }
+        }
+        alert('✓ Importate: ' + d.imported + ' produse.' + extra);
         loadProducts();
       } catch (e) { alert('Eroare: ' + e.message); }
+      finally { importNewOpts = null; }
     }
 
     function specsToText(specs) { return Object.entries(specs || {}).map(([k, v]) => `${k}: ${v}`).join('\n'); }
