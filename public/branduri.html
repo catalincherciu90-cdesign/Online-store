@@ -88,27 +88,46 @@
   <script src="assets/js/main.js"></script>
   <script>
     const esc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    const brandKey = s => (s || '').trim().toLowerCase();
+    // Afișare frumoasă: acronimele scurte rămân MAJUSCULE (WTB, JB), restul Cap Case (LINDAB→Lindab).
+    function niceBrand(s) {
+      return (s || '').trim().split(/\s+/).map(w => {
+        if (w.length <= 3 && w === w.toUpperCase()) return w;
+        return w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
+      }).join(' ');
+    }
     (async () => {
       let prods = [];
       try { prods = await (await fetch('/api/producers')).json(); } catch (e) {}
       await loadCatalog();
-      const byName = {}; (prods || []).forEach(p => byName[p.name.trim().toLowerCase()] = p);
-      const fromProducts = [...new Set(PRODUCTS.map(p => (p.producator || '').trim()).filter(Boolean))];
-      const names = [];
-      (prods || []).slice().sort((a, b) => (a.sort - b.sort) || a.name.localeCompare(b.name, 'ro')).forEach(p => names.push(p.name));
-      fromProducts.forEach(n => { if (!byName[n.toLowerCase()]) names.push(n); });
+      // Grupare case-insensitive: aceeași denumire scrisă cu majuscule sau minuscule = un singur brand.
+      const groups = new Map();
+      (prods || []).forEach(p => {
+        const k = brandKey(p.name); if (!k) return;
+        groups.set(k, { display: p.name.trim(), logo: p.logo || null, sort: (p.sort ?? 999), isProducer: true, count: 0 });
+      });
+      PRODUCTS.forEach(x => {
+        const raw = (x.producator || '').trim(); if (!raw) return;
+        const k = brandKey(raw);
+        let g = groups.get(k);
+        if (!g) { g = { display: niceBrand(raw), logo: null, sort: 999, isProducer: false, count: 0 }; groups.set(k, g); }
+        g.count++;
+      });
+      const list = [...groups.values()]
+        .filter(g => g.isProducer || g.count > 0)
+        .sort((a, b) => (a.isProducer === b.isProducer)
+          ? ((a.isProducer ? (a.sort - b.sort) : 0) || a.display.localeCompare(b.display, 'ro'))
+          : (a.isProducer ? -1 : 1));
       const box = document.getElementById('brands-page');
-      if (!names.length) {
+      if (!list.length) {
         box.innerHTML = `<div style="text-align:center;color:var(--muted);padding:30px">Producătorii vor apărea aici în curând.</div>`;
         return;
       }
-      box.innerHTML = `<div class="brand-cards">${names.map(n => {
-        const p = byName[n.trim().toLowerCase()];
-        const count = PRODUCTS.filter(x => (x.producator || '').trim() === n).length;
-        const inner = p && p.logo ? `<img src="${p.logo}" alt="${esc(n)}" class="brand-card-logo">` : `<span class="brand-card-name">${esc(n)}</span>`;
-        return `<a class="brand-card" href="produse.html?producator=${encodeURIComponent(n)}">
+      box.innerHTML = `<div class="brand-cards">${list.map(g => {
+        const inner = g.logo ? `<img src="${g.logo}" alt="${esc(g.display)}" class="brand-card-logo">` : `<span class="brand-card-name">${esc(g.display)}</span>`;
+        return `<a class="brand-card" href="produse.html?producator=${encodeURIComponent(g.display)}">
           <div class="brand-card-media">${inner}</div>
-          <div class="brand-card-info"><b>${esc(n)}</b><span>${count} ${count === 1 ? 'produs' : 'produse'}</span></div>
+          <div class="brand-card-info"><b>${esc(g.display)}</b><span>${g.count} ${g.count === 1 ? 'produs' : 'produse'}</span></div>
         </a>`;
       }).join('')}</div>`;
     })();

@@ -175,8 +175,14 @@
     let activeProducer = 'all';
     let brandList = [];
     const escAttr = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    // Afișare frumoasă a brandului (acronime scurte rămân majuscule).
+    const niceBrand = s => (s || '').trim().split(/\s+/).map(w => (w.length <= 3 && w === w.toUpperCase()) ? w : (w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())).join(' ');
+    const sameBrand = (a, b) => (a || '').trim().toLowerCase() === (b || '').trim().toLowerCase();
     function buildBrandFilters() {
-      brandList = [...new Set(PRODUCTS.map(p => (p.producator || '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'ro'));
+      // Dedup case-insensitive: „LINDAB" și „Lindab" = un singur brand.
+      const seen = new Map();
+      PRODUCTS.forEach(p => { const raw = (p.producator || '').trim(); if (raw && !seen.has(raw.toLowerCase())) seen.set(raw.toLowerCase(), niceBrand(raw)); });
+      brandList = [...seen.values()].sort((a, b) => a.localeCompare(b, 'ro'));
       const group = document.getElementById('brand-filter-group');
       const box = document.getElementById('brand-filters');
       if (!brandList.length) { group.style.display = 'none'; return; }
@@ -237,7 +243,7 @@
     function render() {
       let list = PRODUCTS.slice();
       if (activeCat !== 'all') list = list.filter(p => p.cat === activeCat);
-      if (activeProducer !== 'all') list = list.filter(p => (p.producator || '').trim() === activeProducer);
+      if (activeProducer !== 'all') list = list.filter(p => sameBrand(p.producator, activeProducer));
       if (activePrice !== 'all') {
         const [lo, hi] = activePrice.split('-').map(Number);
         list = list.filter(p => p.price >= lo && p.price <= hi);
@@ -268,7 +274,7 @@
           ${p.badge ? `<span class="badge" data-badge="${p.badge}">${p.badge}</span>` : ''}${productMedia(p)}
         </a>
         <div class="info">
-          <div class="tag-row"><span class="cat-tag">${categoryName(p.cat)}</span>${p.producator ? `<span class="brand-tag">${escAttr(p.producator)}</span>` : ''}</div>
+          <div class="tag-row"><span class="cat-tag">${categoryName(p.cat)}</span>${p.producator ? `<span class="brand-tag">${escAttr(niceBrand(p.producator))}</span>` : ''}</div>
           <h3><a href="produs.html?id=${p.id}">${p.name}</a></h3>
           <p class="desc">${p.desc}</p>
           <div class="price-row">
