@@ -602,6 +602,11 @@
       <form id="servicii-form" class="checkout-form" onsubmit="saveServicii(event)" style="max-width:820px">
         <div class="field"><label>Titlu pagină</label><input name="servicii_title" placeholder="Montaj și consultanță"></div>
         <div class="field"><label>Introducere (sub titlu)</label><textarea name="servicii_lead" rows="2" placeholder="Nu vindem doar materiale…"></textarea></div>
+        <div class="field">
+          <label>Poză reprezentativă (sus pe pagină, opțional · max ~3 MB)</label>
+          <input type="file" accept="image/*" id="servicii-image-file" onchange="onServiciiImage(this.files[0])">
+          <div id="servicii-image-preview" style="margin-top:10px"></div>
+        </div>
         <div class="form-row">
           <div class="field"><label>Titlu „Montaj"</label><input name="servicii_montaj_title" placeholder="Montaj profesional"></div>
           <div class="field"><label>Titlu „Consultanță"</label><input name="servicii_consult_title" placeholder="Consultanță tehnică"></div>
@@ -1251,15 +1256,38 @@
       } catch (e) { /* neconfigurat */ }
     }
     const SERVICII_KEYS = ['servicii_title', 'servicii_lead', 'servicii_montaj_title', 'servicii_montaj_content', 'servicii_consult_title', 'servicii_consult_content', 'servicii_cta_title', 'servicii_cta_text'];
+    let serviciiImage = '';
+    function renderServiciiImg() {
+      const box = document.getElementById('servicii-image-preview'); if (!box) return;
+      box.innerHTML = serviciiImage
+        ? `<img src="${serviciiImage}" style="max-height:130px;border-radius:10px;display:block;margin-bottom:8px"><button type="button" class="a-btn-sm danger" onclick="removeServiciiImage()">Șterge poza</button>`
+        : '<span class="muted-sm">Nicio poză încărcată.</span>';
+    }
+    function fitWide(file, cb, maxW) {
+      const reader = new FileReader();
+      reader.onload = () => { const img = new Image(); img.onload = () => {
+        const scale = Math.min(1, (maxW || 1400) / img.width);
+        const w = Math.round(img.width * scale), h = Math.round(img.height * scale);
+        const c = document.createElement('canvas'); c.width = w; c.height = h;
+        c.getContext('2d').drawImage(img, 0, 0, w, h);
+        cb(c.toDataURL('image/jpeg', 0.82));
+      }; img.src = reader.result; }; reader.readAsDataURL(file);
+    }
+    function onServiciiImage(file) {
+      if (!file) return;
+      fitWide(file, url => { if (url.length > 2900000) { alert('Poză prea mare. Alege una mai mică sau comprimă-o și încearcă din nou.'); return; } serviciiImage = url; renderServiciiImg(); }, 1400);
+    }
+    function removeServiciiImage() { serviciiImage = ''; renderServiciiImg(); }
     async function loadServicii() {
       const f = document.getElementById('servicii-form'); if (!f) return;
-      try { const s = await (await api('/settings')).json(); SERVICII_KEYS.forEach(k => { if (f[k]) f[k].value = s[k] || ''; }); }
+      try { const s = await (await api('/settings')).json(); SERVICII_KEYS.forEach(k => { if (f[k]) f[k].value = s[k] || ''; }); serviciiImage = s.servicii_image || ''; }
       catch (e) { /* neconfigurat */ }
+      renderServiciiImg();
     }
     async function saveServicii(e) {
       e.preventDefault();
       const f = e.target; const st = document.getElementById('servicii-status');
-      const body = {}; SERVICII_KEYS.forEach(k => { if (f[k]) body[k] = f[k].value; });
+      const body = { servicii_image: serviciiImage }; SERVICII_KEYS.forEach(k => { if (f[k]) body[k] = f[k].value; });
       try {
         const d = await (await api('/settings', { method: 'POST', body: JSON.stringify(body) })).json();
         if (d.ok) { st.className = 'form-status'; st.style.color = '#1a8f4c'; st.textContent = '✓ Salvat.'; }

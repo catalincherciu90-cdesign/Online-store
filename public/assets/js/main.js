@@ -212,6 +212,7 @@ function applySettings(s) {
     if (mode === 'tel') el.setAttribute('href', 'tel:' + val.replace(/\s+/g, ''));
     else if (mode === 'mail') el.setAttribute('href', 'mailto:' + val);
     else if (mode === 'href') el.setAttribute('href', val);
+    else if (mode === 'src') { el.setAttribute('src', val); el.style.display = ''; const fig = el.closest('[data-site-figure]'); if (fig) fig.style.display = ''; }
     else el.textContent = val;
   });
   // Iconițe social în footer (doar rețelele pentru care există link în setări)
