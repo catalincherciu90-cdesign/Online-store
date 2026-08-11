@@ -1912,10 +1912,17 @@
             if (!prod.name) prod.name = cell(r, 'denumire');
             if (!prod.desc) prod.desc = cell(r, 'descriere');
           }
-          const finName = cell(r, 'finisaj'); if (!finName) continue;
+          // Finisajul și grosimea se scriu de regulă o singură dată pe primul rând al
+          // grupului, iar culorile vin pe rândurile următoare cu finisaj/grosime goale.
+          // Le „tragem în jos" pe rândurile aceluiași produs (fill-down de matrice).
+          let finName = cell(r, 'finisaj');
+          let thName = cell(r, 'grosime');
+          if (finName) { prod._lastFin = finName; prod._lastGr = thName; } // rând-antet de finisaj nou
+          else { finName = prod._lastFin || ''; if (!thName) thName = prod._lastGr || ''; }
+          if (!finName) continue;
           const fid = optIdByName('finisaj', finName, unknown);
           const colName = cell(r, 'culoare'); const cid = colName ? optIdByName('culoare', colName, unknown) : '';
-          const thName = cell(r, 'grosime'); const tid = thName ? optIdByName('grosime', thName, unknown) : '';
+          const tid = thName ? optIdByName('grosime', thName, unknown) : '';
           const pr = parseFloat((cell(r, 'pret') || '').replace(',', '.'));
           const f = prod._fin[fid] = prod._fin[fid] || { id: fid, colors: new Set(), thicknesses: new Set(), prices: {} };
           if (cid) f.colors.add(cid);
