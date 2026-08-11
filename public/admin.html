@@ -189,6 +189,7 @@
     .imp-bar { height: 12px; border-radius: 999px; background: rgba(255,255,255,.08); overflow: hidden; border: 1px solid var(--em-border); }
     .imp-bar-fill { height: 100%; width: 0; border-radius: 999px; background: linear-gradient(90deg,#34d399,#1c9e70); transition: width .35s ease; }
     .imp-status { margin-top: 12px; font-size: .9rem; color: var(--em-muted); }
+    .clr-dot { display: inline-block; width: 14px; height: 14px; border-radius: 50%; border: 1px solid rgba(255,255,255,.25); vertical-align: middle; margin-right: 6px; }
     .toolbar h2 { color: #fff; }
     .badge-pill { background: rgba(52,211,153,.16); color: var(--em-accent-2); }
     .ord-tab { background: rgba(255,255,255,.04); border: 1px solid var(--em-border); color: #c4d6cd; }
@@ -671,6 +672,11 @@
           <label style="font-weight:600">Poză montaj & documente</label>
           <div class="muted-sm" style="margin-bottom:8px">Poza „punere în operă" apare pe pagina produsului; documentele (PDF) apar la secțiunea „Documente". Fișier max ~3 MB. Salvează întâi produsul dacă e nou, apoi încarcă-le.</div>
           <div id="pf-box"></div>
+        </div>
+        <div class="field full">
+          <label style="font-weight:600">Poze pe culoare</label>
+          <div class="muted-sm" style="margin-bottom:8px">Câte o poză pentru fiecare culoare a produsului. Când clientul alege culoarea pe pagina produsului, se afișează poza ei. Fișier max ~3 MB.</div>
+          <div id="pf-colors-box"></div>
         </div>
         <div class="field full">
           <label style="display:flex;align-items:center;gap:8px;font-weight:600;cursor:pointer">
@@ -2260,7 +2266,7 @@
         document.getElementById('f-hasfin').checked = !!(p.finishes && p.finishes.length);
       } else { document.getElementById('f-hasfin').checked = false; }
       toggleFinishes();
-      if (p) reloadPF(p.id); else renderPFSlots('');
+      if (p) reloadPF(p.id); else { renderPFSlots(''); renderColorSlots(''); }
       document.getElementById('editor').classList.add('open');
     }
     function closeEditor() { document.getElementById('editor').classList.remove('open'); }
@@ -2290,8 +2296,35 @@
       }).join('');
     }
     async function reloadPF(pid) {
-      try { const list = await (await api('/pf/' + encodeURIComponent(pid))).json(); renderPFSlots(pid, list); }
-      catch (e) { renderPFSlots(pid, []); }
+      try { const list = await (await api('/pf/' + encodeURIComponent(pid))).json(); renderPFSlots(pid, list); renderColorSlots(pid, list); }
+      catch (e) { renderPFSlots(pid, []); renderColorSlots(pid, []); }
+    }
+    // Culorile produsului aflat în editare (reuniunea culorilor din toate finisajele).
+    function editingColorIds() {
+      const set = new Set();
+      Object.values(editingFinishes || {}).forEach(f => (f.colors || []).forEach(c => set.add(c)));
+      return [...set];
+    }
+    function renderColorSlots(pid, available) {
+      const box = document.getElementById('pf-colors-box'); if (!box) return;
+      if (!pid) { box.innerHTML = `<div class="muted-sm">Salvează produsul (completează <b>ID</b>) ca să poți încărca poze pe culoare.</div>`; return; }
+      const ids = editingColorIds();
+      if (!ids.length) { box.innerHTML = `<div class="muted-sm">Produsul nu are culori definite. Adaugă culori la un finisaj (bifează „Produs configurabil pe finisaje") ca să apară aici.</div>`; return; }
+      const has = {}; (available || []).forEach(a => { if ((a.kind || '').startsWith('color_')) has[a.kind] = a; });
+      box.innerHTML = ids.map(cid => {
+        const kind = 'color_' + cid;
+        const up = has[kind];
+        const ov = (typeof optionValue === 'function') ? optionValue('culoare', cid) : null;
+        const name = ov ? ov.name : cid;
+        const hex = (ov && ov.hex) ? ov.hex : '#cccccc';
+        return `<div class="pf-row">
+          <div class="pf-name"><span class="clr-dot" style="background:${hex}"></span> ${esc(name)} ${up ? '<span class="pf-ok">✓ încărcată</span>' : '<span class="muted-sm">—</span>'}</div>
+          <div class="pf-actions">
+            ${up ? `<a class="a-btn-sm" href="${up.url}" target="_blank" rel="noopener">Vezi</a><button type="button" class="a-btn-sm danger" onclick="delPF('${esc(pid)}','${kind}')">Șterge</button>` : ''}
+            <label class="a-btn-sm" style="cursor:pointer">${up ? 'Înlocuiește' : 'Încarcă'}<input type="file" accept="image/*" hidden onchange="onPFFile('${esc(pid)}','${kind}',true,this.files[0]);this.value=''"></label>
+          </div>
+        </div>`;
+      }).join('');
     }
     function onPFFile(pid, kind, isImg, file) {
       if (!file) return;

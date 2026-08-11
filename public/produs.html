@@ -85,13 +85,14 @@
     const root = document.getElementById('pd-root');
     let p = null;
     let sel = {}; // opțiuni selectate (finisaj/grosime/culoare)
+    let pfMap = {}; // fișiere produs (montaj, documente, poze pe culoare) — global pt. galerie
 
     loadCatalog().then(async () => {
     p = getProduct(id);
     sel = p ? defaultOpts(p) : {};
 
-    // Fișiere produs (poză montaj + documente) încărcate din admin
-    let pfMap = {};
+    // Fișiere produs (poză montaj + documente + poze pe culoare) încărcate din admin
+    pfMap = {};
     if (p) { try { const list = await (await fetch('/api/pf/' + encodeURIComponent(id))).json(); (list || []).forEach(x => pfMap[x.kind] = x.url); } catch (e) {} }
 
     if (!p) {
@@ -189,6 +190,7 @@
           </div></div>`).join('');
       hydrateImages();
       initOptions();
+      if (sel.culoare && pfMap['color_' + sel.culoare]) updateGallery(sel.culoare); // poza culorii implicite
     }
     }); // loadCatalog
 
@@ -265,16 +267,28 @@
       });
     }
 
-    // Schimbă imaginea produsului în funcție de culoare, dacă există o poză
-    // dedicată: assets/img/products/<id>__<culoare>.jpg. Altfel, revine la baza.
+    // Schimbă imaginea produsului în funcție de culoare. Ordinea surselor:
+    // 1) poza încărcată din admin în D1 (/api/pf/<id>/color_<culoare>), cu cache-busting
+    // 2) fișier local assets/img/products/<id>__<culoare>.jpg
+    // 3) media implicită a produsului.
     function updateGallery(colorId) {
       const gal = document.querySelector('.product-gallery');
       if (!gal) return;
-      const url = `assets/img/products/${id}__${colorId}.jpg`;
-      const test = new Image();
-      test.onload = () => { gal.innerHTML = `<img class="pmedia" src="${url}" alt="${p.name}">`; };
-      test.onerror = () => { gal.innerHTML = productMedia(p); hydrateImages(gal); };
-      test.src = url;
+      const d1url = pfMap['color_' + colorId];
+      const fileUrl = `assets/img/products/${id}__${colorId}.jpg`;
+      const setDefault = () => { gal.innerHTML = productMedia(p); hydrateImages(gal); };
+      const tryFile = () => {
+        const t = new Image();
+        t.onload = () => { gal.innerHTML = `<img class="pmedia" src="${fileUrl}" alt="${p.name}">`; };
+        t.onerror = setDefault;
+        t.src = fileUrl;
+      };
+      if (d1url) {
+        const t = new Image();
+        t.onload = () => { gal.innerHTML = `<img class="pmedia" src="${d1url}" alt="${p.name}">`; };
+        t.onerror = tryFile;
+        t.src = d1url;
+      } else { tryFile(); }
     }
 
     function chgQty(d) {

@@ -501,7 +501,8 @@ async function productFileUpsert(request, env) {
   if (!await requireAdmin(request, env)) return json({ error: 'Neautorizat' }, 401);
   if (!env.DB) return json({ error: 'Baza de date nu este configurată.' }, 500);
   const v = await request.json().catch(() => null);
-  if (!v || !v.product_id || !PRODUCT_FILE_KINDS.includes(v.kind) || !v.data) return json({ error: 'Date lipsă sau tip invalid.' }, 400);
+  const validKind = v && (PRODUCT_FILE_KINDS.includes(v.kind) || /^color_[a-z0-9_\-]+$/i.test(v.kind || ''));
+  if (!v || !v.product_id || !validKind || !v.data) return json({ error: 'Date lipsă sau tip invalid.' }, 400);
   if (String(v.data).length > 4200000) return json({ error: 'Fișier prea mare (max ~3 MB).' }, 413);
   await env.DB.prepare('INSERT OR REPLACE INTO product_files (product_id, kind, mime, data, name, updated_at) VALUES (?,?,?,?,?,datetime(\'now\'))')
     .bind(v.product_id, v.kind, v.mime || '', v.data, v.name || '').run();
