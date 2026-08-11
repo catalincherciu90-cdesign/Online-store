@@ -175,6 +175,16 @@
     .modal h3 { color: #fff; }
     .muted-sm { color: var(--em-muted); }
     .a-empty { background: var(--em-card); border: 1px dashed var(--em-border); color: var(--em-muted); }
+    /* Bară paginare tabel produse */
+    .a-pager { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; margin: 0 0 14px; }
+    .a-table + .a-pager { margin: 14px 0 0; }
+    .a-pager-info { font-size: .86rem; color: var(--em-muted); }
+    .a-pager-ctrls { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+    .a-pager-size { display: flex; align-items: center; gap: 8px; font-size: .86rem; color: #c4d6cd; }
+    .a-pager-size select { padding: 6px 10px !important; border-radius: 8px; width: auto; min-width: 66px; }
+    .a-pager-nav { display: flex; align-items: center; gap: 10px; }
+    .a-pager-page { font-size: .86rem; color: #c4d6cd; min-width: 100px; text-align: center; }
+    .a-btn-sm:disabled { opacity: .4; cursor: not-allowed; }
     .toolbar h2 { color: #fff; }
     .badge-pill { background: rgba(52,211,153,.16); color: var(--em-accent-2); }
     .ord-tab { background: rgba(255,255,255,.04); border: 1px solid var(--em-border); color: #c4d6cd; }
@@ -847,7 +857,7 @@
     // Mic tutorial afișat sub titlul fiecărei secțiuni
     const TAB_HELP = {
       dashboard: 'Aici vezi pe scurt cum stă magazinul: comenzi noi, comenzi întârziate, cel mai vândut produs și brand, plus graficul de vânzări. Apasă pe un card ca să sari direct la lista respectivă.',
-      produse: 'Adaugă produse cu <b>„+ Produs nou"</b> sau importă-le în masă din Excel/CSV (descarcă întâi template-ul). Fiecare produs poate avea finisaje, culori și grosimi cu prețuri diferite. <b>„Importă din catalog"</b> încarcă produsele demo ca punct de plecare.',
+      produse: 'Adaugă produse cu <b>„+ Produs nou"</b> sau importă-le în masă din Excel/CSV (descarcă întâi template-ul). Fiecare produs poate avea finisaje, culori și grosimi cu prețuri diferite. <b>„Importă din catalog"</b> încarcă produsele demo ca punct de plecare. Lista se afișează paginat — poți alege <b>50 sau 100 de produse pe pagină</b> din selectorul „Pe pagină", iar căutarea de sus filtrează tot catalogul.',
       producatori: 'Adaugă producătorii cu logo. Numele trebuie scris <b>identic</b> cu cel din produse, ca logo-ul să apară pe banda de branduri de pe pagina principală și pe paginile de producător.',
       proprietati: 'Definește o singură dată finisajele, grosimile și culorile — apar automat în editorul fiecărui produs și în filtrele de pe site. Dacă lista e goală, apasă <b>„Inițializează cu valorile implicite"</b>.',
       bannere: 'Bannerele apar în partea de sus a paginii principale (slider). Încarcă o imagine (ideal 1920×720), poți adăuga titlu, subtitlu și buton. Cu mai multe bannere, se rotesc automat. Poți pune și o imagine separată pentru mobil.',
@@ -883,6 +893,12 @@
     // Căutare rapidă în tabelul din tab-ul curent
     function adminSearch(q) {
       q = (q || '').trim().toLowerCase();
+      // Tabul Produse are paginare proprie -> filtrăm tot setul, nu doar pagina afișată.
+      const produseTab = document.getElementById('tab-produse');
+      if (produseTab && produseTab.style.display !== 'none') {
+        prodQuery = q; prodPage = 1; renderProducts();
+        return;
+      }
       document.querySelectorAll('[id^="tab-"]').forEach(p => {
         if (p.style.display === 'none') return;
         p.querySelectorAll('.a-table tbody tr').forEach(tr => {
@@ -1694,27 +1710,80 @@
     }
 
     // ── Produse ──
+    // ── Listă produse cu paginare (50 / 100 pe pagină) ──
+    let allProducts = [];
+    let prodQuery = '';
+    let prodPage = 1;
+    let prodPageSize = +(localStorage.getItem('prod_page_size')) || 50;
     async function loadProducts() {
       const box = document.getElementById('products-box');
       try {
         const res = await api('/products'); const list = await res.json();
-        if (!Array.isArray(list) || !list.length) {
-          box.innerHTML = `<div class="a-empty">Niciun produs în baza de date. Apasă „Importă din catalog" ca să populezi din catalogul existent.</div>`;
-          return;
-        }
-        box.innerHTML = `<table class="a-table"><thead><tr><th>Nume</th><th>Categorie</th><th>Producător</th><th>Preț</th><th>Badge</th><th></th></tr></thead><tbody>${
-          list.map(p => `<tr>
-            <td><b>${esc(p.name)}</b><br><span class="muted-sm">${esc(p.id)}</span></td>
-            <td>${esc(categoryName(p.cat))}</td>
-            <td>${p.producator ? esc(p.producator) : '<span class="muted-sm">—</span>'}</td>
-            <td>${fmt(p.price)} <span class="muted-sm">/ ${esc(p.unit)}</span></td>
-            <td>${p.badge ? `<span class="badge-pill">${esc(p.badge)}</span>` : '—'}</td>
-            <td><div class="a-actions">
-              <button class="a-btn-sm" onclick='openEditor(${JSON.stringify(p).replace(/'/g, "&#39;")})'>Editează</button>
-              <button class="a-btn-sm danger" onclick="delProduct('${esc(p.id)}')">Șterge</button>
-            </div></td></tr>`).join('')
-        }</tbody></table>`;
+        allProducts = Array.isArray(list) ? list : [];
+        prodPage = 1;
+        renderProducts();
       } catch (e) { box.innerHTML = `<div class="a-empty">Eroare la încărcare. Verifică configurarea D1.</div>`; }
+    }
+    function setProdPageSize(v) {
+      prodPageSize = +v || 50;
+      localStorage.setItem('prod_page_size', prodPageSize);
+      prodPage = 1;
+      renderProducts();
+    }
+    function prodGoto(page) {
+      const filtered = filteredProducts();
+      const pages = Math.max(1, Math.ceil(filtered.length / prodPageSize));
+      prodPage = Math.min(Math.max(1, page), pages);
+      renderProducts();
+    }
+    function filteredProducts() {
+      const q = prodQuery;
+      if (!q) return allProducts;
+      return allProducts.filter(p => [p.name, p.id, categoryName(p.cat), p.producator, p.badge]
+        .some(x => (x || '').toString().toLowerCase().includes(q)));
+    }
+    function renderProducts() {
+      const box = document.getElementById('products-box');
+      if (!allProducts.length) {
+        box.innerHTML = `<div class="a-empty">Niciun produs în baza de date. Apasă „Importă din catalog" ca să populezi din catalogul existent.</div>`;
+        return;
+      }
+      const filtered = filteredProducts();
+      const total = filtered.length;
+      const pages = Math.max(1, Math.ceil(total / prodPageSize));
+      if (prodPage > pages) prodPage = pages;
+      const start = (prodPage - 1) * prodPageSize;
+      const pageItems = filtered.slice(start, start + prodPageSize);
+      const from = total ? start + 1 : 0;
+      const to = start + pageItems.length;
+      const controls = `<div class="a-pager">
+        <div class="a-pager-info">${total ? `${from}–${to} din ${total} produse` : 'Niciun rezultat'}${prodQuery ? ' (filtrate)' : ''}</div>
+        <div class="a-pager-ctrls">
+          <label class="a-pager-size">Pe pagină:
+            <select onchange="setProdPageSize(this.value)">
+              <option value="50"${prodPageSize === 50 ? ' selected' : ''}>50</option>
+              <option value="100"${prodPageSize === 100 ? ' selected' : ''}>100</option>
+            </select>
+          </label>
+          <div class="a-pager-nav">
+            <button class="a-btn-sm" onclick="prodGoto(prodPage-1)"${prodPage <= 1 ? ' disabled' : ''}>‹ Înapoi</button>
+            <span class="a-pager-page">Pagina ${prodPage} / ${pages}</span>
+            <button class="a-btn-sm" onclick="prodGoto(prodPage+1)"${prodPage >= pages ? ' disabled' : ''}>Înainte ›</button>
+          </div>
+        </div>
+      </div>`;
+      box.innerHTML = controls + `<table class="a-table"><thead><tr><th>Nume</th><th>Categorie</th><th>Producător</th><th>Preț</th><th>Badge</th><th></th></tr></thead><tbody>${
+        pageItems.map(p => `<tr>
+          <td><b>${esc(p.name)}</b><br><span class="muted-sm">${esc(p.id)}</span></td>
+          <td>${esc(categoryName(p.cat))}</td>
+          <td>${p.producator ? esc(p.producator) : '<span class="muted-sm">—</span>'}</td>
+          <td>${fmt(p.price)} <span class="muted-sm">/ ${esc(p.unit)}</span></td>
+          <td>${p.badge ? `<span class="badge-pill">${esc(p.badge)}</span>` : '—'}</td>
+          <td><div class="a-actions">
+            <button class="a-btn-sm" onclick='openEditor(${JSON.stringify(p).replace(/'/g, "&#39;")})'>Editează</button>
+            <button class="a-btn-sm danger" onclick="delProduct('${esc(p.id)}')">Șterge</button>
+          </div></td></tr>`).join('')
+      }</tbody></table>` + (pages > 1 ? controls : '');
     }
 
     async function seedFromCatalog() {
