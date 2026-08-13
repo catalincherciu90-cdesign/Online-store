@@ -290,6 +290,12 @@ function injectChatbot(s) {
   const input = wrap.querySelector('#cbot-text');
   const history = []; // {role, content} — trimis către API
   let busy = false;
+  // Id de sesiune persistent (pentru istoricul din admin)
+  let cbotSid = '';
+  try {
+    cbotSid = localStorage.getItem('cbot_session') || '';
+    if (!cbotSid) { cbotSid = 's' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8); localStorage.setItem('cbot_session', cbotSid); }
+  } catch (e) { cbotSid = 's' + Date.now().toString(36); }
   // Sugestii (chips) — din setări sau implicite
   const suggestions = (s.chatbot_suggestions && s.chatbot_suggestions.trim()
     ? s.chatbot_suggestions.split(/[\n|]+/) : ['Vreau o ofertă', 'Ce țiglă îmi recomandați?', 'Oferiți montaj?', 'Aveți consultanță tehnică?'])
@@ -363,7 +369,7 @@ function injectChatbot(s) {
     busy = true;
     const typing = addBubble('bot', '…'); typing.classList.add('cbot-typing');
     try {
-      const res = await fetch('/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ messages: history.slice(-12) }) });
+      const res = await fetch('/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ messages: history.slice(-12), session_id: cbotSid }) });
       const data = await res.json().catch(() => ({}));
       typing.remove();
       if (res.ok && data.reply) {

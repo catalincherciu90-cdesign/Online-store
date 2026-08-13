@@ -78,6 +78,8 @@ async function ensureSchema(env) {
         `CREATE TABLE IF NOT EXISTS posts (id INTEGER PRIMARY KEY AUTOINCREMENT, slug TEXT UNIQUE, title TEXT NOT NULL, excerpt TEXT, content TEXT, image TEXT, active INTEGER NOT NULL DEFAULT 1, created_at TEXT DEFAULT (datetime('now')))`,
         `CREATE TABLE IF NOT EXISTS admins (username TEXT PRIMARY KEY, pass_hash TEXT NOT NULL, pass_salt TEXT NOT NULL, name TEXT, created_at TEXT DEFAULT (datetime('now')))`,
         `CREATE TABLE IF NOT EXISTS product_files (product_id TEXT NOT NULL, kind TEXT NOT NULL, mime TEXT, data TEXT, name TEXT, updated_at TEXT DEFAULT (datetime('now')), PRIMARY KEY (product_id, kind))`,
+        `CREATE TABLE IF NOT EXISTS chat_messages (id INTEGER PRIMARY KEY AUTOINCREMENT, session_id TEXT, role TEXT, content TEXT, created_at TEXT DEFAULT (datetime('now')))`,
+        `CREATE INDEX IF NOT EXISTS idx_chat_session ON chat_messages (session_id, id)`,
       ];
       for (const s of stmts) { try { await env.DB.prepare(s).run(); } catch (e) { console.error('ensureSchema', e); } }
       // Coloane adăugate ulterior pe produse (ALTER nu e idempotent → ignoră „duplicate column").
@@ -439,7 +441,46 @@ async function chatHandler(request, env) {
   const data = await r.json().catch(() => null);
   const reply = data && data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
   if (!reply) return json({ error: 'Răspuns gol de la serviciul de chat.' }, 502);
+  // Logăm schimbul (ultimul mesaj al clientului + răspunsul) pentru istoricul din admin.
+  const sid = (body.session_id && /^[a-zA-Z0-9_-]{6,64}$/.test(body.session_id)) ? body.session_id : null;
+  if (sid && env.DB) {
+    try {
+      await env.DB.prepare('INSERT INTO chat_messages (session_id, role, content) VALUES (?,?,?)').bind(sid, 'user', msgs[msgs.length - 1].content).run();
+      await env.DB.prepare('INSERT INTO chat_messages (session_id, role, content) VALUES (?,?,?)').bind(sid, 'assistant', reply).run();
+    } catch (e) { /* logarea nu trebuie să blocheze răspunsul */ }
+  }
   return json({ reply });
+}
+async function chatLogsList(request, env) {
+  if (!await requireAdmin(request, env)) return json({ error: 'Neautorizat' }, 401);
+  if (!env.DB) return json([]);
+  const r = await env.DB.prepare(
+    `SELECT session_id,
+       COUNT(*) AS n,
+       MAX(created_at) AS last_at,
+       MIN(created_at) AS first_at,
+       (SELECT content FROM chat_messages m2 WHERE m2.session_id=m.session_id AND m2.role='user' ORDER BY id LIMIT 1) AS preview
+     FROM chat_messages m
+     GROUP BY session_id
+     ORDER BY last_at DESC
+     LIMIT 300`).all();
+  return json((r.results || []).map(x => ({
+    session_id: x.session_id, count: x.n, last_at: x.last_at, first_at: x.first_at,
+    preview: (x.preview || '').slice(0, 120),
+  })));
+}
+async function chatLogGet(request, env, sid) {
+  if (!await requireAdmin(request, env)) return json({ error: 'Neautorizat' }, 401);
+  if (!env.DB) return json([]);
+  const r = await env.DB.prepare('SELECT role, content, created_at FROM chat_messages WHERE session_id=? ORDER BY id').bind(sid).all();
+  return json(r.results || []);
+}
+async function chatLogDelete(request, env, sid) {
+  if (!await requireAdmin(request, env)) return json({ error: 'Neautorizat' }, 401);
+  if (!env.DB) return json({ error: 'Baza de date nu este configurată.' }, 500);
+  if (sid === '__all__') await env.DB.prepare('DELETE FROM chat_messages').run();
+  else await env.DB.prepare('DELETE FROM chat_messages WHERE session_id=?').bind(sid).run();
+  return json({ ok: true });
 }
 
 // ── Producători (nume + logo) ──
@@ -791,6 +832,10 @@ async function api(request, env, url) {
   if (p === '/api/settings' && m === 'GET') return settingsGet(env);
   if (p === '/api/settings' && m === 'POST') return settingsSave(request, env);
   if (p === '/api/chat' && m === 'POST') return chatHandler(request, env);
+  if (p === '/api/chat-logs' && m === 'GET') return chatLogsList(request, env);
+  const clg = p.match(/^\/api\/chat-logs\/(.+)$/);
+  if (clg && m === 'GET') return chatLogGet(request, env, decodeURIComponent(clg[1]));
+  if (clg && m === 'DELETE') return chatLogDelete(request, env, decodeURIComponent(clg[1]));
   if (p === '/api/producers' && m === 'GET') return producersList(env);
   if (p === '/api/producers' && m === 'POST') return producerUpsert(request, env);
   const pr = p.match(/^\/api\/producers\/(.+)$/);
