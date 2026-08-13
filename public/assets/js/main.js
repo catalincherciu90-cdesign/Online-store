@@ -251,6 +251,84 @@ function applySettings(s) {
     const anpc = bottom.querySelector('.footer-anpc');
     if (anpc) anpc.after(cdiv); else bottom.insertBefore(cdiv, bottom.firstChild);
   }
+  // Chatbot AI (Grok) — doar dacă e activat din admin
+  injectChatbot(s);
+}
+
+/* ==========================================================================
+   Chatbot AI (Grok / xAI) — widget flotant. Trimite conversația la /api/chat,
+   care o proxează server-side către xAI (cheia stă doar pe server).
+   ========================================================================== */
+function injectChatbot(s) {
+  const on = s && (s.chatbot_enabled === 'on' || s.chatbot_enabled === '1' || s.chatbot_enabled === 'true');
+  if (!on || document.getElementById('cbot')) return;
+  const greeting = (s.chatbot_greeting && s.chatbot_greeting.trim()) || 'Salut! 👋 Cu ce te pot ajuta? Întreabă-mă despre produse, montaj sau consultanță.';
+  const esc = t => String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const wrap = document.createElement('div');
+  wrap.id = 'cbot';
+  wrap.innerHTML = `
+    <button class="cbot-fab" aria-label="Deschide chat" type="button">
+      <svg class="cbot-ic-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+      <svg class="cbot-ic-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+    <div class="cbot-panel" role="dialog" aria-label="Chat asistent">
+      <div class="cbot-head">
+        <div class="cbot-head-t"><span class="cbot-dot"></span> Asistent ExpoTigla</div>
+        <button class="cbot-x" aria-label="Închide" type="button">×</button>
+      </div>
+      <div class="cbot-msgs" id="cbot-msgs"></div>
+      <form class="cbot-input" id="cbot-form">
+        <input type="text" id="cbot-text" placeholder="Scrie un mesaj…" autocomplete="off" maxlength="1000">
+        <button type="submit" aria-label="Trimite"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button>
+      </form>
+    </div>`;
+  document.body.appendChild(wrap);
+  const fab = wrap.querySelector('.cbot-fab');
+  const panel = wrap.querySelector('.cbot-panel');
+  const msgsBox = wrap.querySelector('#cbot-msgs');
+  const form = wrap.querySelector('#cbot-form');
+  const input = wrap.querySelector('#cbot-text');
+  const history = []; // {role, content} — trimis către API
+  let busy = false;
+  const scroll = () => { msgsBox.scrollTop = msgsBox.scrollHeight; };
+  function addBubble(role, text) {
+    const b = document.createElement('div');
+    b.className = 'cbot-b cbot-' + role;
+    b.innerHTML = esc(text).replace(/\n/g, '<br>');
+    msgsBox.appendChild(b); scroll(); return b;
+  }
+  function openPanel() {
+    wrap.classList.add('open');
+    if (!msgsBox.dataset.init) { addBubble('bot', greeting); msgsBox.dataset.init = '1'; setTimeout(() => input.focus(), 60); }
+  }
+  function closePanel() { wrap.classList.remove('open'); }
+  fab.addEventListener('click', () => wrap.classList.contains('open') ? closePanel() : openPanel());
+  wrap.querySelector('.cbot-x').addEventListener('click', closePanel);
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const text = input.value.trim();
+    if (!text || busy) return;
+    input.value = '';
+    addBubble('user', text);
+    history.push({ role: 'user', content: text });
+    busy = true;
+    const typing = addBubble('bot', '…'); typing.classList.add('cbot-typing');
+    try {
+      const res = await fetch('/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ messages: history.slice(-12) }) });
+      const data = await res.json().catch(() => ({}));
+      typing.remove();
+      if (res.ok && data.reply) {
+        addBubble('bot', data.reply);
+        history.push({ role: 'assistant', content: data.reply });
+      } else {
+        addBubble('bot', data.error || 'Momentan nu pot răspunde. Încearcă din nou sau scrie-ne pe pagina de contact.');
+      }
+    } catch (err) {
+      typing.remove();
+      addBubble('bot', 'Eroare de conexiune. Încearcă din nou.');
+    }
+    busy = false; scroll();
+  });
 }
 function loadSiteSettings() {
   // Ascunde meniul până se aplică setările, ca să nu pâlpâie meniul din HTML

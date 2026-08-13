@@ -893,3 +893,37 @@ a.pd-doc:hover { border-color: var(--terra); }
 .sk-line.sm { width: 42%; }
 @keyframes sk-shimmer { 100% { transform: translateX(100%); } }
 @media (prefers-reduced-motion: reduce) { .sk::after { animation: none; } }
+
+/* ==========================================================================
+   Chatbot AI (Grok) — widget flotant
+   ========================================================================== */
+#cbot { position: fixed; right: 20px; bottom: 20px; z-index: 90; }
+.cbot-fab { width: 58px; height: 58px; border-radius: 50%; border: 0; cursor: pointer; background: linear-gradient(135deg, var(--terra), #0b7fb0); color: #fff; box-shadow: 0 10px 28px rgba(0,90,140,.4); display: flex; align-items: center; justify-content: center; transition: transform .18s, box-shadow .18s; }
+.cbot-fab:hover { transform: translateY(-2px); box-shadow: 0 14px 34px rgba(0,90,140,.5); }
+.cbot-fab svg { width: 26px; height: 26px; }
+.cbot-ic-close { display: none; }
+#cbot.open .cbot-ic-open { display: none; }
+#cbot.open .cbot-ic-close { display: block; }
+.cbot-panel { position: absolute; right: 0; bottom: 72px; width: 360px; max-width: calc(100vw - 40px); height: 520px; max-height: calc(100vh - 120px); background: #fff; border: 1px solid var(--line); border-radius: 18px; box-shadow: 0 24px 60px rgba(11,59,74,.28); display: none; flex-direction: column; overflow: hidden; }
+#cbot.open .cbot-panel { display: flex; animation: cbot-in .2s ease; }
+@keyframes cbot-in { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+.cbot-head { background: var(--navy); color: #fff; padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; }
+.cbot-head-t { font-weight: 700; font-size: .98rem; display: flex; align-items: center; gap: 9px; }
+.cbot-dot { width: 9px; height: 9px; border-radius: 50%; background: #34d399; box-shadow: 0 0 0 3px rgba(52,211,153,.25); }
+.cbot-x { background: none; border: 0; color: #cfe3ee; font-size: 1.5rem; line-height: 1; cursor: pointer; padding: 0 4px; }
+.cbot-x:hover { color: #fff; }
+.cbot-msgs { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 10px; background: var(--bg); }
+.cbot-b { max-width: 82%; padding: 10px 13px; border-radius: 14px; font-size: .93rem; line-height: 1.5; word-wrap: break-word; }
+.cbot-bot { background: #fff; border: 1px solid var(--line); color: var(--text); border-bottom-left-radius: 5px; align-self: flex-start; }
+.cbot-user { background: var(--terra); color: #fff; border-bottom-right-radius: 5px; align-self: flex-end; }
+.cbot-typing { color: var(--muted); letter-spacing: 3px; }
+.cbot-input { display: flex; gap: 8px; padding: 12px; border-top: 1px solid var(--line); background: #fff; }
+.cbot-input input { flex: 1; border: 1px solid var(--line-strong); border-radius: 10px; padding: 10px 13px; font-family: inherit; font-size: .93rem; outline: none; }
+.cbot-input input:focus { border-color: var(--terra); }
+.cbot-input button { width: 42px; flex-shrink: 0; border: 0; border-radius: 10px; background: var(--terra); color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.cbot-input button:hover { background: var(--terra-dark); }
+.cbot-input button svg { width: 19px; height: 19px; }
+@media (max-width: 480px) {
+  #cbot { right: 14px; bottom: 14px; }
+  .cbot-panel { bottom: 70px; height: calc(100vh - 100px); }
+}

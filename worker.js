@@ -353,6 +353,7 @@ const PUBLIC_SETTINGS = ['logo', 'brandName', 'phone', 'email', 'email2', 'sched
   'about_title', 'about_lead', 'about_story_title', 'about_story', 'about_mission', 'terms_title', 'terms_content', 'howto_title', 'howto_content',
   'livrare_title', 'livrare_content', 'privacy_title', 'privacy_content', 'cookies_title', 'cookies_content', 'faq_title', 'faq_content',
   'servicii_title', 'servicii_lead', 'servicii_image', 'servicii_montaj_title', 'servicii_montaj_content', 'servicii_consult_title', 'servicii_consult_content', 'servicii_cta_title', 'servicii_cta_text',
+  'chatbot_enabled', 'chatbot_greeting',
   'ga4_id', 'gtm_id', 'meta_pixel', 'gsc_verification', 'head_code', 'body_code', 'nav'];
 async function settingsGet(env) {
   if (!env.DB) return json({});
@@ -372,6 +373,55 @@ async function settingsSave(request, env) {
     await env.DB.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?,?)').bind(k, val).run();
   }
   return json({ ok: true });
+}
+
+// ── Chatbot AI (Grok / xAI) ────────────────────────────────────────────────
+// Proxy server-side către api.x.ai. Cheia stă în env.XAI_API_KEY (secret pe
+// Cloudflare), nu ajunge niciodată în browser. Promptul/modelul se pot edita
+// din admin (chei private, ne-expuse prin GET /api/settings).
+const CHAT_DEFAULT_PROMPT = `Ești asistentul virtual al magazinului ExpoTigla (ExpoTigla by Comstore), specializat în sisteme complete de acoperiș: țiglă metalică, tablă fălțuită, panouri sandwich, sisteme pluviale, folii și membrane, borduri și tinichigerie, ventilații, șuruburi și accesorii. Oferim și montaj profesional și consultanță tehnică gratuită.
+Răspunde politicos, concis și clar, în limba română. Ajută clientul să aleagă produsul potrivit, explică diferențele dintre finisaje/culori/grosimi și îndrumă spre pagina de contact pentru ofertă personalizată sau montaj.
+Nu inventa prețuri exacte sau stocuri — pentru prețuri și disponibilitate recomandă cererea de ofertă sau contactarea echipei. Dacă întrebarea nu ține de acoperișuri sau de magazin, redirecționează politicos discuția către subiectul acoperișurilor.`;
+async function chatHandler(request, env) {
+  const key = env.XAI_API_KEY || env.GROK_API_KEY;
+  if (!key) return json({ error: 'Chatbotul nu este configurat pe server (lipsește cheia XAI_API_KEY).' }, 503);
+  const body = await request.json().catch(() => null);
+  let msgs = body && Array.isArray(body.messages) ? body.messages : null;
+  if (!msgs) return json({ error: 'Mesaje lipsă.' }, 400);
+  msgs = msgs.filter(mm => mm && (mm.role === 'user' || mm.role === 'assistant') && typeof mm.content === 'string' && mm.content.trim())
+    .slice(-12).map(mm => ({ role: mm.role, content: mm.content.slice(0, 2000) }));
+  if (!msgs.length || msgs[msgs.length - 1].role !== 'user') return json({ error: 'Mesaj invalid.' }, 400);
+  // Setări (prompt/model private + contact public)
+  let s = {};
+  try {
+    const r = await env.DB.prepare(`SELECT key,value FROM settings WHERE key IN ('chatbot_prompt','chatbot_model','phone','email','schedule')`).all();
+    for (const row of (r.results || [])) if (row.value) s[row.key] = row.value;
+  } catch (e) { /* fără DB → prompt implicit */ }
+  let system = (s.chatbot_prompt && s.chatbot_prompt.trim()) ? s.chatbot_prompt : CHAT_DEFAULT_PROMPT;
+  const contact = [];
+  if (s.phone) contact.push('telefon ' + s.phone);
+  if (s.email) contact.push('email ' + s.email);
+  if (s.schedule) contact.push('program ' + s.schedule);
+  if (contact.length) system += `\n\nDate de contact ale magazinului: ${contact.join(', ')}. Pagina de contact/ofertă: contact.html.`;
+  const model = (s.chatbot_model && s.chatbot_model.trim()) || 'grok-3';
+  const payload = { model, temperature: 0.4, max_tokens: 600, stream: false,
+    messages: [{ role: 'system', content: system }, ...msgs] };
+  let r;
+  try {
+    r = await fetch('https://api.x.ai/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + key, 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+  } catch (e) { return json({ error: 'Nu am putut contacta serviciul de chat.' }, 502); }
+  if (!r.ok) {
+    const t = await r.text().catch(() => '');
+    return json({ error: 'Serviciul de chat a returnat eroare (' + r.status + ').', detail: t.slice(0, 300) }, 502);
+  }
+  const data = await r.json().catch(() => null);
+  const reply = data && data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
+  if (!reply) return json({ error: 'Răspuns gol de la serviciul de chat.' }, 502);
+  return json({ reply });
 }
 
 // ── Producători (nume + logo) ──
@@ -722,6 +772,7 @@ async function api(request, env, url) {
   if (pm && m === 'DELETE') return postDelete(request, env, Number(pm[1]));
   if (p === '/api/settings' && m === 'GET') return settingsGet(env);
   if (p === '/api/settings' && m === 'POST') return settingsSave(request, env);
+  if (p === '/api/chat' && m === 'POST') return chatHandler(request, env);
   if (p === '/api/producers' && m === 'GET') return producersList(env);
   if (p === '/api/producers' && m === 'POST') return producerUpsert(request, env);
   const pr = p.match(/^\/api\/producers\/(.+)$/);
