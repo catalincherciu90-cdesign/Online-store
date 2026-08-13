@@ -353,7 +353,7 @@ const PUBLIC_SETTINGS = ['logo', 'brandName', 'phone', 'email', 'email2', 'sched
   'about_title', 'about_lead', 'about_story_title', 'about_story', 'about_mission', 'terms_title', 'terms_content', 'howto_title', 'howto_content',
   'livrare_title', 'livrare_content', 'privacy_title', 'privacy_content', 'cookies_title', 'cookies_content', 'faq_title', 'faq_content',
   'servicii_title', 'servicii_lead', 'servicii_image', 'servicii_montaj_title', 'servicii_montaj_content', 'servicii_consult_title', 'servicii_consult_content', 'servicii_cta_title', 'servicii_cta_text',
-  'chatbot_enabled', 'chatbot_greeting', 'chatbot_suggestions',
+  'chatbot_enabled', 'chatbot_greeting', 'chatbot_suggestions', 'chatbot_provider', 'chatbot_model', 'chatbot_prompt',
   'ga4_id', 'gtm_id', 'meta_pixel', 'gsc_verification', 'head_code', 'body_code', 'nav'];
 async function settingsGet(env) {
   if (!env.DB) return json({});
@@ -382,33 +382,41 @@ async function settingsSave(request, env) {
 const CHAT_DEFAULT_PROMPT = `Ești asistentul virtual al magazinului ExpoTigla (ExpoTigla by Comstore), specializat în sisteme complete de acoperiș: țiglă metalică, tablă fălțuită, panouri sandwich, sisteme pluviale, folii și membrane, borduri și tinichigerie, ventilații, șuruburi și accesorii. Oferim și montaj profesional și consultanță tehnică gratuită.
 Răspunde politicos, concis și clar, în limba română. Ajută clientul să aleagă produsul potrivit, explică diferențele dintre finisaje/culori/grosimi și îndrumă spre pagina de contact pentru ofertă personalizată sau montaj.
 Nu inventa prețuri exacte sau stocuri — pentru prețuri și disponibilitate recomandă cererea de ofertă sau contactarea echipei. Dacă întrebarea nu ține de acoperișuri sau de magazin, redirecționează politicos discuția către subiectul acoperișurilor.`;
+// Furnizori AI compatibili OpenAI. Cheia se ia din env (secret pe Cloudflare).
+const CHAT_PROVIDERS = {
+  groq: { url: 'https://api.groq.com/openai/v1/chat/completions', model: 'llama-3.3-70b-versatile', keys: ['GROQ_API_KEY'] },
+  xai: { url: 'https://api.x.ai/v1/chat/completions', model: 'grok-3', keys: ['XAI_API_KEY', 'GROK_API_KEY'] },
+  gemini: { url: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions', model: 'gemini-2.0-flash', keys: ['GEMINI_API_KEY'] },
+};
 async function chatHandler(request, env) {
-  const key = env.XAI_API_KEY || env.GROK_API_KEY;
-  if (!key) return json({ error: 'Chatbotul nu este configurat pe server (lipsește cheia XAI_API_KEY).' }, 503);
   const body = await request.json().catch(() => null);
   let msgs = body && Array.isArray(body.messages) ? body.messages : null;
   if (!msgs) return json({ error: 'Mesaje lipsă.' }, 400);
   msgs = msgs.filter(mm => mm && (mm.role === 'user' || mm.role === 'assistant') && typeof mm.content === 'string' && mm.content.trim())
     .slice(-12).map(mm => ({ role: mm.role, content: mm.content.slice(0, 2000) }));
   if (!msgs.length || msgs[msgs.length - 1].role !== 'user') return json({ error: 'Mesaj invalid.' }, 400);
-  // Setări (prompt/model private + contact public)
+  // Setări (provider/prompt/model + contact)
   let s = {};
   try {
-    const r = await env.DB.prepare(`SELECT key,value FROM settings WHERE key IN ('chatbot_prompt','chatbot_model','phone','email','schedule')`).all();
+    const r = await env.DB.prepare(`SELECT key,value FROM settings WHERE key IN ('chatbot_provider','chatbot_prompt','chatbot_model','phone','email','schedule')`).all();
     for (const row of (r.results || [])) if (row.value) s[row.key] = row.value;
-  } catch (e) { /* fără DB → prompt implicit */ }
+  } catch (e) { /* fără DB → implicit */ }
+  const prov = CHAT_PROVIDERS[s.chatbot_provider] || CHAT_PROVIDERS.groq;
+  let key = '';
+  for (const k of prov.keys) { if (env[k]) { key = env[k]; break; } }
+  if (!key) return json({ error: 'Chatbotul nu este configurat pe server (lipsește cheia ' + prov.keys[0] + ').' }, 503);
   let system = (s.chatbot_prompt && s.chatbot_prompt.trim()) ? s.chatbot_prompt : CHAT_DEFAULT_PROMPT;
   const contact = [];
   if (s.phone) contact.push('telefon ' + s.phone);
   if (s.email) contact.push('email ' + s.email);
   if (s.schedule) contact.push('program ' + s.schedule);
   if (contact.length) system += `\n\nDate de contact ale magazinului: ${contact.join(', ')}. Pagina de contact/ofertă: contact.html.`;
-  const model = (s.chatbot_model && s.chatbot_model.trim()) || 'grok-3';
+  const model = (s.chatbot_model && s.chatbot_model.trim()) || prov.model;
   const payload = { model, temperature: 0.4, max_tokens: 600, stream: false,
     messages: [{ role: 'system', content: system }, ...msgs] };
   let r;
   try {
-    r = await fetch('https://api.x.ai/v1/chat/completions', {
+    r = await fetch(prov.url, {
       method: 'POST',
       headers: { 'Authorization': 'Bearer ' + key, 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
