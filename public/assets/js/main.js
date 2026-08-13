@@ -290,6 +290,10 @@ function injectChatbot(s) {
   const input = wrap.querySelector('#cbot-text');
   const history = []; // {role, content} — trimis către API
   let busy = false;
+  // Sugestii (chips) — din setări sau implicite
+  const suggestions = (s.chatbot_suggestions && s.chatbot_suggestions.trim()
+    ? s.chatbot_suggestions.split(/[\n|]+/) : ['Vreau o ofertă', 'Ce țiglă îmi recomandați?', 'Oferiți montaj?', 'Aveți consultanță tehnică?'])
+    .map(x => x.trim()).filter(Boolean).slice(0, 6);
   const scroll = () => { msgsBox.scrollTop = msgsBox.scrollHeight; };
   function addBubble(role, text) {
     const b = document.createElement('div');
@@ -297,17 +301,30 @@ function injectChatbot(s) {
     b.innerHTML = esc(text).replace(/\n/g, '<br>');
     msgsBox.appendChild(b); scroll(); return b;
   }
+  function renderChips() {
+    if (!suggestions.length) return;
+    const box = document.createElement('div');
+    box.className = 'cbot-chips';
+    suggestions.forEach(txt => {
+      const c = document.createElement('button');
+      c.type = 'button'; c.className = 'cbot-chip'; c.textContent = txt;
+      c.addEventListener('click', () => sendMessage(txt));
+      box.appendChild(c);
+    });
+    msgsBox.appendChild(box); scroll();
+  }
+  function removeChips() { const c = msgsBox.querySelector('.cbot-chips'); if (c) c.remove(); }
   function openPanel() {
     wrap.classList.add('open');
-    if (!msgsBox.dataset.init) { addBubble('bot', greeting); msgsBox.dataset.init = '1'; setTimeout(() => input.focus(), 60); }
+    if (!msgsBox.dataset.init) { addBubble('bot', greeting); renderChips(); msgsBox.dataset.init = '1'; setTimeout(() => input.focus(), 60); }
   }
   function closePanel() { wrap.classList.remove('open'); }
   fab.addEventListener('click', () => wrap.classList.contains('open') ? closePanel() : openPanel());
   wrap.querySelector('.cbot-x').addEventListener('click', closePanel);
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const text = input.value.trim();
+  async function sendMessage(text) {
+    text = (text || '').trim();
     if (!text || busy) return;
+    removeChips();
     input.value = '';
     addBubble('user', text);
     history.push({ role: 'user', content: text });
@@ -328,7 +345,8 @@ function injectChatbot(s) {
       addBubble('bot', 'Eroare de conexiune. Încearcă din nou.');
     }
     busy = false; scroll();
-  });
+  }
+  form.addEventListener('submit', (e) => { e.preventDefault(); sendMessage(input.value); });
 }
 function loadSiteSettings() {
   // Ascunde meniul până se aplică setările, ca să nu pâlpâie meniul din HTML

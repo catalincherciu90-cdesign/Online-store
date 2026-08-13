@@ -917,6 +917,9 @@ a.pd-doc:hover { border-color: var(--terra); }
 .cbot-bot { background: #fff; border: 1px solid var(--line); color: var(--text); border-bottom-left-radius: 5px; align-self: flex-start; }
 .cbot-user { background: var(--terra); color: #fff; border-bottom-right-radius: 5px; align-self: flex-end; }
 .cbot-typing { color: var(--muted); letter-spacing: 3px; }
+.cbot-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 2px; }
+.cbot-chip { background: #fff; border: 1px solid var(--terra); color: var(--terra-dark); border-radius: 999px; padding: 8px 13px; font-family: inherit; font-size: .85rem; font-weight: 600; cursor: pointer; transition: background .14s, color .14s; }
+.cbot-chip:hover { background: var(--terra); color: #fff; }
 .cbot-input { display: flex; gap: 8px; padding: 12px; border-top: 1px solid var(--line); background: #fff; }
 .cbot-input input { flex: 1; border: 1px solid var(--line-strong); border-radius: 10px; padding: 10px 13px; font-family: inherit; font-size: .93rem; outline: none; }
 .cbot-input input:focus { border-color: var(--terra); }

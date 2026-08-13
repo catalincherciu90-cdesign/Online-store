@@ -460,6 +460,7 @@
           <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:600"><input type="checkbox" name="chatbot_enabled"> Activează chatbotul pe site</label>
         </div>
         <div class="field"><label>Mesaj de întâmpinare</label><input name="chatbot_greeting" placeholder="Salut! 👋 Cu ce te pot ajuta?"></div>
+        <div class="field"><label>Butoane de sugestii (câte unul pe linie)</label><textarea name="chatbot_suggestions" rows="4" placeholder="Vreau o ofertă&#10;Ce țiglă îmi recomandați?&#10;Oferiți montaj?&#10;Aveți consultanță tehnică?"></textarea><span class="muted-sm">Apar sub mesajul de întâmpinare. Lasă gol pentru sugestiile implicite. Maxim 6.</span></div>
         <div class="field"><label>Model Grok</label><input name="chatbot_model" placeholder="grok-3"><span class="muted-sm">Implicit: grok-3. Poți pune grok-4, grok-3-mini etc., în funcție de ce ai acces la xAI.</span></div>
         <div class="field"><label>Instrucțiuni / context pentru bot (prompt de sistem)</label><textarea name="chatbot_prompt" rows="9" placeholder="Ești asistentul virtual al ExpoTigla… (lasă gol pentru textul implicit)"></textarea><span class="muted-sm">Descrie ce vinde magazinul, tonul dorit și ce să facă/ să nu facă. Dacă lași gol, se folosește un prompt implicit potrivit pentru ExpoTigla.</span></div>
         <div style="display:flex;align-items:center;gap:14px"><button class="btn btn-primary" style="padding:11px 22px">Salvează</button><span class="form-status" id="chatbot-status"></span></div>
@@ -1285,6 +1286,7 @@
         const s = await (await api('/settings')).json();
         f.chatbot_enabled.checked = (s.chatbot_enabled === 'on' || s.chatbot_enabled === '1' || s.chatbot_enabled === 'true');
         f.chatbot_greeting.value = s.chatbot_greeting || '';
+        f.chatbot_suggestions.value = s.chatbot_suggestions || '';
         f.chatbot_model.value = s.chatbot_model || '';
         f.chatbot_prompt.value = s.chatbot_prompt || '';
       } catch (e) { /* neconfigurat */ }
@@ -1295,6 +1297,7 @@
       const body = {
         chatbot_enabled: f.chatbot_enabled.checked ? 'on' : '',
         chatbot_greeting: f.chatbot_greeting.value.trim(),
+        chatbot_suggestions: f.chatbot_suggestions.value,
         chatbot_model: f.chatbot_model.value.trim(),
         chatbot_prompt: f.chatbot_prompt.value,
       };
