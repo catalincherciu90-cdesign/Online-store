@@ -301,6 +301,38 @@ function injectChatbot(s) {
     b.innerHTML = esc(text).replace(/\n/g, '<br>');
     msgsBox.appendChild(b); scroll(); return b;
   }
+  // Acceptă doar linkuri interne (pagina.html[?...]) sau http(s); refuză javascript: etc.
+  function safeHref(href) {
+    href = (href || '').trim();
+    if (/^javascript:/i.test(href)) return '';
+    if (/^https?:\/\//i.test(href)) return href;
+    if (/^\/?[a-z0-9._-]+\.html(\?[^\s]*)?$/i.test(href)) return href;
+    return '';
+  }
+  // Răspunsul botului poate conține linkuri în format [Text](adresă) → butoane.
+  function renderBotReply(text) {
+    const links = [];
+    const clean = String(text || '').replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (m, label, href) => {
+      const s = safeHref(href);
+      if (s) { links.push({ label: label.trim(), href: s }); return ''; }
+      return label;
+    }).replace(/\n{3,}/g, '\n\n').replace(/[ \t]+\n/g, '\n').trim();
+    const b = addBubble('bot', clean || '…');
+    if (links.length) {
+      const row = document.createElement('div');
+      row.className = 'cbot-links';
+      links.slice(0, 4).forEach(l => {
+        const a = document.createElement('a');
+        a.className = 'cbot-linkbtn';
+        a.textContent = l.label;
+        a.href = l.href;
+        if (/^https?:/i.test(l.href)) { a.target = '_blank'; a.rel = 'noopener'; }
+        row.appendChild(a);
+      });
+      msgsBox.appendChild(row); scroll();
+    }
+    return b;
+  }
   function renderChips() {
     if (!suggestions.length) return;
     const box = document.createElement('div');
@@ -335,7 +367,7 @@ function injectChatbot(s) {
       const data = await res.json().catch(() => ({}));
       typing.remove();
       if (res.ok && data.reply) {
-        addBubble('bot', data.reply);
+        renderBotReply(data.reply);
         history.push({ role: 'assistant', content: data.reply });
       } else {
         addBubble('bot', data.error || 'Momentan nu pot răspunde. Încearcă din nou sau scrie-ne pe pagina de contact.');

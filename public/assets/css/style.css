@@ -920,6 +920,10 @@ a.pd-doc:hover { border-color: var(--terra); }
 .cbot-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 2px; }
 .cbot-chip { background: #fff; border: 1px solid var(--terra); color: var(--terra-dark); border-radius: 999px; padding: 8px 13px; font-family: inherit; font-size: .85rem; font-weight: 600; cursor: pointer; transition: background .14s, color .14s; }
 .cbot-chip:hover { background: var(--terra); color: #fff; }
+.cbot-links { display: flex; flex-wrap: wrap; gap: 8px; margin-top: -2px; align-self: flex-start; max-width: 90%; }
+.cbot-linkbtn { display: inline-flex; align-items: center; gap: 6px; background: var(--terra); color: #fff; border-radius: 10px; padding: 8px 13px; font-size: .85rem; font-weight: 600; text-decoration: none; transition: background .14s, transform .12s; }
+.cbot-linkbtn::after { content: "→"; font-weight: 700; }
+.cbot-linkbtn:hover { background: var(--terra-dark); transform: translateX(1px); }
 .cbot-input { display: flex; gap: 8px; padding: 12px; border-top: 1px solid var(--line); background: #fff; }
 .cbot-input input { flex: 1; border: 1px solid var(--line-strong); border-radius: 10px; padding: 10px 13px; font-family: inherit; font-size: .93rem; outline: none; }
 .cbot-input input:focus { border-color: var(--terra); }
