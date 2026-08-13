@@ -384,9 +384,10 @@ Răspunde politicos, concis și clar, în limba română. Ajută clientul să al
 Nu inventa prețuri exacte sau stocuri — pentru prețuri și disponibilitate recomandă cererea de ofertă sau contactarea echipei. Dacă întrebarea nu ține de acoperișuri sau de magazin, redirecționează politicos discuția către subiectul acoperișurilor.`;
 // Furnizori AI compatibili OpenAI. Cheia se ia din env (secret pe Cloudflare).
 const CHAT_PROVIDERS = {
-  groq: { url: 'https://api.groq.com/openai/v1/chat/completions', model: 'llama-3.3-70b-versatile', keys: ['GROQ_API_KEY'] },
-  xai: { url: 'https://api.x.ai/v1/chat/completions', model: 'grok-3', keys: ['XAI_API_KEY', 'GROK_API_KEY'] },
-  gemini: { url: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions', model: 'gemini-2.0-flash', keys: ['GEMINI_API_KEY'] },
+  // Pentru Groq acceptăm și greșeala frecventă GROK_API_KEY (cu K) și un AI_API_KEY generic.
+  groq: { url: 'https://api.groq.com/openai/v1/chat/completions', model: 'llama-3.3-70b-versatile', keys: ['GROQ_API_KEY', 'GROK_API_KEY', 'AI_API_KEY'] },
+  xai: { url: 'https://api.x.ai/v1/chat/completions', model: 'grok-3', keys: ['XAI_API_KEY', 'GROK_API_KEY', 'AI_API_KEY'] },
+  gemini: { url: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions', model: 'gemini-2.0-flash', keys: ['GEMINI_API_KEY', 'GOOGLE_API_KEY', 'AI_API_KEY'] },
 };
 async function chatHandler(request, env) {
   const body = await request.json().catch(() => null);
