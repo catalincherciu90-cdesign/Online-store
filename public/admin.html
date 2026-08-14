@@ -540,6 +540,19 @@
       <h2 style="font-size:1.3rem;margin-bottom:16px">Setări site</h2>
 
       <div style="background:var(--em-card);border:1px solid var(--em-border);border-radius:12px;padding:20px;margin-bottom:20px">
+        <h3 style="font-size:1.05rem;margin-bottom:6px">Mod „În curând" (lansare)</h3>
+        <p class="muted-sm" style="margin-bottom:14px">Când e activ, vizitatorii văd o pagină „Ne lansăm în curând", iar magazinul e ascuns. Adminul rămâne funcțional. Tu poți vedea site-ul real adăugând <b>?preview=1</b> la adresă (ex. <code>/?preview=1</code>).</p>
+        <form id="coming-form" class="checkout-form" onsubmit="saveComing(event)">
+          <div class="field">
+            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-weight:700"><input type="checkbox" name="coming_soon" style="width:auto"> Activează modul „În curând" (ascunde site-ul public)</label>
+          </div>
+          <div class="field"><label>Titlu pagină</label><input name="coming_soon_title" placeholder="Ne lansăm în curând"></div>
+          <div class="field"><label>Mesaj</label><textarea name="coming_soon_text" rows="2" placeholder="Lucrăm la ceva grozav pentru acoperișul tău. Revino curând…"></textarea></div>
+          <div style="display:flex;align-items:center;gap:14px"><button class="btn btn-primary" style="padding:11px 22px">Salvează</button><span class="form-status" id="coming-status"></span><a href="/?preview=1" target="_blank" rel="noopener" class="a-btn-sm">Vezi site-ul real</a></div>
+        </form>
+      </div>
+
+      <div style="background:var(--em-card);border:1px solid var(--em-border);border-radius:12px;padding:20px;margin-bottom:20px">
         <h3 style="font-size:1.05rem;margin-bottom:14px">Logo magazin & date de contact</h3>
         <form id="settings-form" class="checkout-form" onsubmit="saveSettings(event)">
           <div class="field full">
@@ -964,7 +977,7 @@
       document.getElementById('login-view').style.display = 'none';
       document.getElementById('dash-view').style.display = 'grid';
       document.getElementById('whoami').style.display = 'flex';
-      loadProps().then(loadProducts); loadOrders(); loadQuotes(); loadReviews(); loadBanners(); loadSettings(); loadPosts(); loadNav(); loadTerms(); loadHowto(); loadPage('livrare'); loadPage('privacy'); loadPage('cookies'); loadPage('faq'); loadServicii(); loadTracking(); loadChatbot(); loadSeo(); loadSocial(); loadDespre(); loadDashboard(); injectHelp();
+      loadProps().then(loadProducts); loadOrders(); loadQuotes(); loadReviews(); loadBanners(); loadSettings(); loadPosts(); loadNav(); loadTerms(); loadHowto(); loadPage('livrare'); loadPage('privacy'); loadPage('cookies'); loadPage('faq'); loadServicii(); loadTracking(); loadChatbot(); loadSeo(); loadComing(); loadSocial(); loadDespre(); loadDashboard(); injectHelp();
     }
 
     // Mic tutorial afișat sub titlul fiecărei secțiuni
@@ -1371,6 +1384,26 @@
       try {
         const d = await (await api('/settings', { method: 'POST', body: JSON.stringify(body) })).json();
         if (d.ok) { st.className = 'form-status'; st.style.color = '#1a8f4c'; st.textContent = '✓ Salvat.'; }
+        else { st.className = 'form-status err'; st.style.color = ''; st.textContent = d.error || 'Eroare.'; }
+      } catch (err) { st.className = 'form-status err'; st.style.color = ''; st.textContent = err.message; }
+    }
+    // ── Mod „În curând" ──
+    async function loadComing() {
+      const f = document.getElementById('coming-form'); if (!f) return;
+      try {
+        const s = await (await api('/settings')).json();
+        f.coming_soon.checked = (s.coming_soon === 'on');
+        f.coming_soon_title.value = s.coming_soon_title || '';
+        f.coming_soon_text.value = s.coming_soon_text || '';
+      } catch (e) { /* neconfigurat */ }
+    }
+    async function saveComing(e) {
+      e.preventDefault();
+      const f = e.target; const st = document.getElementById('coming-status');
+      const body = { coming_soon: f.coming_soon.checked ? 'on' : '', coming_soon_title: f.coming_soon_title.value.trim(), coming_soon_text: f.coming_soon_text.value.trim() };
+      try {
+        const d = await (await api('/settings', { method: 'POST', body: JSON.stringify(body) })).json();
+        if (d.ok) { st.className = 'form-status'; st.style.color = '#1a8f4c'; st.textContent = f.coming_soon.checked ? '✓ Site pus pe „În curând".' : '✓ Site public activ.'; }
         else { st.className = 'form-status err'; st.style.color = ''; st.textContent = d.error || 'Eroare.'; }
       } catch (err) { st.className = 'form-status err'; st.style.color = ''; st.textContent = err.message; }
     }

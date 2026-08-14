@@ -356,7 +356,7 @@ const PUBLIC_SETTINGS = ['logo', 'brandName', 'phone', 'email', 'email2', 'sched
   'livrare_title', 'livrare_content', 'privacy_title', 'privacy_content', 'cookies_title', 'cookies_content', 'faq_title', 'faq_content',
   'servicii_title', 'servicii_lead', 'servicii_image', 'servicii_montaj_title', 'servicii_montaj_content', 'servicii_consult_title', 'servicii_consult_content', 'servicii_cta_title', 'servicii_cta_text',
   'chatbot_enabled', 'chatbot_greeting', 'chatbot_suggestions', 'chatbot_provider', 'chatbot_model', 'chatbot_prompt',
-  'seo_default_desc', 'seo_areas',
+  'seo_default_desc', 'seo_areas', 'coming_soon', 'coming_soon_title', 'coming_soon_text',
   'ga4_id', 'gtm_id', 'meta_pixel', 'gsc_verification', 'head_code', 'body_code', 'nav'];
 async function settingsGet(env) {
   if (!env.DB) return json({});
@@ -912,6 +912,49 @@ function buildBodyCode(t) {
   return b;
 }
 
+/* ── Mod „În curând" (coming soon) ─────────────────────────────────────── */
+let CS_CACHE = null, CS_TS = 0;
+async function getComingSoon(env) {
+  const now = Date.now();
+  if (CS_CACHE && now - CS_TS < 30000) return CS_CACHE;
+  const keys = ['coming_soon', 'coming_soon_title', 'coming_soon_text', 'brandName', 'logo', 'phone', 'email', 'schedule'];
+  const out = {};
+  try {
+    const r = await env.DB.prepare(`SELECT key,value FROM settings WHERE key IN (${keys.map(() => '?').join(',')})`).bind(...keys).all();
+    for (const row of (r.results || [])) if (row.value) out[row.key] = row.value;
+  } catch (e) { /* fără DB */ }
+  CS_CACHE = out; CS_TS = now;
+  return out;
+}
+function comingSoonPage(cs) {
+  const brand = cs.brandName || 'ExpoTigla';
+  const title = cs.coming_soon_title || 'Ne lansăm în curând';
+  const text = cs.coming_soon_text || 'Lucrăm la ceva grozav pentru acoperișul tău. Revino curând — sau contactează-ne pentru oferte și consultanță.';
+  const logo = cs.logo ? `<img src="${cs.logo}" alt="${esc(brand)}">` : `<div class="brandtxt">${esc(brand)}</div>`;
+  const chips = [];
+  if (cs.phone) chips.push(`<a href="tel:${esc(cs.phone).replace(/\s+/g, '')}">📞 ${esc(cs.phone)}</a>`);
+  if (cs.email) chips.push(`<a href="mailto:${esc(cs.email)}">✉️ ${esc(cs.email)}</a>`);
+  const sched = cs.schedule ? `<p class="sched">${esc(cs.schedule)}</p>` : '';
+  const html = `<!DOCTYPE html><html lang="ro"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>${esc(title)} | ${esc(brand)}</title><meta name="robots" content="noindex">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%230099cc' d='M12 3 2 12h3v8h14v-8h3z'/%3E%3C/svg%3E">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}body{font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:28px;background:radial-gradient(ellipse at 50% 0%,#0b3b4a 0%,#072530 60%,#04161d 100%);color:#eaf4f8;text-align:center}
+.box{max-width:640px}.box img{max-height:70px;margin-bottom:30px}.brandtxt{font-size:2rem;font-weight:800;margin-bottom:30px;color:#fff}
+.badge{display:inline-block;background:rgba(0,153,204,.18);border:1px solid rgba(0,153,204,.5);color:#7fd4f0;padding:7px 16px;border-radius:999px;font-size:.82rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:22px}
+h1{font-size:2.3rem;line-height:1.15;margin-bottom:16px;color:#fff}p{font-size:1.1rem;line-height:1.65;color:#bfd8e2;max-width:520px;margin:0 auto}
+.chips{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:30px}
+.chips a{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);color:#eaf4f8;text-decoration:none;padding:12px 20px;border-radius:12px;font-weight:600;transition:background .15s}
+.chips a:hover{background:rgba(0,153,204,.28)}.sched{margin-top:20px;font-size:.95rem;color:#8fb3c2}
+@media(max-width:520px){h1{font-size:1.7rem}}
+</style></head><body><main class="box">
+${logo}<span class="badge">În curând</span>
+<h1>${esc(title)}</h1><p>${esc(text)}</p>
+${chips.length ? `<div class="chips">${chips.join('')}</div>` : ''}${sched}
+</main></body></html>`;
+  return new Response(html, { status: 503, headers: { 'Content-Type': 'text/html; charset=utf-8', 'Retry-After': '3600', 'Cache-Control': 'no-store' } });
+}
+
 /* ── SEO: date structurate (JSON-LD) + Open Graph + robots + sitemap ─────── */
 let SEO_CACHE = null, SEO_TS = 0;
 async function getSeoData(env) {
@@ -1071,6 +1114,25 @@ export default {
     if (url.pathname.startsWith('/api/')) {
       try { return await api(request, env, url); }
       catch (e) { console.error(e); return json({ error: 'Eroare internă.' }, 500); }
+    }
+    // Mod „În curând": ascunde paginile publice (adminul, API-ul și fișierele rămân accesibile)
+    {
+      const p = url.pathname;
+      const assetLike = p.startsWith('/assets/') || p.startsWith('/admin') || p === '/robots.txt' || p === '/sitemap.xml' || (/\.[a-z0-9]{2,6}$/i.test(p) && !p.endsWith('.html'));
+      if (!assetLike) {
+        try {
+          await ensureSchema(env);
+          const cs = await getComingSoon(env);
+          if (cs.coming_soon === 'on') {
+            const cookie = request.headers.get('Cookie') || '';
+            if (url.searchParams.get('preview') === '1') {
+              const to = new URL(url); to.searchParams.delete('preview');
+              return new Response(null, { status: 302, headers: { 'Location': to.pathname + (to.search || ''), 'Set-Cookie': 'es_preview=1; Path=/; Max-Age=86400; SameSite=Lax' } });
+            }
+            if (!/(?:^|;\s*)es_preview=1/.test(cookie)) return comingSoonPage(cs);
+          }
+        } catch (e) { /* la eroare, lăsăm site-ul normal */ }
+      }
     }
     if (url.pathname === '/robots.txt') { try { await ensureSchema(env); } catch (e) {} return robotsTxt(url); }
     if (url.pathname === '/sitemap.xml') { try { await ensureSchema(env); } catch (e) {} return sitemapXml(env, url); }
