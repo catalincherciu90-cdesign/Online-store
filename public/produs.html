@@ -136,8 +136,8 @@
       root.innerHTML = `
         <div class="breadcrumb"><a href="index.html">Acasă</a><span>/</span><a href="produse.html?cat=${p.cat}">${categoryName(p.cat)}</a><span>/</span> ${p.name}</div>
         <div class="product-detail">
-          <div class="product-gallery">
-            ${productMedia(p)}
+          <div class="product-media">
+            <div class="product-gallery">${productMedia(p)}</div>
             <figure class="pd-inuse"><img src="${pfMap.montaj || 'assets/img/products/' + p.id + '-montaj.jpg'}" alt="Exemplu de montaj — ${p.name}" loading="lazy" onerror="this.closest('figure').remove()"><figcaption>Exemplu de montaj</figcaption></figure>
           </div>
           <div class="pd-info">

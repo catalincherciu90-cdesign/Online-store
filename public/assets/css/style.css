@@ -68,7 +68,7 @@ select:focus-visible, textarea:focus-visible, [tabindex]:focus-visible {
 
 /* Poze reale de produs/categorie: umplu containerul, decupare centrată */
 img.pmedia { width: 100%; height: 100%; object-fit: cover; }
-.product-gallery img.pmedia { object-fit: cover; }
+.product-gallery img.pmedia { object-fit: contain; }
 
 .container {
   width: 100%;
@@ -493,12 +493,14 @@ a.pd-doc:hover { border-color: var(--terra); }
 .breadcrumb a:hover { color: var(--terra-700); }
 .breadcrumb span { margin: 0 8px; }
 .product-detail { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; padding-bottom: 40px; }
+.product-media { align-self: start; }
 .product-gallery {
   background: radial-gradient(ellipse at 50% 42%, #fff 0%, var(--bg) 100%);
   border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow-sm);
   overflow: hidden; aspect-ratio: 4/3; display: flex; align-items: center; justify-content: center;
+  padding: 16px;
 }
-.product-gallery svg, .product-gallery img { width: 100%; height: 100%; }
+.product-gallery svg, .product-gallery img { width: 100%; height: 100%; display: block; }
 .pd-info .cat-tag { font-size: .8rem; text-transform: uppercase; letter-spacing: .06em; color: var(--terra-700); font-weight: 700; }
 .pd-info h1 { margin: 8px 0 16px; }
 .pd-price { font-size: 2.2rem; font-weight: 800; color: var(--navy); margin-bottom: 6px; font-variant-numeric: tabular-nums; }
