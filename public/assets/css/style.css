@@ -398,6 +398,17 @@ h2 { font-size: clamp(1.6rem, 3vw, 2.35rem); letter-spacing: -0.028em; }
 .pd-inuse { margin: 14px 0 0; }
 .pd-inuse img { width: 100%; display: block; border-radius: var(--radius); border: 1px solid var(--line); }
 .pd-inuse figcaption { color: var(--muted); font-size: .85rem; margin-top: 8px; text-align: center; }
+/* Buton „Vezi exemplu de montaj" + lightbox */
+.pd-montaj-btn { display: inline-flex; align-items: center; gap: 9px; margin-top: 14px; background: #fff; border: 1px solid var(--line-strong); border-radius: 12px; padding: 12px 18px; font-family: inherit; font-size: .95rem; font-weight: 600; color: var(--navy); cursor: pointer; transition: border-color .14s, color .14s, background .14s; }
+.pd-montaj-btn:hover { border-color: var(--terra); color: var(--terra-dark); background: #f6fbfe; }
+.pd-montaj-btn svg { width: 20px; height: 20px; color: var(--terra); }
+.lightbox { position: fixed; inset: 0; background: rgba(8,20,28,.86); display: none; align-items: center; justify-content: center; z-index: 200; padding: 24px; }
+.lightbox.open { display: flex; animation: cbot-in .18s ease; }
+.lightbox figure { margin: 0; text-align: center; max-width: 96vw; }
+.lightbox img { max-width: 96vw; max-height: 84vh; border-radius: 12px; box-shadow: 0 24px 70px rgba(0,0,0,.55); display: block; margin: 0 auto; }
+.lightbox figcaption { color: #dbe8f0; font-size: .9rem; margin-top: 12px; }
+.lightbox-close { position: absolute; top: 14px; right: 18px; background: rgba(255,255,255,.16); border: 0; color: #fff; width: 44px; height: 44px; border-radius: 50%; font-size: 1.9rem; line-height: 1; cursor: pointer; transition: background .14s; }
+.lightbox-close:hover { background: rgba(255,255,255,.28); }
 .pd-section { margin-top: 46px; }
 .pd-section h2 { font-size: 1.45rem; margin-bottom: 4px; }
 .pd-section .pd-sub { color: var(--muted); margin-bottom: 4px; }

@@ -138,7 +138,9 @@
         <div class="product-detail">
           <div class="product-media">
             <div class="product-gallery">${productMedia(p)}</div>
-            <figure class="pd-inuse"><img src="${pfMap.montaj || 'assets/img/products/' + p.id + '-montaj.jpg'}" alt="Exemplu de montaj — ${p.name}" loading="lazy" onerror="this.closest('figure').remove()"><figcaption>Exemplu de montaj</figcaption></figure>
+            ${pfMap.montaj ? `<button type="button" class="pd-montaj-btn" data-montaj="${pfMap.montaj}">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+              Vezi exemplu de montaj</button>` : ''}
           </div>
           <div class="pd-info">
             <span class="cat-tag">${categoryName(p.cat)}</span>
@@ -191,8 +193,29 @@
       hydrateImages();
       initOptions();
       if (sel.culoare && pfMap['color_' + sel.culoare]) updateGallery(sel.culoare); // poza culorii implicite
+      const mbtn = document.querySelector('.pd-montaj-btn');
+      if (mbtn) mbtn.addEventListener('click', () => openLightbox(mbtn.dataset.montaj, 'Exemplu de montaj'));
     }
     }); // loadCatalog
+
+    // Lightbox: deschide o imagine mărită peste pagină.
+    function openLightbox(src, caption) {
+      if (!src) return;
+      let lb = document.getElementById('lightbox');
+      if (!lb) {
+        lb = document.createElement('div');
+        lb.id = 'lightbox';
+        lb.className = 'lightbox';
+        lb.innerHTML = `<button class="lightbox-close" aria-label="Închide" type="button">×</button><figure><img id="lightbox-img" alt=""><figcaption id="lightbox-cap"></figcaption></figure>`;
+        document.body.appendChild(lb);
+        const close = () => lb.classList.remove('open');
+        lb.addEventListener('click', e => { if (e.target === lb || e.target.classList.contains('lightbox-close')) close(); });
+        document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
+      }
+      lb.querySelector('#lightbox-img').src = src;
+      lb.querySelector('#lightbox-cap').textContent = caption || '';
+      lb.classList.add('open');
+    }
 
     // Selectori: finisaj (pastile) → culorile lui (swatch) + grosimile lui (pastile)
     function renderOptions(prod) {
