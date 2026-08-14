@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Concept design nou | ExpoTigla</title>
+<meta name="description" content="Concept de design pentru showroomul digital ExpoTigla: traseu dublu, sistem complet și comparator.">
+<meta name="robots" content="noindex">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23c8912c' d='M12 3 2 12h3v8h14v-8h3z'/%3E%3C/svg%3E">
+<style>
+  :root{
+    --gold:#c8912c; --gold-d:#a9761d; --gold-l:#e6c079;
+    --ink:#2a2a2e; --ink-2:#3a3a40;
+    --cream:#f4eee3; --cream-2:#efe6d6;
+    --muted:#6f675b; --line:#e6dccb; --white:#fff;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:"Segoe UI",-apple-system,Roboto,"Helvetica Neue",Arial,sans-serif;color:var(--ink);background:var(--white);line-height:1.5;-webkit-font-smoothing:antialiased}
+  img{max-width:100%;display:block}
+  a{color:inherit;text-decoration:none}
+  .wrap{max-width:1200px;margin:0 auto;padding:0 24px}
+  .eyebrow{color:var(--gold);font-weight:800;letter-spacing:.14em;text-transform:uppercase;font-size:.8rem}
+  h1,h2,h3{line-height:1.1;font-weight:800;letter-spacing:-.01em}
+  .btn{display:inline-flex;align-items:center;gap:9px;font-weight:800;font-size:.95rem;padding:15px 26px;border-radius:10px;cursor:pointer;border:2px solid transparent;transition:.16s;font-family:inherit}
+  .btn-gold{background:var(--gold);color:#fff}.btn-gold:hover{background:var(--gold-d)}
+  .btn-ghost{background:transparent;border-color:var(--gold);color:var(--gold-d)}.btn-ghost:hover{background:var(--gold);color:#fff}
+  .btn-dark{background:var(--ink);color:#fff}.btn-dark:hover{background:#000}
+  .link-u{font-weight:700;border-bottom:2px solid var(--gold);padding-bottom:2px;color:var(--ink)}
+  /* Header */
+  header{position:sticky;top:0;z-index:40;background:rgba(255,255,255,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+  .nav{display:flex;align-items:center;justify-content:space-between;height:78px}
+  .logo{display:flex;flex-direction:column;line-height:1}
+  .logo b{font-size:1.5rem;font-weight:800}.logo b span{color:var(--gold)}
+  .logo small{font-size:.62rem;color:var(--muted);letter-spacing:.02em;margin-top:3px}
+  .menu{display:flex;gap:30px;font-weight:600;font-size:.98rem}
+  .menu a:hover{color:var(--gold-d)}
+  .badge-note{background:#38352f;color:#f4eee3;text-align:center;font-size:.82rem;padding:11px 16px}
+  .badge-note b{color:var(--gold-l)}
+  /* Hero */
+  .hero{background:linear-gradient(180deg,var(--cream) 0%,#faf6ef 100%);overflow:hidden}
+  .hero-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:40px;align-items:center;padding:64px 0 72px}
+  .hero h1{font-size:3.5rem}
+  .hero h1 .g{color:var(--gold)}
+  .hero p.lead{font-size:1.18rem;color:var(--muted);margin:22px 0 30px;max-width:520px}
+  .hero-cta{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:30px}
+  .usps{display:flex;gap:26px;flex-wrap:wrap}
+  .usp{display:flex;gap:10px;align-items:center;font-weight:600;font-size:.92rem;color:var(--ink-2)}
+  .usp svg{width:26px;height:26px;color:var(--gold)}
+  .hero-visual{position:relative;border-radius:20px;min-height:420px;background:
+     linear-gradient(135deg,rgba(42,42,46,.06),rgba(42,42,46,.02)),
+     repeating-linear-gradient(115deg,#3a3a40 0 34px,#33333a 34px 68px);
+     box-shadow:0 30px 70px rgba(42,42,46,.22);overflow:hidden}
+  .hero-visual::before{content:"";position:absolute;inset:0;background:linear-gradient(160deg,transparent 40%,rgba(200,145,44,.22))}
+  .picker{position:absolute;right:22px;bottom:22px;left:22px;background:#fff;border-radius:16px;padding:18px 18px 20px;box-shadow:0 18px 40px rgba(0,0,0,.22)}
+  .picker h4{font-size:.92rem;margin-bottom:12px}
+  .swrow{display:flex;gap:10px;margin-bottom:14px}
+  .swatch-lg{width:60px;height:44px;border-radius:8px;border:2px solid transparent}
+  .swatch-lg.sel{border-color:var(--gold)}
+  .picker .lbl{font-size:.8rem;color:var(--muted);margin-bottom:8px}
+  .dots{display:flex;gap:9px}
+  .dot{width:26px;height:26px;border-radius:50%;box-shadow:inset 0 0 0 2px rgba(255,255,255,.6)}
+  .dot.sel{box-shadow:0 0 0 2px var(--gold)}
+  /* Section */
+  section{padding:70px 0}
+  .sec-head{text-align:center;max-width:640px;margin:0 auto 40px}
+  .sec-head h2{font-size:2.2rem;margin-top:8px}
+  /* Path cards */
+  .paths{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+  .path{display:flex;gap:16px;align-items:flex-start;background:#fff;border:1px solid var(--line);border-radius:16px;padding:24px;transition:.16s;cursor:pointer}
+  .path:hover{border-color:var(--gold);box-shadow:0 14px 30px rgba(200,145,44,.14);transform:translateY(-2px)}
+  .path .ic{width:52px;height:52px;border-radius:12px;background:#faf3e5;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .path .ic svg{width:26px;height:26px;color:var(--gold)}
+  .path h3{font-size:1.08rem;margin-bottom:5px}
+  .path p{color:var(--muted);font-size:.92rem}
+  .path .arr{margin-left:auto;color:var(--gold);font-weight:800;align-self:center}
+  /* Compara */
+  .cmp{background:var(--cream)}
+  .cmp-grid{display:grid;grid-template-columns:.8fr 1.2fr;gap:40px;align-items:center}
+  .cmp h2{font-size:2.4rem}.cmp h2 .g{color:var(--gold)}
+  .cmp p{color:var(--muted);margin:18px 0 26px;max-width:420px}
+  .profiles{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .profile{border-radius:14px;overflow:hidden;background:#fff;box-shadow:0 12px 30px rgba(42,42,46,.12)}
+  .profile .ph{height:150px;position:relative;display:flex;align-items:flex-end;padding:14px;color:#fff}
+  .profile .ph b{font-weight:800;position:relative;z-index:1;text-shadow:0 1px 6px rgba(0,0,0,.5)}
+  .profile .body{padding:14px 16px 18px}
+  .profile .cdots{display:flex;gap:7px}
+  .profile .cdots span{width:18px;height:18px;border-radius:50%}
+  /* Sistem complet */
+  .sys-grid{display:grid;grid-template-columns:1fr 1fr;gap:44px;align-items:center}
+  .sys h2{font-size:2.6rem;margin:8px 0 18px}
+  .sys p{color:var(--muted);font-size:1.08rem;margin-bottom:26px;max-width:460px}
+  .sys .checks{display:flex;gap:22px;flex-wrap:wrap;margin-top:26px}
+  .sys .checks span{font-weight:700;font-size:.9rem}
+  .sys .checks b{color:var(--gold)}
+  .layers{background:var(--ink);border-radius:20px;padding:30px;color:#fff;box-shadow:0 30px 70px rgba(42,42,46,.3)}
+  .layers .ttl{color:var(--gold-l);letter-spacing:.12em;text-transform:uppercase;font-size:.78rem;font-weight:800;margin-bottom:20px}
+  .stack{display:flex;flex-direction:column;gap:8px;perspective:900px}
+  .layer{height:52px;border-radius:8px;display:flex;align-items:center;padding:0 18px;color:#fff;font-weight:700;font-size:.9rem;transform:rotateX(6deg);box-shadow:0 6px 16px rgba(0,0,0,.3)}
+  .stats{display:flex;justify-content:space-between;border-top:1px solid rgba(255,255,255,.14);margin-top:22px;padding-top:18px}
+  .stats div b{color:var(--gold-l);font-size:1.5rem;margin-right:6px}
+  .stats div span{color:#cfc7b8;font-size:.78rem;letter-spacing:.08em;text-transform:uppercase}
+  /* Proiect complet CTA */
+  .final{background:var(--ink);color:#fff}
+  .final .sec-head h2{color:#fff}.final .eyebrow{color:var(--gold-l)}
+  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin:36px 0 40px}
+  .step{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:24px}
+  .step .num{width:40px;height:40px;border-radius:50%;background:var(--gold);color:#fff;font-weight:800;display:flex;align-items:center;justify-content:center;margin-bottom:14px}
+  .step h3{font-size:1.05rem;margin-bottom:6px}
+  .step p{color:#c7c0b3;font-size:.92rem}
+  .final-cta{text-align:center}
+  .incl{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin:26px 0 30px}
+  .incl span{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:9px 16px;font-size:.88rem}
+  footer{background:#211f1c;color:#b7ad9c;padding:34px 0;text-align:center;font-size:.86rem}
+  @media(max-width:920px){
+    .hero-grid,.cmp-grid,.sys-grid{grid-template-columns:1fr}
+    .paths,.profiles,.steps{grid-template-columns:1fr}
+    .menu{display:none}
+    .hero h1{font-size:2.5rem}.sec-head h2,.cmp h2,.sys h2{font-size:1.8rem}
+    .hero-visual{min-height:320px}
+  }
+</style>
+</head>
+<body>
+
+<header><div class="wrap"><div class="nav">
+  <a href="#" class="logo"><b>Expo<span>Tigla</span></b><small>Centru de inspirație și soluții pentru acoperișuri</small></a>
+  <nav class="menu"><a href="#">Produse</a><a href="#cmp">Compară</a><a href="#">Inspirație</a><a href="#">Ghiduri</a><a href="#sys">Proiect complet</a></nav>
+  <a class="btn btn-gold" href="#final"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M12 2 3 7v6c0 5 3.8 8.5 9 9 5.2-.5 9-4 9-9V7z"/></svg> Montaj prin ComStore</a>
+</div></div></header>
+
+<!-- HERO -->
+<div class="hero"><div class="wrap"><div class="hero-grid">
+  <div>
+    <span class="eyebrow">Showroom digital</span>
+    <h1>Vezi. Compară.<br><span class="g">Alege acoperișul potrivit.</span></h1>
+    <p class="lead">Modele, culori și sisteme complete, cu consultanță, transport și montaj prin ComStore.</p>
+    <div class="hero-cta">
+      <a class="btn btn-gold" href="#final">Solicită oferta completă</a>
+      <a class="btn btn-ghost" href="#">Explorează produsele</a>
+    </div>
+    <div class="usps">
+      <div class="usp"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> Consultanță de specialitate</div>
+      <div class="usp"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="1" y="3" width="15" height="13"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg> Transport rapid și sigur</div>
+      <div class="usp"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12 12 3l9 9"/><path d="M5 10v10h14V10"/></svg> Montaj profesionist prin ComStore</div>
+    </div>
+  </div>
+  <div class="hero-visual">
+    <div class="picker">
+      <h4>Alege materialul și culoarea</h4>
+      <div class="swrow">
+        <div class="swatch-lg sel" style="background:repeating-linear-gradient(90deg,#33333a 0 8px,#26262b 8px 12px)"></div>
+        <div class="swatch-lg" style="background:linear-gradient(135deg,#3a3a40,#26262b)"></div>
+        <div class="swatch-lg" style="background:linear-gradient(135deg,#b7532e,#8a3a22)"></div>
+        <div class="swatch-lg" style="background:linear-gradient(135deg,#6a4327,#4a2e18)"></div>
+        <div class="swatch-lg" style="background:linear-gradient(135deg,#4a4d52,#33353a)"></div>
+      </div>
+      <div class="lbl">Culoare: Antracit</div>
+      <div class="dots">
+        <span class="dot sel" style="background:#2a2c30"></span>
+        <span class="dot" style="background:#4a4d52"></span>
+        <span class="dot" style="background:#8a3a22"></span>
+        <span class="dot" style="background:#b7532e"></span>
+        <span class="dot" style="background:#6a4327"></span>
+      </div>
+    </div>
+  </div>
+</div></div></div>
+
+<!-- TRASEE / PATHS -->
+<section><div class="wrap">
+  <div class="sec-head"><span class="eyebrow">Traseu dublu</span><h2>Alege soluția potrivită proiectului tău</h2></div>
+  <div class="paths">
+    <div class="path"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.7l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.7l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M3.3 7 12 12l8.7-5M12 22V12"/></svg></div><div><h3>Am nevoie doar de materiale</h3><p>Produse de calitate, livrate rapid oriunde în țară.</p></div><span class="arr">→</span></div>
+    <div class="path"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg></div><div><h3>Materiale + transport</h3><p>Noi livrăm, tu te ocupi de restul.</p></div><span class="arr">→</span></div>
+    <div class="path"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20h20"/><path d="M4 20V10l8-6 8 6v10"/><path d="M9 20v-6h6v6"/></svg></div><div><h3>Sistem complet + montaj</h3><p>Soluție completă, montaj profesionist prin ComStore.</p></div><span class="arr">→</span></div>
+  </div>
+</div></section>
+
+<!-- COMPARA -->
+<section class="cmp" id="cmp"><div class="wrap"><div class="cmp-grid">
+  <div>
+    <span class="eyebrow">Comparator ExpoTigla</span>
+    <h2>Vezi diferențele.<br><span class="g">Alege informat.</span></h2>
+    <p>Compară până la trei produse după aspect, profil, finisaj și criteriile tehnice care contează pentru proiectul tău.</p>
+    <div class="hero-cta"><a class="btn btn-gold" href="#">Alege produsele ↓</a><a class="link-u" href="#">Cum folosesc comparatorul?</a></div>
+  </div>
+  <div class="profiles">
+    <div class="profile"><div class="ph" style="background:repeating-linear-gradient(100deg,#33333a 0 22px,#26262b 22px 30px)"><b>Panel fălțuit</b></div><div class="body"><div style="font-size:.8rem;color:var(--muted);margin-bottom:8px">Modern și elegant</div><div class="cdots"><span style="background:#2a2c30"></span><span style="background:#4a4d52"></span><span style="background:#8a3a22"></span><span style="background:#6a4327"></span></div></div></div>
+    <div class="profile"><div class="ph" style="background:radial-gradient(circle at 70% 20%,#4a4d52,#26262b)"><b>Profil clasic</b></div><div class="body"><div style="font-size:.8rem;color:var(--muted);margin-bottom:8px">Clasic și versatil</div><div class="cdots"><span style="background:#2a2c30"></span><span style="background:#8a3a22"></span><span style="background:#b7532e"></span><span style="background:#6a4327"></span></div></div></div>
+    <div class="profile"><div class="ph" style="background:radial-gradient(circle at 60% 30%,#c05a32,#7c3418)"><b>Profil mediteranean</b></div><div class="body"><div style="font-size:.8rem;color:var(--muted);margin-bottom:8px">Tradițional și rafinat</div><div class="cdots"><span style="background:#b7532e"></span><span style="background:#8a3a22"></span><span style="background:#6a4327"></span><span style="background:#4a4d52"></span></div></div></div>
+  </div>
+</div></div></section>
+
+<!-- SISTEM COMPLET -->
+<section class="sys" id="sys"><div class="wrap"><div class="sys-grid">
+  <div>
+    <span class="eyebrow">Sistem complet ExpoTigla</span>
+    <h2>Un acoperiș bine ales începe cu toate piesele potrivite.</h2>
+    <p>Configurează materialele, serviciile și preferințele proiectului tău. Primești o ofertă clară, fără componente uitate și fără drumuri între mai mulți furnizori.</p>
+    <div class="hero-cta"><a class="btn btn-gold" href="#final">Începe configurarea →</a><a class="link-u" href="#final">Vezi ce include sistemul</a></div>
+    <div class="checks"><span><b>✓</b> Configurare gratuită</span><span><b>✓</b> Răspuns de la consultant</span><span><b>✓</b> Montaj opțional</span></div>
+  </div>
+  <div class="layers">
+    <div class="ttl">Acoperișul tău, strat cu strat</div>
+    <div class="stack">
+      <div class="layer" style="background:linear-gradient(90deg,#3a3a40,#2c2c31)">Învelitoare</div>
+      <div class="layer" style="background:linear-gradient(90deg,#8a6a3e,#6a4f2c)">Accesorii & tinichigerie</div>
+      <div class="layer" style="background:linear-gradient(90deg,#e8ddc6,#d3c6a8);color:#3a3a40">Folii & membrane</div>
+      <div class="layer" style="background:linear-gradient(90deg,#b7813f,#8a5f28)">Structură & fixare</div>
+    </div>
+    <div class="stats"><div><b>1</b><span>Proiect</span></div><div><b>1</b><span>Ofertă</span></div><div><b>1</b><span>Consultant</span></div></div>
+  </div>
+</div></div></section>
+
+<!-- PROIECT COMPLET / FINAL CTA -->
+<section class="final" id="final"><div class="wrap">
+  <div class="sec-head"><span class="eyebrow">Proiect complet</span><h2>Un singur partener. Tot acoperișul.</h2><p style="color:#c7c0b3;margin-top:10px">Materiale • consultanță • transport • montaj</p></div>
+  <div class="steps">
+    <div class="step"><div class="num">1</div><h3>Trimite planul</h3><p>Încarci planul sau dimensiunile acoperișului tău.</p></div>
+    <div class="step"><div class="num">2</div><h3>Primești calculul</h3><p>Cantități și accesorii calculate, cu ofertă clară.</p></div>
+    <div class="step"><div class="num">3</div><h3>Alegi serviciile</h3><p>Transport coordonat și montaj prin ComStore, opțional.</p></div>
+  </div>
+  <div class="incl">
+    <span>Un singur punct de contact</span><span>Cantități & accesorii calculate</span><span>Transport coordonat</span><span>Montaj prin ComStore</span><span>Garanții explicate separat</span>
+  </div>
+  <div class="final-cta"><a class="btn btn-gold" href="#" style="font-size:1.05rem;padding:17px 34px">Vreau oferta completă</a></div>
+</div></section>
+
+<footer>© <span id="y"></span> ExpoTigla by ComStore — concept de design (pagină demonstrativă).</footer>
+<div class="badge-note">Aceasta este o pagină de <b>concept design nou</b>, separată — nu afectează site-ul live. <b>/design-nou.html</b></div>
+<script>document.getElementById('y').textContent=new Date().getFullYear();</script>
+</body>
+</html>
