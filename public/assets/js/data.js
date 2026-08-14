@@ -397,10 +397,6 @@ function defaultProductSvg(p) {
   // când produsul nu are o poză reală încărcată; se înlocuiește automat cu poza.
   return `<svg viewBox="0 0 400 300" width="100%" height="100%" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${(p && p.name) ? String(p.name).replace(/[<>&"]/g, '') : 'Produs'}">
     <rect width="400" height="300" fill="#ffffff"/>
-    <g fill="none" stroke="#e4e8ec" stroke-width="7" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M112 168 200 104 288 168"/>
-      <path d="M132 160 132 202 268 202 268 160"/>
-    </g>
   </svg>`;
 }
 // Încarcă valorile globale de opțiuni din API (finisaje/grosimi/culori) și le
