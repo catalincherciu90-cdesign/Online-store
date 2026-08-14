@@ -393,10 +393,15 @@ function optionSummary(opts) {
    acestea înlocuiesc catalogul static, ca editările din admin să apară pe site.
    Dacă API-ul lipsește sau întoarce listă goală, rămâne catalogul static. */
 function defaultProductSvg(p) {
-  const cat = getCategory(p.cat);
-  const icon = cat ? cat.icon : 'tigla';
-  const cols = CAT_SVG_COLORS[p.cat] || ['#16324f', '#0f2438'];
-  return (SVG[icon] || SVG.tigla)(cols[0], cols[1]);
+  // Placeholder curat pe fundal alb (fără schița colorată din cod). Apare doar
+  // când produsul nu are o poză reală încărcată; se înlocuiește automat cu poza.
+  return `<svg viewBox="0 0 400 300" width="100%" height="100%" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${(p && p.name) ? String(p.name).replace(/[<>&"]/g, '') : 'Produs'}">
+    <rect width="400" height="300" fill="#ffffff"/>
+    <g fill="none" stroke="#e4e8ec" stroke-width="7" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M112 168 200 104 288 168"/>
+      <path d="M132 160 132 202 268 202 268 160"/>
+    </g>
+  </svg>`;
 }
 // Încarcă valorile globale de opțiuni din API (finisaje/grosimi/culori) și le
 // aplică peste cele implicite, ca proprietățile adăugate din admin să apară.
