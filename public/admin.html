@@ -748,8 +748,8 @@
         <div class="field full"><label>Descriere</label><textarea name="desc" rows="2"></textarea></div>
         <div class="field full"><label>Specificații (câte una pe linie: „Cheie: valoare")</label><textarea name="specs" rows="4" placeholder="Grosime: 0.5 mm&#10;Garanție: 15 ani"></textarea></div>
         <div class="field full">
-          <label style="font-weight:600">Poză montaj & documente</label>
-          <div class="muted-sm" style="margin-bottom:8px">Poza „punere în operă" apare pe pagina produsului; documentele (PDF) apar la secțiunea „Documente". Fișier max ~3 MB. Salvează întâi produsul dacă e nou, apoi încarcă-le.</div>
+          <label style="font-weight:600">Poze & documente produs</label>
+          <div class="muted-sm" style="margin-bottom:8px">Poza <b>principală</b> se afișează pentru toate culorile (utilă când nu ai poze pe culoare). Poza „montaj" apare la butonul „Vezi exemplu de montaj"; documentele (PDF) apar la secțiunea „Documente". Fișier max ~3 MB. Salvează întâi produsul dacă e nou.</div>
           <div id="pf-box"></div>
         </div>
         <div class="field full">
@@ -2469,6 +2469,7 @@
 
     // ── Poză montaj & documente per produs ──
     const PF_KINDS = [
+      { kind: 'main', label: 'Poză principală produs (folosită pentru toate culorile)', img: true },
       { kind: 'montaj', label: 'Poză montaj (punere în operă)', img: true },
       { kind: 'doc_fisa', label: 'Fișă tehnică (PDF)', img: false },
       { kind: 'doc_dop', label: 'Declarație de performanță (PDF)', img: false },

@@ -610,7 +610,7 @@ async function bannerImage(env, id, mobile) {
 }
 
 // ── Fișiere produs (poză montaj + documente), stocate în D1, servite binar ──
-const PRODUCT_FILE_KINDS = ['montaj', 'doc_fisa', 'doc_dop', 'doc_garantie', 'doc_montaj'];
+const PRODUCT_FILE_KINDS = ['main', 'montaj', 'doc_fisa', 'doc_dop', 'doc_garantie', 'doc_montaj'];
 async function productFilesList(env, pid) {
   if (!env.DB) return json([]);
   const r = await env.DB.prepare('SELECT kind, name, LENGTH(data) AS len FROM product_files WHERE product_id=?').bind(pid).all();

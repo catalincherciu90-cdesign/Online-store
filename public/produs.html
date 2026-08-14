@@ -192,7 +192,8 @@
           </div></div>`).join('');
       hydrateImages();
       initOptions();
-      if (sel.culoare && pfMap['color_' + sel.culoare]) updateGallery(sel.culoare); // poza culorii implicite
+      // Afișează poza potrivită de la început (culoare → principală → alb)
+      if (pfMap.main || (sel.culoare && pfMap['color_' + sel.culoare])) updateGallery(sel.culoare);
       const mbtn = document.querySelector('.pd-montaj-btn');
       if (mbtn) mbtn.addEventListener('click', () => openLightbox(mbtn.dataset.montaj, 'Exemplu de montaj'));
     }
@@ -294,23 +295,25 @@
     // 1) poza încărcată din admin în D1 (/api/pf/<id>/color_<culoare>), cu cache-busting
     // 2) fișier local assets/img/products/<id>__<culoare>.jpg
     // 3) media implicită a produsului.
+    // Precedență imagine: 1) poza culorii (D1) → 2) fișier per-culoare →
+    // 3) poza principală a produsului (pfMap.main) → 4) media implicită (alb).
     function updateGallery(colorId) {
       const gal = document.querySelector('.product-gallery');
       if (!gal) return;
-      const d1url = pfMap['color_' + colorId];
+      const colorUrl = pfMap['color_' + colorId];
+      const mainUrl = pfMap.main;
       const fileUrl = `assets/img/products/${id}__${colorId}.jpg`;
+      const show = url => { gal.innerHTML = `<img class="pmedia" src="${url}" alt="${p.name}">`; };
       const setDefault = () => { gal.innerHTML = productMedia(p); hydrateImages(gal); };
-      const tryFile = () => {
-        const t = new Image();
-        t.onload = () => { gal.innerHTML = `<img class="pmedia" src="${fileUrl}" alt="${p.name}">`; };
-        t.onerror = setDefault;
-        t.src = fileUrl;
+      const showMain = () => {
+        if (!mainUrl) return setDefault();
+        const t = new Image(); t.onload = () => show(mainUrl); t.onerror = setDefault; t.src = mainUrl;
       };
-      if (d1url) {
-        const t = new Image();
-        t.onload = () => { gal.innerHTML = `<img class="pmedia" src="${d1url}" alt="${p.name}">`; };
-        t.onerror = tryFile;
-        t.src = d1url;
+      const tryFile = () => {
+        const t = new Image(); t.onload = () => show(fileUrl); t.onerror = showMain; t.src = fileUrl;
+      };
+      if (colorUrl) {
+        const t = new Image(); t.onload = () => show(colorUrl); t.onerror = tryFile; t.src = colorUrl;
       } else { tryFile(); }
     }
 
