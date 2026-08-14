@@ -356,6 +356,7 @@ const PUBLIC_SETTINGS = ['logo', 'brandName', 'phone', 'email', 'email2', 'sched
   'livrare_title', 'livrare_content', 'privacy_title', 'privacy_content', 'cookies_title', 'cookies_content', 'faq_title', 'faq_content',
   'servicii_title', 'servicii_lead', 'servicii_image', 'servicii_montaj_title', 'servicii_montaj_content', 'servicii_consult_title', 'servicii_consult_content', 'servicii_cta_title', 'servicii_cta_text',
   'chatbot_enabled', 'chatbot_greeting', 'chatbot_suggestions', 'chatbot_provider', 'chatbot_model', 'chatbot_prompt',
+  'seo_default_desc', 'seo_areas',
   'ga4_id', 'gtm_id', 'meta_pixel', 'gsc_verification', 'head_code', 'body_code', 'nav'];
 async function settingsGet(env) {
   if (!env.DB) return json({});
@@ -911,6 +912,65 @@ function buildBodyCode(t) {
   return b;
 }
 
+/* ── SEO: date structurate (JSON-LD) + Open Graph + robots + sitemap ─────── */
+let SEO_CACHE = null, SEO_TS = 0;
+async function getSeoData(env) {
+  const now = Date.now();
+  if (SEO_CACHE && now - SEO_TS < 60000) return SEO_CACHE;
+  const keys = ['brandName', 'phone', 'email', 'schedule', 'address', 'company_name', 'company_cui', 'company_reg', 'company_seat', 'seo_areas', 'seo_default_desc'];
+  const out = {};
+  try {
+    const r = await env.DB.prepare(`SELECT key,value FROM settings WHERE key IN (${keys.map(() => '?').join(',')})`).bind(...keys).all();
+    for (const row of (r.results || [])) if (row.value) out[row.key] = row.value;
+  } catch (e) { /* fără DB */ }
+  SEO_CACHE = out; SEO_TS = now;
+  return out;
+}
+function buildSeoHead(s, url) {
+  const origin = url.origin;
+  const name = s.brandName || 'ExpoTigla';
+  const DEFAULT_AREAS = ['București', 'Ilfov', 'Giurgiu', 'Călărași', 'Prahova', 'Dâmbovița'];
+  let areas = (s.seo_areas || '').split(/[\n,;]+/).map(x => x.trim()).filter(Boolean);
+  if (!areas.length) areas = DEFAULT_AREAS;
+  const biz = {
+    '@context': 'https://schema.org', '@type': 'RoofingContractor',
+    name, url: origin + '/',
+  };
+  if (s.phone) biz.telephone = s.phone;
+  if (s.email) biz.email = s.email;
+  if (s.address) biz.address = { '@type': 'PostalAddress', streetAddress: s.address, addressCountry: 'RO' };
+  if (areas.length) biz.areaServed = areas.map(a => ({ '@type': 'City', name: a }));
+  if (s.company_cui) biz.vatID = s.company_cui;
+  biz.priceRange = '$$';
+  const website = {
+    '@context': 'https://schema.org', '@type': 'WebSite', name, url: origin + '/',
+    potentialAction: { '@type': 'SearchAction', target: origin + '/produse.html?q={search_term_string}', 'query-input': 'required name=search_term_string' },
+  };
+  const jsonld = `<script type="application/ld+json">${JSON.stringify(biz)}</script><script type="application/ld+json">${JSON.stringify(website)}</script>`;
+  const og = `<meta property="og:site_name" content="${esc(name)}"><meta property="og:type" content="website"><meta property="og:locale" content="ro_RO"><meta property="og:url" content="${esc(url.href.split('#')[0])}"><meta name="twitter:card" content="summary_large_image">`;
+  return jsonld + og;
+}
+function robotsTxt(url) {
+  const body = `User-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /api/\n\nSitemap: ${url.origin}/sitemap.xml\n`;
+  return new Response(body, { headers: { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'public, max-age=86400' } });
+}
+async function sitemapXml(env, url) {
+  const o = url.origin;
+  const staticPages = ['produse.html', 'branduri.html', 'servicii.html', 'despre.html', 'contact.html', 'blog.html', 'livrare.html', 'termeni.html', 'confidentialitate.html', 'cookies.html', 'faq.html', 'cum-cumpar.html'];
+  const cats = ['tigla-metalica', 'tabla-faltuita', 'panouri-sandwich', 'sistem-pluvial', 'folii-membrane', 'borduri', 'ventilatii', 'suruburi', 'accesorii'];
+  const u = [`<url><loc>${o}/</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>`];
+  staticPages.forEach(p => u.push(`<url><loc>${o}/${p}</loc><changefreq>monthly</changefreq></url>`));
+  cats.forEach(c => u.push(`<url><loc>${o}/produse.html?cat=${c}</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>`));
+  try {
+    const r = await env.DB.prepare('SELECT id FROM products WHERE active=1').all();
+    (r.results || []).forEach(p => u.push(`<url><loc>${o}/produs.html?id=${encodeURIComponent(p.id)}</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>`));
+    const posts = await env.DB.prepare('SELECT slug FROM posts WHERE active=1').all();
+    (posts.results || []).forEach(p => u.push(`<url><loc>${o}/blog.html?slug=${encodeURIComponent(p.slug)}</loc><changefreq>monthly</changefreq></url>`));
+  } catch (e) { /* fără DB */ }
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${u.join('\n')}\n</urlset>`;
+  return new Response(xml, { headers: { 'Content-Type': 'application/xml; charset=utf-8', 'Cache-Control': 'public, max-age=3600' } });
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -918,11 +978,16 @@ export default {
       try { return await api(request, env, url); }
       catch (e) { console.error(e); return json({ error: 'Eroare internă.' }, 500); }
     }
+    if (url.pathname === '/robots.txt') { try { await ensureSchema(env); } catch (e) {} return robotsTxt(url); }
+    if (url.pathname === '/sitemap.xml') { try { await ensureSchema(env); } catch (e) {} return sitemapXml(env, url); }
     const res = await env.ASSETS.fetch(request);
     const ct = res.headers.get('content-type') || '';
     if (!ct.includes('text/html')) return res;
     const t = await getTracking(env);
-    const head = buildHeadCode(t), body = buildBodyCode(t);
+    // SEO (date structurate + Open Graph) pe paginile publice, nu pe admin.
+    const isAdmin = url.pathname === '/admin' || url.pathname.startsWith('/admin');
+    const seoHead = isAdmin ? '' : buildSeoHead(await getSeoData(env), url);
+    const head = buildHeadCode(t) + seoHead, body = buildBodyCode(t);
     if (!head && !body) return res;
     let rw = new HTMLRewriter();
     if (head) rw = rw.on('head', { element(el) { el.append(head, { html: true }); } });

@@ -101,7 +101,8 @@
         <p>Poate a fost mutat sau nu mai există.</p>
         <a href="produse.html" class="btn btn-primary" style="margin-top:16px">Înapoi la produse</a></div>`;
     } else {
-      document.title = `${p.name} | ExpoTigla`;
+      document.title = `${p.name}${p.producator ? ' ' + p.producator : ''} — ${categoryName(p.cat)} | ExpoTigla`;
+      setMetaDesc(`${p.name}${p.producator ? ' de la ' + p.producator : ''} — ${p.desc || categoryName(p.cat) + ' de calitate'}. Preț de la ${formatPrice(displayPrice(p))}/${p.unit}, livrare și montaj. Cere ofertă la ExpoTigla.`);
       const specsRows = Object.entries(p.specs).map(([k,v]) =>
         `<div class="row"><span class="k">${k}</span><span class="v">${v}</span></div>`).join('');
 
@@ -196,8 +197,38 @@
       if (pfMap.main || (sel.culoare && pfMap['color_' + sel.culoare])) updateGallery(sel.culoare);
       const mbtn = document.querySelector('.pd-montaj-btn');
       if (mbtn) mbtn.addEventListener('click', () => openLightbox(mbtn.dataset.montaj, 'Exemplu de montaj'));
+      injectProductLd(p);
     }
     }); // loadCatalog
+
+    // Setează/actualizează meta description
+    function setMetaDesc(txt) {
+      let m = document.querySelector('meta[name="description"]');
+      if (!m) { m = document.createElement('meta'); m.setAttribute('name', 'description'); document.head.appendChild(m); }
+      m.setAttribute('content', String(txt || '').slice(0, 160));
+    }
+    // Date structurate: Product + BreadcrumbList
+    function injectProductLd(p) {
+      const price = (typeof displayPrice === 'function') ? Number(displayPrice(p) || 0) : Number(p.price || 0);
+      const ld = {
+        '@context': 'https://schema.org', '@type': 'Product', name: p.name, sku: p.id,
+        category: categoryName(p.cat),
+        offers: { '@type': 'Offer', price: price.toFixed(2), priceCurrency: 'RON', availability: 'https://schema.org/InStock', url: location.href.split('#')[0] },
+      };
+      if (p.producator) ld.brand = { '@type': 'Brand', name: p.producator };
+      if (p.desc) ld.description = p.desc;
+      if (pfMap.main) ld.image = location.origin + pfMap.main;
+      const bc = {
+        '@context': 'https://schema.org', '@type': 'BreadcrumbList',
+        itemListElement: [
+          { '@type': 'ListItem', position: 1, name: 'Acasă', item: location.origin + '/' },
+          { '@type': 'ListItem', position: 2, name: categoryName(p.cat), item: location.origin + '/produse.html?cat=' + p.cat },
+          { '@type': 'ListItem', position: 3, name: p.name },
+        ],
+      };
+      const s = document.createElement('script'); s.type = 'application/ld+json'; s.textContent = JSON.stringify([ld, bc]);
+      document.head.appendChild(s);
+    }
 
     // Lightbox: deschide o imagine mărită peste pagină.
     function openLightbox(src, caption) {
