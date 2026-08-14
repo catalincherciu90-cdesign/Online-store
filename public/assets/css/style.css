@@ -819,6 +819,10 @@ a.pd-doc:hover { border-color: var(--terra); }
 .footer-anpc img { height: 46px; width: auto; display: block; border-radius: 4px; }
 .anpc-fallback { align-items: center; gap: 8px; padding: 9px 15px; border: 1px solid rgba(255,255,255,.22); border-radius: 8px; color: #cdd8e2; font-size: .82rem; font-weight: 700; background: rgba(255,255,255,.04); }
 .footer-company { color: #9fb0be; font-size: .85rem; margin-bottom: 12px; line-height: 1.6; }
+.footer-zones { text-align: center; font-size: .85rem; color: #7f92a3; margin-bottom: 16px; line-height: 1.9; }
+.footer-zones span { color: #9fb0be; font-weight: 600; }
+.footer-zones a { color: #9fb0be; margin: 0 4px; }
+.footer-zones a:hover { color: #fff; }
 .footer-company span { color: #4f6070; margin: 0 2px; }
 .footer-legal { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; align-items: center; }
 .footer-legal a { color: #9fb0be; }

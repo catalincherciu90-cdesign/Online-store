@@ -45,6 +45,18 @@ function injectProduseDropdown() {
   });
 }
 
+/* Linkuri „Zone deservite" în subsol (SEO local + descoperire) */
+function injectZoneLinks() {
+  const cont = document.querySelector('.site-footer .container');
+  if (!cont || cont.querySelector('.footer-zones')) return;
+  const bottom = cont.querySelector('.footer-bottom');
+  const ZONES = [['București', '/acoperis-bucuresti'], ['Ilfov', '/acoperis-ilfov'], ['Giurgiu', '/acoperis-giurgiu'], ['Călărași', '/acoperis-calarasi'], ['Prahova', '/acoperis-prahova'], ['Dâmbovița', '/acoperis-dambovita']];
+  const div = document.createElement('div');
+  div.className = 'footer-zones';
+  div.innerHTML = '<span>Zone deservite:</span> ' + ZONES.map(([n, h]) => `<a href="${h}">${n}</a>`).join('');
+  if (bottom) cont.insertBefore(div, bottom); else cont.appendChild(div);
+}
+
 /* Linkuri utile + legale în footer, injectate pe toate paginile */
 function injectFooterLegal() {
   // Linkuri de ajutor în coloana „Companie"
@@ -444,6 +456,7 @@ document.addEventListener('DOMContentLoaded', () => {
   injectSearch();
   injectHeaderCta();
   injectFooterLegal();
+  injectZoneLinks();
   injectAnpc();
   loadSiteSettings();
   headerScrollShadow();

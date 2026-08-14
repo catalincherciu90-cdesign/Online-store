@@ -950,6 +950,99 @@ function buildSeoHead(s, url) {
   const og = `<meta property="og:site_name" content="${esc(name)}"><meta property="og:type" content="website"><meta property="og:locale" content="ro_RO"><meta property="og:url" content="${esc(url.href.split('#')[0])}"><meta name="twitter:card" content="summary_large_image">`;
   return jsonld + og;
 }
+// ── Pagini pe zone (SEO local, generate server-side) ───────────────────────
+const ZONE_JUDETE = {
+  'bucuresti': { name: 'București', prep: 'în', cities: ['Sector 1', 'Sector 2', 'Sector 3', 'Sector 4', 'Sector 5', 'Sector 6'] },
+  'ilfov': { name: 'Ilfov', prep: 'în', cities: ['Voluntari', 'Otopeni', 'Buftea', 'Pantelimon', 'Popești-Leordeni', 'Bragadiru', 'Chitila', 'Măgurele', 'Chiajna', 'Snagov', 'Corbeanca', 'Mogoșoaia'] },
+  'giurgiu': { name: 'Giurgiu', prep: 'în', cities: ['Giurgiu', 'Bolintin-Vale', 'Mihăilești', 'Ogrezeni', 'Comana', 'Călugăreni'] },
+  'calarasi': { name: 'Călărași', prep: 'în', cities: ['Călărași', 'Oltenița', 'Budești', 'Fundulea', 'Lehliu-Gară', 'Borcea', 'Dragalina'] },
+  'prahova': { name: 'Prahova', prep: 'în', cities: ['Ploiești', 'Câmpina', 'Băicoi', 'Mizil', 'Vălenii de Munte', 'Sinaia', 'Bușteni', 'Boldești-Scăeni', 'Breaza', 'Comarnic'] },
+  'dambovita': { name: 'Dâmbovița', prep: 'în', cities: ['Târgoviște', 'Moreni', 'Găești', 'Pucioasa', 'Titu', 'Fieni', 'Răcari'] },
+};
+function zoneHeaderFooter() {
+  return {
+    header: `<header class="site-header"><div class="container header-inner">
+      <a href="index.html" class="logo">Expo<b>Tigla</b></a>
+      <nav class="nav">
+        <a href="index.html">Acasă</a><a href="produse.html">Produse</a><a href="branduri.html">Branduri</a><a href="servicii.html">Montaj &amp; consultanță</a><a href="blog.html">Ghidul acoperișului</a><a href="despre.html">Despre noi</a><a href="contact.html">Contact</a>
+      </nav>
+      <div class="header-actions">
+        <a href="cos.html" class="cart-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg><span>Coș</span><span class="cart-count">0</span></a>
+        <button class="menu-toggle" aria-label="Meniu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+      </div></div></header>`,
+    footer: `<footer class="site-footer"><div class="container"><div class="footer-grid">
+      <div class="footer-col"><div class="logo">Expo<b>Tigla</b></div><p>Sisteme complete de acoperiș pentru case și clădiri industriale. Calitate de la producător, cu garanție și livrare națională.</p></div>
+      <div class="footer-col"><h4>Produse</h4><a href="produse.html?cat=tigla-metalica">Țiglă metalică</a><a href="produse.html?cat=tabla-faltuita">Tablă fălțuită</a><a href="produse.html?cat=panouri-sandwich">Panouri sandwich</a><a href="produse.html?cat=sistem-pluvial">Sistem pluvial</a><a href="produse.html?cat=accesorii">Accesorii</a></div>
+      <div class="footer-col"><h4>Companie</h4><a href="despre.html">Despre noi</a><a href="servicii.html">Montaj &amp; consultanță</a><a href="blog.html">Ghidul acoperișului</a><a href="contact.html">Contact</a></div>
+      <div class="footer-col"><h4>Contact</h4><p>📞 <span data-site="phone">0740 000 000</span></p><p>✉️ <span data-site="email">comenzi@acoperispro.ro</span></p><p>📍 <span data-site="address">București</span></p></div>
+      </div><div class="footer-bottom">© <span class="js-year">2026</span> ExpoTigla. Toate drepturile rezervate. Prețurile includ TVA.</div></div></footer>`,
+  };
+}
+async function renderZonePage(env, url, slug) {
+  const z = ZONE_JUDETE[slug];
+  const s = await getSeoData(env);
+  const origin = url.origin;
+  const name = z.name;
+  const brand = s.brandName || 'ExpoTigla';
+  const title = `Materiale acoperiș, țiglă metalică și montaj ${z.prep} ${name} | ${brand}`;
+  const desc = `Țiglă metalică, tablă fălțuită, panouri sandwich, sisteme pluviale și accesorii ${z.prep} ${name}. Consultanță, calcul de necesar, livrare și montaj profesional. Cere ofertă la ${brand}.`;
+  const cats = [
+    ['Țiglă metalică', 'tigla-metalica'], ['Tablă fălțuită', 'tabla-faltuita'], ['Panouri sandwich', 'panouri-sandwich'],
+    ['Sisteme pluviale', 'sistem-pluvial'], ['Folii și membrane', 'folii-membrane'], ['Accesorii', 'accesorii'],
+  ];
+  const biz = {
+    '@context': 'https://schema.org', '@type': 'RoofingContractor', name: `${brand} — ${name}`, url: `${origin}/acoperis-${slug}`,
+    areaServed: [{ '@type': 'AdministrativeArea', name }, ...z.cities.map(c => ({ '@type': 'City', name: c }))],
+  };
+  if (s.phone) biz.telephone = s.phone;
+  if (s.email) biz.email = s.email;
+  const bc = { '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'Acasă', item: origin + '/' },
+    { '@type': 'ListItem', position: 2, name: 'Zone deservite', item: origin + '/acoperis-' + slug },
+    { '@type': 'ListItem', position: 3, name: name },
+  ] };
+  const hf = zoneHeaderFooter();
+  const html = `<!DOCTYPE html><html lang="ro"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>${esc(title)}</title>
+<meta name="description" content="${esc(desc)}">
+<link rel="canonical" href="${origin}/acoperis-${slug}">
+<link rel="stylesheet" href="/assets/css/style.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%230099cc' d='M12 3 2 12h3v8h14v-8h3z'/%3E%3C/svg%3E">
+<script type="application/ld+json">${JSON.stringify([biz, bc])}</script>
+</head><body>
+${hf.header}
+<section class="hero hero-simple" style="padding:56px 0 60px"><div class="container">
+  <span class="eyebrow" style="color:#bfe6f4">Zonă deservită</span>
+  <h1>Materiale pentru acoperiș și montaj ${z.prep} ${esc(name)}</h1>
+  <p style="max-width:820px;margin:16px auto 0;color:#dbe8f0;font-size:1.1rem">Livrăm și montăm sisteme complete de acoperiș ${z.prep} ${esc(name)}: țiglă metalică, tablă fălțuită, panouri sandwich, sisteme pluviale, folii, accesorii. Consultanță tehnică gratuită și calcul de necesar pentru proiectul tău.</p>
+</div></section>
+<section class="section"><div class="container" style="max-width:960px">
+  <h2 style="margin-bottom:14px">Ce oferim ${z.prep} ${esc(name)}</h2>
+  <p class="muted" style="margin-bottom:20px">Produse de la producători consacrați (Lindab, Wetterbest, Metigla), cu garanție și documente tehnice.</p>
+  <div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:36px">
+    ${cats.map(([n, id]) => `<a href="produse.html?cat=${id}" class="btn btn-outline">${esc(n)}</a>`).join('')}
+  </div>
+  <h2 style="margin-bottom:14px">Montaj și consultanță ${z.prep} ${esc(name)}</h2>
+  <p class="muted" style="margin-bottom:20px">Nu vindem doar materiale — te ajutăm să alegi corect și, la cerere, montăm acoperișul cu echipe specializate. <a href="servicii.html" style="color:var(--terra-dark);font-weight:600">Vezi serviciile de montaj →</a></p>
+  <h2 style="margin-bottom:14px">Orașe și localități în ${esc(name)}</h2>
+  <p class="muted" style="margin-bottom:14px">Livrare și montaj în ${esc(name)} și împrejurimi, inclusiv:</p>
+  <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:36px">
+    ${z.cities.map(c => `<span style="background:#eef5f9;border:1px solid var(--line);border-radius:999px;padding:7px 14px;font-size:.9rem;color:var(--navy)">${esc(c)}</span>`).join('')}
+  </div>
+</div></section>
+<section class="section" style="padding-top:0"><div class="container" style="max-width:960px">
+  <div style="background:var(--navy);color:#fff;border-radius:20px;padding:44px 32px;text-align:center">
+    <h2 style="color:#fff;font-size:1.7rem;margin:0 0 10px">Ai un proiect de acoperiș ${z.prep} ${esc(name)}?</h2>
+    <p style="color:#cfe3ee;max-width:640px;margin:0 auto 22px;font-size:1.06rem">Spune-ne ce ai nevoie și îți răspundem cu recomandarea potrivită, calculul de necesar și oferta — inclusiv montaj.</p>
+    <a href="contact.html" class="btn btn-primary">Cere ofertă & consultanță</a>
+  </div>
+</div></section>
+${hf.footer}
+<script src="/assets/js/store-img.js"></script><script src="/assets/js/data.js"></script><script src="/assets/js/cart.js"></script><script src="/assets/js/main.js"></script>
+</body></html>`;
+  return new Response(html, { headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'public, max-age=1800' } });
+}
 function robotsTxt(url) {
   const body = `User-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /api/\n\nSitemap: ${url.origin}/sitemap.xml\n`;
   return new Response(body, { headers: { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'public, max-age=86400' } });
@@ -961,6 +1054,7 @@ async function sitemapXml(env, url) {
   const u = [`<url><loc>${o}/</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>`];
   staticPages.forEach(p => u.push(`<url><loc>${o}/${p}</loc><changefreq>monthly</changefreq></url>`));
   cats.forEach(c => u.push(`<url><loc>${o}/produse.html?cat=${c}</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>`));
+  Object.keys(ZONE_JUDETE).forEach(z => u.push(`<url><loc>${o}/acoperis-${z}</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>`));
   try {
     const r = await env.DB.prepare('SELECT id FROM products WHERE active=1').all();
     (r.results || []).forEach(p => u.push(`<url><loc>${o}/produs.html?id=${encodeURIComponent(p.id)}</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>`));
@@ -980,6 +1074,8 @@ export default {
     }
     if (url.pathname === '/robots.txt') { try { await ensureSchema(env); } catch (e) {} return robotsTxt(url); }
     if (url.pathname === '/sitemap.xml') { try { await ensureSchema(env); } catch (e) {} return sitemapXml(env, url); }
+    const zoneMatch = url.pathname.match(/^\/acoperis-([a-z-]+)$/);
+    if (zoneMatch && ZONE_JUDETE[zoneMatch[1]]) { try { await ensureSchema(env); } catch (e) {} return renderZonePage(env, url, zoneMatch[1]); }
     const res = await env.ASSETS.fetch(request);
     const ct = res.headers.get('content-type') || '';
     if (!ct.includes('text/html')) return res;
