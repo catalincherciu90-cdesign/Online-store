@@ -190,6 +190,22 @@
     .imp-bar-fill { height: 100%; width: 0; border-radius: 999px; background: linear-gradient(90deg,#34d399,#1c9e70); transition: width .35s ease; }
     .imp-status { margin-top: 12px; font-size: .9rem; color: var(--em-muted); }
     .clr-dot { display: inline-block; width: 14px; height: 14px; border-radius: 50%; border: 1px solid rgba(255,255,255,.25); vertical-align: middle; margin-right: 6px; }
+    /* Editor produs: header cu X, corp derulabil, bară „Salvează" fixă jos */
+    #editor .editor-modal { display: flex; flex-direction: column; max-height: calc(100vh - 48px); padding: 0; overflow: hidden; }
+    .editor-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 22px; border-bottom: 1px solid var(--em-border); flex-shrink: 0; }
+    .editor-head h3 { color: #fff; }
+    .editor-x { background: rgba(255,255,255,.06); border: 1px solid var(--em-border); color: #cfe0d8; width: 36px; height: 36px; border-radius: 9px; font-size: 1.55rem; line-height: 1; cursor: pointer; flex-shrink: 0; transition: background .14s, color .14s, border-color .14s; }
+    .editor-x:hover { background: rgba(248,113,113,.16); color: #fff; border-color: var(--em-danger); }
+    #editor #prod-form { display: flex; flex-direction: column; flex: 1; min-height: 0; overflow: hidden; }
+    #editor .editor-scroll { overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 20px 22px; flex: 1; min-height: 0; }
+    .editor-actions { display: flex; align-items: center; gap: 10px; padding: 13px 22px; border-top: 1px solid var(--em-border); background: rgba(255,255,255,.02); flex-shrink: 0; }
+    .editor-actions .btn { padding: 11px 22px; }
+    #editor .editor-scroll > details { border: 1px solid var(--em-border); border-radius: 10px; padding: 0 14px; margin-bottom: 14px; background: rgba(255,255,255,.02); }
+    #editor .editor-scroll > details > summary { cursor: pointer; font-weight: 600; color: #dcebe3; padding: 13px 4px; list-style: none; display: flex; align-items: center; gap: 8px; }
+    #editor .editor-scroll > details > summary::-webkit-details-marker { display: none; }
+    #editor .editor-scroll > details > summary::before { content: "▸"; color: var(--em-accent-2); transition: transform .15s; }
+    #editor .editor-scroll > details[open] > summary::before { transform: rotate(90deg); }
+    #editor .editor-scroll > details > .field, #editor .editor-scroll > details > div { padding-bottom: 12px; }
     .toolbar h2 { color: #fff; }
     .badge-pill { background: rgba(52,211,153,.16); color: var(--em-accent-2); }
     .ord-tab { background: rgba(255,255,255,.04); border: 1px solid var(--em-border); color: #c4d6cd; }
@@ -757,9 +773,13 @@
 
   <!-- EDITOR PRODUS -->
   <div class="overlay" id="editor">
-    <div class="modal">
-      <h3 id="editor-title" style="margin-bottom:18px">Produs</h3>
+    <div class="modal editor-modal">
+      <div class="editor-head">
+        <h3 id="editor-title" style="margin:0;font-size:1.15rem">Produs</h3>
+        <button type="button" class="editor-x" aria-label="Închide (Esc)" title="Închide (Esc)" onclick="closeEditor()">×</button>
+      </div>
       <form class="checkout-form" id="prod-form" onsubmit="saveProduct(event)">
+        <div class="editor-scroll">
         <div class="form-row">
           <div class="field"><label>ID (unic) *</label><input name="id" required></div>
           <div class="field"><label>Categorie *</label><select name="cat" id="f-cat" required></select></div>
@@ -775,16 +795,16 @@
         </div>
         <div class="field full"><label>Descriere</label><textarea name="desc" rows="2"></textarea></div>
         <div class="field full"><label>Specificații (câte una pe linie: „Cheie: valoare")</label><textarea name="specs" rows="4" placeholder="Grosime: 0.5 mm&#10;Garanție: 15 ani"></textarea></div>
-        <div class="field full">
-          <label style="font-weight:600">Poze & documente produs</label>
+        <details>
+          <summary>Poze & documente produs</summary>
           <div class="muted-sm" style="margin-bottom:8px">Poza <b>principală</b> se afișează pentru toate culorile (utilă când nu ai poze pe culoare). Poza „montaj" apare la butonul „Vezi exemplu de montaj"; documentele (PDF) apar la secțiunea „Documente". Fișier max ~3 MB. Salvează întâi produsul dacă e nou.</div>
           <div id="pf-box"></div>
-        </div>
-        <div class="field full">
-          <label style="font-weight:600">Poze pe culoare</label>
+        </details>
+        <details>
+          <summary>Poze pe culoare</summary>
           <div class="muted-sm" style="margin-bottom:8px">Câte o poză pentru fiecare culoare a produsului. Când clientul alege culoarea pe pagina produsului, se afișează poza ei. Fișier max ~3 MB.</div>
           <div id="pf-colors-box"></div>
-        </div>
+        </details>
         <div class="field full">
           <label style="display:flex;align-items:center;gap:8px;font-weight:600;cursor:pointer">
             <input type="checkbox" id="f-hasfin" onchange="toggleFinishes()"> Produs configurabil pe finisaje (finisaj → culorile și grosimile lui, cu preț pe combinație)
@@ -794,11 +814,12 @@
             <div id="finishes-box"></div>
           </div>
         </div>
-        <div style="display:flex;gap:10px;margin-top:8px">
-          <button class="btn btn-primary" style="flex:1">Salvează</button>
+        </div><!-- editor-scroll -->
+        <div class="editor-actions">
+          <span class="form-status" id="editor-status" style="margin-right:auto"></span>
           <button type="button" class="btn btn-outline" onclick="closeEditor()">Anulează</button>
+          <button class="btn btn-primary">Salvează</button>
         </div>
-        <div class="form-status" id="editor-status"></div>
       </form>
     </div>
   </div>
@@ -1995,12 +2016,12 @@
     let prodQuery = '';
     let prodPage = 1;
     let prodPageSize = +(localStorage.getItem('prod_page_size')) || 50;
-    async function loadProducts() {
+    async function loadProducts(keepPage) {
       const box = document.getElementById('products-box');
       try {
         const res = await api('/products'); const list = await res.json();
         allProducts = Array.isArray(list) ? list : [];
-        prodPage = 1;
+        if (!keepPage) prodPage = 1;
         renderProducts();
       } catch (e) { box.innerHTML = `<div class="a-empty">Eroare la încărcare. Verifică configurarea D1.</div>`; }
     }
@@ -2531,6 +2552,14 @@
       document.getElementById('editor').classList.add('open');
     }
     function closeEditor() { document.getElementById('editor').classList.remove('open'); }
+    // Închide editorul (sau alte overlay-uri) cu tasta Escape
+    document.addEventListener('keydown', (e) => {
+      if (e.key !== 'Escape') return;
+      const ed = document.getElementById('editor');
+      if (ed && ed.classList.contains('open')) { closeEditor(); return; }
+      const cl = document.getElementById('chatlog-view');
+      if (cl && cl.classList.contains('open')) cl.classList.remove('open');
+    });
 
     // ── Poză montaj & documente per produs ──
     const PF_KINDS = [
@@ -2642,14 +2671,14 @@
         const res = await api(isEdit ? '/products/' + encodeURIComponent(body.id) : '/products',
           { method: isEdit ? 'PUT' : 'POST', body: JSON.stringify(body) });
         const d = await res.json();
-        if (d.ok) { closeEditor(); loadProducts(); }
+        if (d.ok) { closeEditor(); loadProducts(true); }
         else { const st = document.getElementById('editor-status'); st.className = 'form-status err'; st.textContent = d.error || 'Eroare la salvare.'; }
       } catch (err) { const st = document.getElementById('editor-status'); st.className = 'form-status err'; st.textContent = err.message; }
     }
 
     async function delProduct(id) {
       if (!confirm('Ștergi produsul „' + id + '"?')) return;
-      try { await api('/products/' + encodeURIComponent(id), { method: 'DELETE' }); loadProducts(); }
+      try { await api('/products/' + encodeURIComponent(id), { method: 'DELETE' }); loadProducts(true); }
       catch (e) { alert('Eroare: ' + e.message); }
     }
 
