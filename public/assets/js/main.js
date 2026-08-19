@@ -178,6 +178,8 @@ function injectHeaderCta() {
   const a = document.createElement('a');
   a.className = 'btn btn-primary header-cta';
   a.href = 'contact.html';
+  a.title = 'Cerere ofertă rapidă';
+  a.setAttribute('aria-label', 'Cerere ofertă rapidă');
   a.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span class="cta-label">Cerere ofertă rapidă</span>';
   actions.insertBefore(a, actions.firstChild);
 }
