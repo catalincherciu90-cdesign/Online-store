@@ -278,9 +278,14 @@ function injectChatbot(s) {
   if (!on || document.getElementById('cbot')) return;
   const greeting = (s.chatbot_greeting && s.chatbot_greeting.trim()) || 'Salut! 👋 Cu ce te pot ajuta? Întreabă-mă despre produse, montaj sau consultanță.';
   const esc = t => String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const teaser = (s.chatbot_teaser && s.chatbot_teaser.trim()) || 'Ai o întrebare? 💬 Scrie-ne, răspundem rapid!';
   const wrap = document.createElement('div');
   wrap.id = 'cbot';
   wrap.innerHTML = `
+    <div class="cbot-teaser" role="button" tabindex="0" aria-label="Deschide chat">
+      <button class="cbot-teaser-x" aria-label="Închide" type="button">×</button>
+      <span>${esc(teaser)}</span>
+    </div>
     <button class="cbot-fab" aria-label="Deschide chat" type="button">
       <svg class="cbot-ic-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
       <svg class="cbot-ic-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -373,6 +378,25 @@ function injectChatbot(s) {
   function closePanel() { wrap.classList.remove('open'); }
   fab.addEventListener('click', () => wrap.classList.contains('open') ? closePanel() : openPanel());
   wrap.querySelector('.cbot-x').addEventListener('click', closePanel);
+
+  // Pop-up mic de invitație lângă buton (o singură dată per sesiune).
+  const teaserEl = wrap.querySelector('.cbot-teaser');
+  const teaserX = wrap.querySelector('.cbot-teaser-x');
+  let teaserDismissed = false;
+  try { teaserDismissed = sessionStorage.getItem('cbot_teaser_off') === '1'; } catch (e) {}
+  function hideTeaser(remember) {
+    wrap.classList.remove('teaser-on');
+    if (remember) { teaserDismissed = true; try { sessionStorage.setItem('cbot_teaser_off', '1'); } catch (e) {} }
+  }
+  if (!teaserDismissed) {
+    setTimeout(() => { if (!wrap.classList.contains('open') && !teaserDismissed) wrap.classList.add('teaser-on'); }, 2600);
+    setTimeout(() => hideTeaser(false), 15000); // dispare singur după un timp
+  }
+  teaserX.addEventListener('click', (e) => { e.stopPropagation(); hideTeaser(true); });
+  teaserEl.addEventListener('click', () => { hideTeaser(true); openPanel(); });
+  teaserEl.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); hideTeaser(true); openPanel(); } });
+  const _openPanel = openPanel;
+  openPanel = function () { hideTeaser(true); _openPanel(); };
   async function sendMessage(text) {
     text = (text || '').trim();
     if (!text || busy) return;

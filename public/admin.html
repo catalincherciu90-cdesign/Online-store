@@ -486,6 +486,7 @@
           <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:600"><input type="checkbox" name="chatbot_enabled"> Activează chatbotul pe site</label>
         </div>
         <div class="field"><label>Mesaj de întâmpinare</label><input name="chatbot_greeting" placeholder="Salut! 👋 Cu ce te pot ajuta?"></div>
+        <div class="field"><label>Pop-up de invitație (bula de lângă buton)</label><input name="chatbot_teaser" placeholder="Ai o întrebare? 💬 Scrie-ne, răspundem rapid!"><span class="muted-sm">Apare o singură dată lângă butonul de chat. Lasă gol pentru textul implicit.</span></div>
         <div class="field"><label>Butoane de sugestii (câte unul pe linie)</label><textarea name="chatbot_suggestions" rows="4" placeholder="Vreau o ofertă&#10;Ce țiglă îmi recomandați?&#10;Oferiți montaj?&#10;Aveți consultanță tehnică?"></textarea><span class="muted-sm">Apar sub mesajul de întâmpinare. Lasă gol pentru sugestiile implicite. Maxim 6.</span></div>
         <div class="form-row">
           <div class="field"><label>Furnizor AI</label>
@@ -1382,6 +1383,7 @@
         const s = await (await api('/settings')).json();
         f.chatbot_enabled.checked = (s.chatbot_enabled === 'on' || s.chatbot_enabled === '1' || s.chatbot_enabled === 'true');
         f.chatbot_greeting.value = s.chatbot_greeting || '';
+        if (f.chatbot_teaser) f.chatbot_teaser.value = s.chatbot_teaser || '';
         f.chatbot_suggestions.value = s.chatbot_suggestions || '';
         f.chatbot_provider.value = s.chatbot_provider || 'groq';
         f.chatbot_model.value = s.chatbot_model || '';
@@ -1394,6 +1396,7 @@
       const body = {
         chatbot_enabled: f.chatbot_enabled.checked ? 'on' : '',
         chatbot_greeting: f.chatbot_greeting.value.trim(),
+        chatbot_teaser: f.chatbot_teaser ? f.chatbot_teaser.value.trim() : '',
         chatbot_suggestions: f.chatbot_suggestions.value,
         chatbot_provider: f.chatbot_provider.value,
         chatbot_model: f.chatbot_model.value.trim(),

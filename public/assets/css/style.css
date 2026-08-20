@@ -929,6 +929,13 @@ a.pd-doc:hover { border-color: var(--terra); }
 .cbot-ic-close { display: none; }
 #cbot.open .cbot-ic-open { display: none; }
 #cbot.open .cbot-ic-close { display: block; }
+/* Pop-up mic de invitație lângă buton */
+.cbot-teaser { position: absolute; right: 4px; bottom: 72px; width: max-content; max-width: 240px; background: #fff; color: var(--navy); border: 1px solid var(--line); border-radius: 14px 14px 4px 14px; box-shadow: 0 12px 30px rgba(11,59,74,.22); padding: 12px 30px 12px 14px; font-size: .9rem; font-weight: 600; line-height: 1.35; cursor: pointer; opacity: 0; visibility: hidden; transform: translateY(8px) scale(.96); transform-origin: bottom right; transition: opacity .22s ease, transform .22s ease, visibility .22s; }
+#cbot.teaser-on .cbot-teaser { opacity: 1; visibility: visible; transform: none; }
+#cbot.open .cbot-teaser { opacity: 0; visibility: hidden; }
+.cbot-teaser:hover { border-color: var(--terra); }
+.cbot-teaser-x { position: absolute; top: 5px; right: 6px; width: 20px; height: 20px; border: 0; background: none; color: var(--muted); font-size: 1.1rem; line-height: 1; cursor: pointer; border-radius: 50%; }
+.cbot-teaser-x:hover { background: rgba(0,0,0,.06); color: var(--navy); }
 .cbot-panel { position: absolute; right: 0; bottom: 72px; width: 360px; max-width: calc(100vw - 40px); height: 520px; max-height: calc(100vh - 120px); background: #fff; border: 1px solid var(--line); border-radius: 18px; box-shadow: 0 24px 60px rgba(11,59,74,.28); display: none; flex-direction: column; overflow: hidden; }
 #cbot.open .cbot-panel { display: flex; animation: cbot-in .2s ease; }
 @keyframes cbot-in { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }

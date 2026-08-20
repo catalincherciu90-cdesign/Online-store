@@ -365,7 +365,7 @@ const PUBLIC_SETTINGS = ['logo', 'brandName', 'phone', 'email', 'email2', 'sched
   'about_title', 'about_lead', 'about_story_title', 'about_story', 'about_mission', 'terms_title', 'terms_content', 'howto_title', 'howto_content',
   'livrare_title', 'livrare_content', 'privacy_title', 'privacy_content', 'cookies_title', 'cookies_content', 'faq_title', 'faq_content',
   'servicii_title', 'servicii_lead', 'servicii_image', 'servicii_montaj_title', 'servicii_montaj_content', 'servicii_consult_title', 'servicii_consult_content', 'servicii_cta_title', 'servicii_cta_text',
-  'chatbot_enabled', 'chatbot_greeting', 'chatbot_suggestions', 'chatbot_provider', 'chatbot_model', 'chatbot_prompt',
+  'chatbot_enabled', 'chatbot_greeting', 'chatbot_teaser', 'chatbot_suggestions', 'chatbot_provider', 'chatbot_model', 'chatbot_prompt',
   'seo_default_desc', 'seo_areas', 'coming_soon', 'coming_soon_title', 'coming_soon_text',
   'ga4_id', 'gtm_id', 'meta_pixel', 'gsc_verification', 'head_code', 'body_code', 'nav'];
 async function settingsGet(env) {
