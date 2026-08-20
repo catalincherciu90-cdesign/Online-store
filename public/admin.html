@@ -2635,6 +2635,35 @@
         </div>`;
       }).join('');
     }
+    // Browserul suportă export WebP din canvas?
+    function canvasWebp() {
+      try { return document.createElement('canvas').toDataURL('image/webp').indexOf('data:image/webp') === 0; }
+      catch (e) { return false; }
+    }
+    // Aplatizează orice imagine pe FUNDAL ALB (elimină transparența — altfel PNG-urile
+    // transparente ies negre la JPEG) și o encodează WebP (fallback JPEG). Redimensionează
+    // la maxW. Echivalentul în browser al scriptului scripts/png2webp.py.
+    function imgToWhiteWebp(file, maxW, quality, cb) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const img = new Image();
+        img.onload = () => {
+          const scale = Math.min(1, maxW / img.width);
+          const w = Math.max(1, Math.round(img.width * scale)), h = Math.max(1, Math.round(img.height * scale));
+          const c = document.createElement('canvas'); c.width = w; c.height = h;
+          const ctx = c.getContext('2d');
+          ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, w, h); // fundal alb
+          ctx.drawImage(img, 0, 0, w, h);
+          const webp = canvasWebp();
+          const mime = webp ? 'image/webp' : 'image/jpeg';
+          const name = (file.name || 'imagine').replace(/\.[^.]+$/, '') + (webp ? '.webp' : '.jpg');
+          cb(c.toDataURL(mime, quality), mime, name);
+        };
+        img.onerror = () => alert('Nu am putut citi imaginea. Încearcă alt fișier.');
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    }
     function onPFFile(pid, kind, isImg, file) {
       if (!file) return;
       if (!pid) { alert('Salvează întâi produsul (completează ID-ul).'); return; }
@@ -2645,19 +2674,8 @@
           .catch(err => alert('Eroare: ' + err.message));
       };
       if (isImg && file.type.startsWith('image/')) {
-        const reader = new FileReader();
-        reader.onload = () => {
-          const img = new Image();
-          img.onload = () => {
-            const maxW = 1600, scale = Math.min(1, maxW / img.width);
-            const w = Math.round(img.width * scale), h = Math.round(img.height * scale);
-            const c = document.createElement('canvas'); c.width = w; c.height = h;
-            c.getContext('2d').drawImage(img, 0, 0, w, h);
-            send(c.toDataURL('image/jpeg', 0.82), 'image/jpeg', file.name);
-          };
-          img.src = reader.result;
-        };
-        reader.readAsDataURL(file);
+        // Pozele de produs: fundal alb + WebP, exact ca scriptul png2webp.
+        imgToWhiteWebp(file, 1600, 0.85, send);
       } else {
         const reader = new FileReader();
         reader.onload = () => send(reader.result, file.type || 'application/pdf', file.name);
