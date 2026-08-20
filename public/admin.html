@@ -2236,7 +2236,8 @@
             if (!catIds.has(cat)) continue; // primul rând al unui produs are nevoie de categorie validă
             prod = byCod[cod] = { id: cod, cat, name: cell(r, 'denumire'), desc: cell(r, 'descriere'),
               producator: cell(r, 'producator') || null,
-              unit: cell(r, 'unitate') || 'buc', badge: cell(r, 'badge') || null, specs: {}, _fin: {}, _prices: [] };
+              unit: cell(r, 'unitate') || 'buc', badge: cell(r, 'badge') || null, specs: {}, _fin: {}, _prices: [],
+              _pc: {}, _pcolors: new Set(), _base: null };
             cell(r, 'specificatii').split(';').forEach(part => { const j = part.indexOf(':'); if (j > 0) prod.specs[part.slice(0, j).trim()] = part.slice(j + 1).trim(); });
           } else {
             if (!prod.name) prod.name = cell(r, 'denumire');
@@ -2249,7 +2250,15 @@
           let thName = cell(r, 'grosime');
           if (finName) { prod._lastFin = finName; prod._lastGr = thName; } // rând-antet de finisaj nou
           else { finName = prod._lastFin || ''; if (!thName) thName = prod._lastGr || ''; }
-          if (!finName) continue;
+          if (!finName) {
+            // Produs FĂRĂ finisaj (ex. folii, șuruburi): preț simplu, eventual absolut pe culoare.
+            const colName0 = cell(r, 'culoare');
+            const cid0 = colName0 ? optIdByName('culoare', colName0, unknown) : '';
+            const pr0 = parseFloat((cell(r, 'pret') || '').replace(',', '.'));
+            if (cid0) { prod._pcolors.add(cid0); if (!isNaN(pr0)) prod._pc[cid0] = pr0; }
+            if (!isNaN(pr0)) { prod._prices.push(pr0); if (prod._base == null || pr0 < prod._base) prod._base = pr0; }
+            continue;
+          }
           const fid = optIdByName('finisaj', finName, unknown);
           const colName = cell(r, 'culoare'); const cid = colName ? optIdByName('culoare', colName, unknown) : '';
           const tid = thName ? optIdByName('grosime', thName, unknown) : '';
@@ -2260,9 +2269,18 @@
           if (!isNaN(pr)) { f.prices[cid + '|' + tid] = pr; prod._prices.push(pr); }
         }
         products = Object.values(byCod).map(p => {
-          p.finishes = Object.values(p._fin).map(f => ({ id: f.id, colors: [...f.colors], thicknesses: [...f.thicknesses], prices: f.prices }));
-          p.price = p._prices.length ? Math.min(...p._prices) : 0; // preț „de la” = cea mai mică combinație
-          delete p._fin; delete p._prices; return p;
+          const finishes = Object.values(p._fin).map(f => ({ id: f.id, colors: [...f.colors], thicknesses: [...f.thicknesses], prices: f.prices }));
+          if (finishes.length) {
+            p.finishes = finishes;
+          } else {
+            // Produs simplu (fără finisaj): preț de bază + eventual culori cu preț absolut.
+            if (p._pcolors.size) { p.colors = [...p._pcolors]; p.options = ['culoare']; }
+            else p.options = [];
+            if (Object.keys(p._pc).length) p.colorPrices = p._pc;
+          }
+          p.price = p._base != null ? p._base : (p._prices.length ? Math.min(...p._prices) : 0); // preț „de la” = cea mai mică valoare
+          delete p._fin; delete p._prices; delete p._pc; delete p._pcolors; delete p._base; delete p._lastFin; delete p._lastGr;
+          return p;
         });
       } else {
         // FORMAT SIMPLU (compatibilitate): un rând per produs, cu preț unic și culori opționale.

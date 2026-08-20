@@ -390,8 +390,9 @@ function finishColorValues(p, finishId) {
     const f = finishById(p, finishId); if (!f) return [];
     return (f.colors || []).map(id => optionValue('culoare', id) || { id, name: id, hex: '#ccc' });
   }
-  const fc = p && p.finishColors && p.finishColors[finishId];
   const all = OPTIONS.culoare.values;
+  if (Array.isArray(p && p.colors) && p.colors.length) return all.filter(v => p.colors.includes(v.id));
+  const fc = p && p.finishColors && p.finishColors[finishId];
   return (Array.isArray(fc) && fc.length) ? all.filter(v => fc.includes(v.id)) : all;
 }
 // Grosimile disponibile pentru un finisaj (obiecte {id,name})
