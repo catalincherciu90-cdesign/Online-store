@@ -102,7 +102,7 @@
         <a href="produse.html" class="btn btn-primary" style="margin-top:16px">Înapoi la produse</a></div>`;
     } else {
       document.title = `${p.name}${p.producator ? ' ' + p.producator : ''} — ${categoryName(p.cat)} | ExpoTigla`;
-      setMetaDesc(`${p.name}${p.producator ? ' de la ' + p.producator : ''} — ${p.desc || categoryName(p.cat) + ' de calitate'}. Preț de la ${formatPrice(displayPrice(p))}/${p.unit}, livrare și montaj. Cere ofertă la ExpoTigla.`);
+      setMetaDesc(`${p.name}${p.producator ? ' de la ' + p.producator : ''} — ${p.desc || categoryName(p.cat) + ' de calitate'}. Preț de la ${formatPrice(priceMin(p))}/${p.unit}, livrare și montaj. Cere ofertă la ExpoTigla.`);
       const specsRows = Object.entries(p.specs).map(([k,v]) =>
         `<div class="row"><span class="k">${k}</span><span class="v">${v}</span></div>`).join('');
 
@@ -185,7 +185,7 @@
             <span class="cat-tag">${categoryName(rp.cat)}</span>
             <h3><a href="produs.html?id=${rp.id}">${rp.name}</a></h3>
             <p class="desc">${rp.desc}</p>
-            <div class="price-row"><span class="price">${formatPrice(displayPrice(rp))} <span class="unit">/ ${rp.unit}</span></span></div>
+            <div class="price-row"><span class="price">${cardPrice(rp)} <span class="unit">/ ${rp.unit}</span></span></div>
             <div class="card-actions">
               <a href="produs.html?id=${rp.id}" class="btn btn-outline">Detalii</a>
               <button class="btn btn-primary" onclick="Cart.add('${rp.id}');showToast('Adăugat în coș')">În coș</button>
@@ -209,7 +209,7 @@
     }
     // Date structurate: Product + BreadcrumbList
     function injectProductLd(p) {
-      const price = (typeof displayPrice === 'function') ? Number(displayPrice(p) || 0) : Number(p.price || 0);
+      const price = (typeof priceMin === 'function') ? Number(priceMin(p) || 0) : Number(p.price || 0);
       const ld = {
         '@context': 'https://schema.org', '@type': 'Product', name: p.name, sku: p.id,
         category: categoryName(p.cat),

@@ -494,6 +494,8 @@ a.pd-doc:hover { border-color: var(--terra); }
 .product-card .desc { color: var(--muted); font-size: .88rem; margin-bottom: 14px; flex: 1; }
 .product-card .price-row { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 14px; }
 .product-card .price { font-size: 1.35rem; font-weight: 800; color: var(--navy); font-variant-numeric: tabular-nums; }
+.price-from { font-size: .74rem; font-weight: 600; color: var(--muted); letter-spacing: .01em; }
+.si-price .price-from { font-size: .68rem; display: block; line-height: 1; }
 .product-card .price .unit { font-size: .82rem; font-weight: 500; color: var(--muted); }
 .product-card .card-actions { display: flex; gap: 8px; }
 .product-card .card-actions .btn { flex: 1; padding: 10px; font-size: .9rem; }

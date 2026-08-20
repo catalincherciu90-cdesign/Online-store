@@ -358,6 +358,26 @@ function optionPrice(p, opts) {
   return price;
 }
 function displayPrice(p) { return optionPrice(p, defaultOpts(p)); }
+// Prețul minim al produsului („de la") și dacă prețul variază între combinații.
+function priceMin(p) {
+  if (!p) return 0;
+  const vals = [];
+  if (usesFinishes(p)) p.finishes.forEach(f => { const pr = f.prices || {}; for (const k in pr) if (typeof pr[k] === 'number') vals.push(pr[k]); });
+  if (p.colorPrices) Object.values(p.colorPrices).forEach(x => { if (typeof x === 'number') vals.push(x); });
+  if (typeof p.price === 'number') vals.push(p.price);
+  return vals.length ? Math.min(...vals) : 0;
+}
+function priceVaries(p) {
+  const set = new Set();
+  if (p && usesFinishes(p)) p.finishes.forEach(f => { const pr = f.prices || {}; for (const k in pr) if (typeof pr[k] === 'number') set.add(pr[k]); });
+  if (p && p.colorPrices) Object.values(p.colorPrices).forEach(x => { if (typeof x === 'number') set.add(x); });
+  if (!set.size && p && typeof p.price === 'number') set.add(p.price);
+  return set.size > 1;
+}
+// HTML pentru prețul de pe card: „de la 57,45 lei" dacă variază, altfel „57,45 lei".
+function cardPrice(p) {
+  return (priceVaries(p) ? '<span class="price-from">de la </span>' : '') + formatPrice(priceMin(p));
+}
 
 // Finisajele produsului (obiecte {id,name}) pentru pagina produsului
 function finishList(p) {

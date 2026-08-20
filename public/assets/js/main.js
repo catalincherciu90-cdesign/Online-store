@@ -164,7 +164,7 @@ function runSearch() {
     return;
   }
   const top = matches.slice(0, 6);
-  const price = p => (typeof formatPrice === 'function' && typeof displayPrice === 'function') ? formatPrice(displayPrice(p)) : '';
+  const price = p => (typeof cardPrice === 'function') ? cardPrice(p) : ((typeof formatPrice === 'function' && typeof displayPrice === 'function') ? formatPrice(displayPrice(p)) : '');
   box.innerHTML = top.map(p => `<a class="search-item" href="produs.html?id=${encodeURIComponent(p.id)}">
       <div class="si-info"><div class="si-name">${escBasic(p.name)}</div><div class="si-cat">${escBasic(cat(p))}${p.producator ? ' · ' + escBasic(p.producator) : ''}</div></div>
       <div class="si-price">${price(p)}</div></a>`).join('') +
