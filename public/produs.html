@@ -260,7 +260,7 @@
       return `<div class="pd-options">` + groups.map(g => {
         if (g === 'finisaj') {
           return `<div class="opt-group">
-            <div class="opt-label">Finisaj: <b id="cur-finisaj">${optionValueName('finisaj', sel.finisaj)}</b></div>
+            <div class="opt-label">${finishAxisLabel(prod)}: <b id="cur-finisaj">${optionValueName('finisaj', sel.finisaj)}</b></div>
             <div class="opt-pills">${finishList(prod).map(f =>
               `<button type="button" class="opt-pill${f.id === sel.finisaj ? ' sel' : ''}" data-group="finisaj" data-val="${f.id}">${f.name}</button>`).join('')}</div>
           </div>`;

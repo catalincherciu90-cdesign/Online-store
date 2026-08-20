@@ -819,6 +819,11 @@
           </label>
           <div id="finishes-wrap" style="display:none;margin-top:12px">
             <p class="muted-sm" style="margin-bottom:10px">Bifează finisajele oferite; pentru fiecare, alege grosimile și culorile disponibile și completează prețul (lei) pentru fiecare combinație. Prețul de bază de mai sus e folosit doar ca fallback.</p>
+            <div class="field" style="max-width:320px;margin-bottom:12px">
+              <label>Etichetă axă (opțional)</label>
+              <input name="finishLabel" placeholder="Finisaj" maxlength="40">
+              <span class="muted-sm">Numele afișat pe pagina produsului în loc de „Finisaj" (ex. „Model acoperiș").</span>
+            </div>
             <div id="finishes-box"></div>
           </div>
         </div>
@@ -2244,8 +2249,9 @@
             if (!catIds.has(cat)) continue; // primul rând al unui produs are nevoie de categorie validă
             prod = byCod[cod] = { id: cod, cat, name: cell(r, 'denumire'), desc: cell(r, 'descriere'),
               producator: cell(r, 'producator') || null,
-              unit: cell(r, 'unitate') || 'buc', badge: cell(r, 'badge') || null, specs: {}, _fin: {}, _prices: [],
-              _pc: {}, _pcolors: new Set(), _base: null };
+              unit: cell(r, 'unitate') || 'buc', badge: cell(r, 'badge') || null,
+              finishLabel: (cell(r, 'eticheta') || cell(r, 'eticheta_finisaj') || '').trim() || null,
+              specs: {}, _fin: {}, _prices: [], _pc: {}, _pcolors: new Set(), _base: null };
             cell(r, 'specificatii').split(';').forEach(part => { const j = part.indexOf(':'); if (j > 0) prod.specs[part.slice(0, j).trim()] = part.slice(j + 1).trim(); });
           } else {
             if (!prod.name) prod.name = cell(r, 'denumire');
@@ -2571,6 +2577,7 @@
         f.unit.value = p.unit || 'mp'; f.badge.value = p.badge || ''; f.desc.value = p.desc || '';
         f.producator.value = p.producator || '';
         f.specs.value = specsToText(p.specs);
+        if (f.finishLabel) f.finishLabel.value = p.finishLabel || '';
         document.getElementById('f-hasfin').checked = !!(p.finishes && p.finishes.length);
       } else { document.getElementById('f-hasfin').checked = false; }
       toggleFinishes();
@@ -2788,6 +2795,7 @@
         specs: textToSpecs(f.specs.value),
         options: hasFin ? undefined : [], // fără finisaje = doar preț de bază
         finishes,
+        finishLabel: (hasFin && f.finishLabel) ? (f.finishLabel.value.trim() || null) : null,
       };
       const isEdit = f.id.readOnly;
       try {

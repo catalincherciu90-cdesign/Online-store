@@ -408,6 +408,8 @@ function brandDisplay(s) {
   return raw.split(/\s+/).map(w => (w.length <= 3 && w === w.toUpperCase()) ? w : (w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())).join(' ');
 }
 
+// Eticheta axei „finisaj" pentru un produs (poate fi personalizată, ex. „Model acoperiș").
+function finishAxisLabel(p) { return (p && p.finishLabel) ? p.finishLabel : 'Finisaj'; }
 // Finisajele produsului (obiecte {id,name}) pentru pagina produsului
 function finishList(p) {
   if (usesFinishes(p)) return p.finishes.map(f => ({ id: f.id, name: optionValueName('finisaj', f.id) }));

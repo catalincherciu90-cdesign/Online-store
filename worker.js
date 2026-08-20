@@ -83,7 +83,7 @@ async function ensureSchema(env) {
       ];
       for (const s of stmts) { try { await env.DB.prepare(s).run(); } catch (e) { console.error('ensureSchema', e); } }
       // Coloane adăugate ulterior pe produse (ALTER nu e idempotent → ignoră „duplicate column").
-      for (const col of ['producator TEXT']) {
+      for (const col of ['producator TEXT', 'finish_label TEXT']) {
         try { await env.DB.prepare(`ALTER TABLE products ADD COLUMN ${col}`).run(); } catch (e) { /* există deja */ }
       }
       for (const col of ['align TEXT', 'height TEXT', 'image_mobile TEXT']) {
@@ -109,18 +109,19 @@ function rowToProduct(r) {
     finishColors: r.finish_colors ? JSON.parse(r.finish_colors) : undefined,
     colorPrices: r.color_prices ? JSON.parse(r.color_prices) : undefined,
     finishes: r.finishes ? JSON.parse(r.finishes) : undefined,
+    finishLabel: r.finish_label || undefined,
     active: !!r.active,
   };
 }
 const jstr = o => (o && (Array.isArray(o) ? o.length : Object.keys(o).length) ? JSON.stringify(o) : null);
 async function upsertProduct(env, p) {
   await env.DB.prepare(
-    `INSERT OR REPLACE INTO products (id,cat,name,price,unit,badge,descr,producator,specs,options,option_prices,finish_colors,color_prices,finishes,active)
-     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,1)`
+    `INSERT OR REPLACE INTO products (id,cat,name,price,unit,badge,descr,producator,specs,options,option_prices,finish_colors,color_prices,finishes,finish_label,active)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1)`
   ).bind(
     p.id, p.cat, p.name, Number(p.price) || 0, p.unit || 'buc', p.badge || null,
     p.desc || '', p.producator || null, JSON.stringify(p.specs || {}), p.options ? JSON.stringify(p.options) : null,
-    jstr(p.optionPrices), jstr(p.finishColors), jstr(p.colorPrices), jstr(p.finishes)
+    jstr(p.optionPrices), jstr(p.finishColors), jstr(p.colorPrices), jstr(p.finishes), (p.finishLabel || '').trim() || null
   ).run();
 }
 
@@ -208,11 +209,11 @@ async function productUpdate(request, env, id) {
   const p = await request.json().catch(() => null);
   if (!p) return json({ error: 'Date invalide.' }, 400);
   await env.DB.prepare(
-    `UPDATE products SET cat=?,name=?,price=?,unit=?,badge=?,descr=?,producator=?,specs=?,options=?,option_prices=?,finish_colors=?,color_prices=?,finishes=? WHERE id=?`
+    `UPDATE products SET cat=?,name=?,price=?,unit=?,badge=?,descr=?,producator=?,specs=?,options=?,option_prices=?,finish_colors=?,color_prices=?,finishes=?,finish_label=? WHERE id=?`
   ).bind(
     p.cat, p.name, Number(p.price) || 0, p.unit || 'buc', p.badge || null,
     p.desc || '', p.producator || null, JSON.stringify(p.specs || {}), p.options ? JSON.stringify(p.options) : null,
-    jstr(p.optionPrices), jstr(p.finishColors), jstr(p.colorPrices), jstr(p.finishes), id
+    jstr(p.optionPrices), jstr(p.finishColors), jstr(p.colorPrices), jstr(p.finishes), (p.finishLabel || '').trim() || null, id
   ).run();
   return json({ ok: true });
 }
