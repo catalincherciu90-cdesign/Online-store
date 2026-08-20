@@ -2691,24 +2691,30 @@
       }
     }
     // Ca imgToWhiteWebp, dar pentru un Blob deja descărcat (poze existente din D1).
+    // Folosește data: URL (ca la upload) pentru compatibilitate maximă.
     function blobToWhiteWebp(blob, maxW, quality) {
       return new Promise((resolve, reject) => {
-        const url = URL.createObjectURL(blob);
-        const img = new Image();
-        img.onload = () => {
-          URL.revokeObjectURL(url);
-          const scale = Math.min(1, maxW / img.width);
-          const w = Math.max(1, Math.round(img.width * scale)), h = Math.max(1, Math.round(img.height * scale));
-          const c = document.createElement('canvas'); c.width = w; c.height = h;
-          const ctx = c.getContext('2d');
-          ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, w, h);
-          ctx.drawImage(img, 0, 0, w, h);
-          const webp = canvasWebp();
-          const mime = webp ? 'image/webp' : 'image/jpeg';
-          resolve({ dataUrl: c.toDataURL(mime, quality), mime });
+        const reader = new FileReader();
+        reader.onload = () => {
+          const img = new Image();
+          img.onload = () => {
+            try {
+              const scale = Math.min(1, maxW / img.width);
+              const w = Math.max(1, Math.round(img.width * scale)), h = Math.max(1, Math.round(img.height * scale));
+              const c = document.createElement('canvas'); c.width = w; c.height = h;
+              const ctx = c.getContext('2d');
+              ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, w, h);
+              ctx.drawImage(img, 0, 0, w, h);
+              const webp = canvasWebp();
+              const mime = webp ? 'image/webp' : 'image/jpeg';
+              resolve({ dataUrl: c.toDataURL(mime, quality), mime });
+            } catch (e) { reject(new Error('encodare: ' + e.message)); }
+          };
+          img.onerror = () => reject(new Error('imaginea nu s-a putut decoda'));
+          img.src = reader.result;
         };
-        img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('imagine invalidă')); };
-        img.src = url;
+        reader.onerror = () => reject(new Error('citire blob eșuată'));
+        reader.readAsDataURL(blob);
       });
     }
     // Reprocesează toate pozele de produs deja încărcate: fundal alb + WebP.
@@ -2723,6 +2729,7 @@
       let products = allProducts;
       if (!products || !products.length) { try { products = await (await api('/products')).json(); } catch (e) { products = []; } }
       let done = 0, converted = 0, skipped = 0, errors = 0;
+      const errSamples = [];
       const total = products.length || 1;
       for (const p of products) {
         done++;
@@ -2732,20 +2739,23 @@
         for (const f of (files || [])) {
           if (/^doc_/.test(f.kind)) continue; // documente (PDF) — nu se ating
           try {
-            const blob = await (await fetch(f.url)).blob();
-            if (!blob.type.startsWith('image/')) { skipped++; continue; }
+            const r = await fetch(f.url);
+            if (!r.ok) throw new Error('descărcare ' + r.status);
+            const blob = await r.blob();
+            if (blob.type && !blob.type.startsWith('image/')) { skipped++; continue; }
             if (blob.type === 'image/webp' && /\.webp$/i.test(f.name || '')) { skipped++; continue; } // deja procesată
             const { dataUrl, mime } = await blobToWhiteWebp(blob, 1600, 0.85);
             if (dataUrl.length > 4200000) { skipped++; continue; }
             const name = (f.name || f.kind).replace(/\.[^.]+$/, '') + (mime === 'image/webp' ? '.webp' : '.jpg');
             const res = await api('/product-files', { method: 'POST', body: JSON.stringify({ product_id: p.id, kind: f.kind, mime, data: dataUrl, name }) });
-            const d = await res.json();
-            if (d && d.ok) converted++; else errors++;
-          } catch (e) { errors++; }
+            const d = await res.json().catch(() => ({}));
+            if (d && d.ok) converted++; else { errors++; if (errSamples.length < 3) errSamples.push(p.id + '/' + f.kind + ': ' + (d.error || ('HTTP ' + res.status))); }
+          } catch (e) { errors++; if (errSamples.length < 3) errSamples.push(p.id + '/' + f.kind + ': ' + e.message); console.error('convert', p.id, f.kind, e); }
         }
       }
-      setP(100, `Gata: ${converted} poze convertite, ${skipped} sărite (deja WebP / non-imagine), ${errors} erori.`);
-      setTimeout(() => { box.style.display = 'none'; }, 8000);
+      setP(100, `Gata: ${converted} convertite, ${skipped} sărite, ${errors} erori.` + (errSamples.length ? ' Ex.: ' + errSamples.join(' | ') : ''));
+      if (converted) loadProducts(true);
+      if (!errors) setTimeout(() => { box.style.display = 'none'; }, 8000); // dacă sunt erori, rămâne vizibil
     }
     async function delPF(pid, kind) {
       if (!confirm('Ștergi acest fișier?')) return;
