@@ -441,6 +441,10 @@ a.pd-doc:hover { border-color: var(--terra); }
 
 .filters-toggle { display: none; align-items: center; gap: 8px; padding: 11px 16px; border: 1px solid var(--line-strong); background: #fff; border-radius: var(--radius-sm); font-weight: 700; color: var(--navy); cursor: pointer; }
 .filters-toggle svg { width: 18px; height: 18px; }
+.filter-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; padding-bottom: 14px; border-bottom: 1px solid var(--line); }
+.filter-head h4 { text-transform: none; letter-spacing: 0; font-size: 1rem; color: var(--navy); }
+.filter-clear { background: none; border: 0; color: var(--terra-700, var(--terra)); font-weight: 600; font-size: .85rem; cursor: pointer; padding: 4px 6px; border-radius: 6px; }
+.filter-clear:hover { background: var(--accent-soft, rgba(0,153,204,.08)); text-decoration: underline; }
 .filters h4 { font-size: .8rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin-bottom: 14px; }
 .filter-group { margin-bottom: 24px; padding-bottom: 20px; border-bottom: 1px solid var(--line); }
 .filter-group:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: 0; }
@@ -496,6 +500,7 @@ a.pd-doc:hover { border-color: var(--terra); }
 .product-card .price { font-size: 1.35rem; font-weight: 800; color: var(--navy); font-variant-numeric: tabular-nums; }
 .price-from { font-size: .74rem; font-weight: 600; color: var(--muted); letter-spacing: .01em; }
 .si-price .price-from { font-size: .68rem; display: block; line-height: 1; }
+.price-req { font-size: .95rem; font-weight: 700; color: var(--terra-dark, var(--terra)); }
 .product-card .price .unit { font-size: .82rem; font-weight: 500; color: var(--muted); }
 .product-card .card-actions { display: flex; gap: 8px; }
 .product-card .card-actions .btn { flex: 1; padding: 10px; font-size: .9rem; }

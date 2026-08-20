@@ -51,6 +51,10 @@
       </button>
       <!-- FILTRE -->
       <aside class="filters">
+        <div class="filter-head">
+          <h4 style="margin:0">Filtre</h4>
+          <button type="button" class="filter-clear" onclick="resetFilters()">Șterge filtrele</button>
+        </div>
         <div class="filter-group">
           <h4>Categorie</h4>
           <div id="cat-filters"></div>
@@ -109,7 +113,7 @@
           <a href="produse.html?cat=tabla-faltuita">Tablă fălțuită</a>
           <a href="produse.html?cat=panouri-sandwich">Panouri sandwich</a>
           <a href="produse.html?cat=sistem-pluvial">Sistem pluvial</a>
-          <a href="produse.html?cat=accesorii">Accesorii montaj</a>
+          <a href="produse.html?cat=accesorii">Altele</a>
           <a href="produse.html?cat=folii-membrane">Folii &amp; membrane</a>
         </div>
         <div class="footer-col">
@@ -167,7 +171,12 @@
     // Marchează categoria activă
     (catFilters.querySelector(`input[value="${activeCat}"]`) || catFilters.querySelector('input[value="all"]')).checked = true;
 
-    catFilters.addEventListener('change', e => { activeCat = e.target.value; render(); updateHeader(); });
+    // La schimbarea categoriei (deschiderea unei secțiuni), derulează sus la rezultate.
+    function scrollToResults() {
+      const el = document.getElementById('catalog-title') || document.getElementById('product-grid');
+      if (el) window.scrollTo({ top: Math.max(0, el.getBoundingClientRect().top + window.scrollY - 90), behavior: 'smooth' });
+    }
+    catFilters.addEventListener('change', e => { activeCat = e.target.value; render(); updateHeader(); document.querySelector('.filters').classList.remove('open'); scrollToResults(); });
     document.querySelectorAll('input[name="price"]').forEach(r => r.addEventListener('change', e => { activePrice = e.target.value; render(); }));
     document.getElementById('sort').addEventListener('change', e => { activeSort = e.target.value; render(); });
 
@@ -176,7 +185,7 @@
     let brandList = [];
     const escAttr = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     // Afișare frumoasă a brandului (acronime scurte rămân majuscule).
-    const niceBrand = s => (s || '').trim().split(/\s+/).map(w => (w.length <= 3 && w === w.toUpperCase()) ? w : (w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())).join(' ');
+    const niceBrand = s => brandDisplay(s);
     const sameBrand = (a, b) => (a || '').trim().toLowerCase() === (b || '').trim().toLowerCase();
     function buildBrandFilters() {
       // Dedup case-insensitive: „LINDAB" și „Lindab" = un singur brand.
@@ -240,6 +249,20 @@
       return productOptions(p).includes('culoare');
     }
 
+    // Resetează toate filtrele (categorie, producător, preț, grosime, culoare, căutare).
+    function resetFilters() {
+      activeCat = 'all'; activeProducer = 'all'; activePrice = 'all';
+      activeThickness = 'all'; activeColor = 'all'; activeQuery = ''; activeSort = 'default';
+      // curăță și URL-ul (?cat=, ?q=, ?producator=)
+      if (history.replaceState) history.replaceState(null, '', location.pathname);
+      document.querySelectorAll('.filters input[type="radio"]').forEach(r => { r.checked = (r.value === 'all'); });
+      document.querySelectorAll('.filters .fswatch.sel').forEach(b => b.classList.remove('sel'));
+      const sortSel = document.getElementById('sort'); if (sortSel) sortSel.value = 'default';
+      document.querySelector('.filters').classList.remove('open');
+      buildBrandFilters && buildBrandFilters();
+      updateHeader(); render();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
     function render() {
       let list = PRODUCTS.slice();
       if (activeCat !== 'all') list = list.filter(p => p.cat === activeCat);

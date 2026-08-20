@@ -92,7 +92,7 @@ const CATEGORIES = [
     desc: 'Protecție suplimentară și control al umidității pentru sistemul de acoperiș.' },
   { id: 'suruburi', name: 'Șuruburi', icon: 'accesoriu', tag: 'autoforante, torx',
     desc: 'Șuruburi autoforante cu cap torx și garnitură, în diverse dimensiuni și culori RAL.' },
-  { id: 'accesorii', name: 'Accesorii', icon: 'accesoriu', tag: 'coame, parazăpezi',
+  { id: 'accesorii', name: 'Altele', icon: 'accesoriu', tag: 'coame, parazăpezi',
     desc: 'Elementele necesare pentru un sistem complet și un montaj corect.' },
 ];
 
@@ -377,9 +377,24 @@ function priceVaries(p) {
   if (!set.size && p && typeof p.price === 'number') set.add(p.price);
   return set.size > 1;
 }
-// HTML pentru prețul de pe card: „de la 57,45 lei" dacă variază, altfel „57,45 lei".
+// Categorii fără preț afișat (preț „la cerere"): folii/membrane și șuruburi.
+const PRICELESS_CATS = ['folii-membrane', 'suruburi'];
+function isPriceless(p) { return !!(p && PRICELESS_CATS.includes(p.cat)); }
+// HTML pentru prețul de pe card. Prețurile se afișează mereu ca „de la …" (nu fixe).
+// Pentru categoriile fără preț se afișează „Preț la cerere".
 function cardPrice(p) {
-  return (priceVaries(p) ? '<span class="price-from">de la </span>' : '') + formatPrice(priceMin(p));
+  if (isPriceless(p)) return '<span class="price-req">Preț la cerere</span>';
+  return '<span class="price-from">de la </span>' + formatPrice(priceMin(p));
+}
+// Alias-uri de brand pentru afișare (ex. WTB → Wetterbest).
+const BRAND_ALIASES = { 'wtb': 'Wetterbest' };
+// Numele de brand formatat frumos pentru afișare (respectă alias-urile).
+function brandDisplay(s) {
+  const raw = (s == null ? '' : String(s)).trim();
+  if (!raw) return '';
+  const alias = BRAND_ALIASES[raw.toLowerCase()];
+  if (alias) return alias;
+  return raw.split(/\s+/).map(w => (w.length <= 3 && w === w.toUpperCase()) ? w : (w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())).join(' ');
 }
 
 // Finisajele produsului (obiecte {id,name}) pentru pagina produsului

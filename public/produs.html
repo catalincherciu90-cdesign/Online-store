@@ -56,7 +56,7 @@
           <a href="produse.html?cat=tabla-faltuita">Tablă fălțuită</a>
           <a href="produse.html?cat=panouri-sandwich">Panouri sandwich</a>
           <a href="produse.html?cat=sistem-pluvial">Sistem pluvial</a>
-          <a href="produse.html?cat=accesorii">Accesorii montaj</a>
+          <a href="produse.html?cat=accesorii">Altele</a>
           <a href="produse.html?cat=folii-membrane">Folii &amp; membrane</a>
         </div>
         <div class="footer-col">
@@ -119,19 +119,14 @@
           </div>
         </section>` : '';
 
-      // „Documente" — linkuri dacă produsul are documente (p.docs), altfel „la cerere"
-      const DOCS = [['fisa', 'Fișă tehnică'], ['dop', 'Declarație de performanță'], ['garantie', 'Garanție'], ['montaj', 'Instrucțiuni montaj']];
-      const docs = { fisa: pfMap.doc_fisa, dop: pfMap.doc_dop, garantie: pfMap.doc_garantie, montaj: pfMap.doc_montaj };
+      // „Documente" — disponibile la cerere (fișă tehnică, DoP, garanție, montaj),
+      // nu se listează per document.
       const docIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v5h5"/><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8Z"/></svg>';
       const docsHtml = `
         <section class="pd-section">
           <h2>Documente</h2>
-          <div class="pd-docs">
-            ${DOCS.map(([k, label]) => docs[k]
-              ? `<a class="pd-doc" href="${docs[k]}" target="_blank" rel="noopener">${docIcon}<span>${label}</span><span class="pd-doc-dl">Descarcă</span></a>`
-              : `<div class="pd-doc muted">${docIcon}<span>${label}</span><span class="pd-doc-dl">La cerere</span></div>`).join('')}
-          </div>
-          <p class="pd-sub" style="margin-top:12px">Ai nevoie de un document care nu apare aici? <a href="contact.html" style="color:var(--terra-dark);font-weight:600">Scrie-ne</a> și ți-l trimitem.</p>
+          <div class="pd-doc muted" style="max-width:520px">${docIcon}<span>Fișă tehnică, declarație de performanță, garanție și instrucțiuni de montaj</span><span class="pd-doc-dl">La cerere</span></div>
+          <p class="pd-sub" style="margin-top:12px">Ai nevoie de documentația produsului? <a href="contact.html" style="color:var(--terra-dark);font-weight:600">Scrie-ne</a> și ți-o trimitem.</p>
         </section>`;
 
       root.innerHTML = `
@@ -146,9 +141,12 @@
           <div class="pd-info">
             <span class="cat-tag">${categoryName(p.cat)}</span>
             <h1>${p.name}</h1>
-            ${p.producator ? `<div class="pd-brand">Producător: <b>${p.producator}</b></div>` : ''}
-            <div class="pd-price"><span id="pd-price-val">${formatPrice(optionPrice(p, sel))}</span> <span class="unit">/ ${p.unit}</span></div>
-            <div class="pd-vat">Preț cu TVA inclus</div>
+            ${p.producator ? `<div class="pd-brand">Producător: <b>${brandDisplay(p.producator)}</b></div>` : ''}
+            ${isPriceless(p)
+              ? `<div class="pd-price"><span class="price-req">Preț la cerere</span></div>
+                 <div class="pd-vat"><a href="contact.html" style="color:var(--terra-dark);font-weight:600">Cere ofertă →</a></div>`
+              : `<div class="pd-price"><span class="price-from" style="font-size:.85rem">de la </span><span id="pd-price-val">${formatPrice(optionPrice(p, sel))}</span> <span class="unit">/ ${p.unit}</span></div>
+                 <div class="pd-vat">Preț cu TVA inclus</div>`}
             <p class="pd-desc">${p.desc}</p>
             ${renderOptions(p)}
             <div class="pd-specs">${specsRows}</div>

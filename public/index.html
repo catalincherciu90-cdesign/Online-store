@@ -192,7 +192,7 @@
           <a href="produse.html?cat=tabla-faltuita">Tablă fălțuită</a>
           <a href="produse.html?cat=panouri-sandwich">Panouri sandwich</a>
           <a href="produse.html?cat=sistem-pluvial">Sistem pluvial</a>
-          <a href="produse.html?cat=accesorii">Accesorii montaj</a>
+          <a href="produse.html?cat=accesorii">Altele</a>
           <a href="produse.html?cat=folii-membrane">Folii &amp; membrane</a>
         </div>
         <div class="footer-col">
@@ -300,7 +300,7 @@
         document.getElementById('brands').style.display = '';
         document.getElementById('home-brands').innerHTML = names.map(n => {
           const p = byName[n.trim().toLowerCase()];
-          const inner = p && p.logo ? `<img src="${p.logo}" alt="${escHtml(n)}" class="brand-logo-img">` : `<span>${escHtml(n)}</span>`;
+          const inner = p && p.logo ? `<img src="${p.logo}" alt="${escHtml(brandDisplay(n))}" class="brand-logo-img">` : `<span>${escHtml(brandDisplay(n))}</span>`;
           return `<a class="brand-logo" href="produse.html?producator=${encodeURIComponent(n)}">${inner}</a>`;
         }).join('');
       })();
@@ -345,7 +345,7 @@
           ${p.badge ? `<span class="badge" data-badge="${p.badge}">${p.badge}</span>` : ''}${productMedia(p)}
         </a>
         <div class="info">
-          <div class="tag-row"><span class="cat-tag">${categoryName(p.cat)}</span>${p.producator ? `<span class="brand-tag">${p.producator}</span>` : ''}</div>
+          <div class="tag-row"><span class="cat-tag">${categoryName(p.cat)}</span>${p.producator ? `<span class="brand-tag">${brandDisplay(p.producator)}</span>` : ''}</div>
           <h3><a href="produs.html?id=${p.id}">${p.name}</a></h3>
           <p class="desc">${p.desc}</p>
           <div class="price-row">
