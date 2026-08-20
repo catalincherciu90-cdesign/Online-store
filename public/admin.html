@@ -787,7 +787,7 @@
         <button type="button" class="editor-x" aria-label="Închide (Esc)" title="Închide (Esc)" onclick="closeEditor()">×</button>
       </div>
       <form class="checkout-form" id="prod-form" onsubmit="saveProduct(event)">
-        <div class="editor-scroll">
+        <div class="editor-scroll" id="editor-scroll">
         <div class="form-row">
           <div class="field"><label>ID (unic) *</label><input name="id" required></div>
           <div class="field"><label>Categorie *</label><select name="cat" id="f-cat" required></select></div>
@@ -2578,6 +2578,18 @@
       document.getElementById('editor').classList.add('open');
     }
     function closeEditor() { document.getElementById('editor').classList.remove('open'); }
+    // La deschiderea unei secțiuni pliabile din editor, derulează sus la ea (mai puțin scroll).
+    (function () {
+      const sc = document.getElementById('editor-scroll');
+      if (!sc) return;
+      sc.addEventListener('toggle', (e) => {
+        const d = e.target;
+        if (d && d.tagName === 'DETAILS' && d.open && d.parentElement === sc) {
+          const top = d.offsetTop - sc.offsetTop - 8;
+          sc.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+        }
+      }, true); // capture: evenimentul „toggle" nu face bubbling
+    })();
     // Închide editorul (sau alte overlay-uri) cu tasta Escape
     document.addEventListener('keydown', (e) => {
       if (e.key !== 'Escape') return;

@@ -380,11 +380,22 @@ function priceVaries(p) {
 // Categorii fără preț afișat (preț „la cerere"): folii/membrane și șuruburi.
 const PRICELESS_CATS = ['folii-membrane', 'suruburi'];
 function isPriceless(p) { return !!(p && PRICELESS_CATS.includes(p.cat)); }
+// Prețul maxim al produsului (pentru afișarea intervalului la produsele configurabile).
+function priceMax(p) {
+  if (!p) return 0;
+  const vals = [];
+  if (usesFinishes(p)) p.finishes.forEach(f => { const pr = f.prices || {}; for (const k in pr) if (typeof pr[k] === 'number') vals.push(pr[k]); });
+  if (p.colorPrices) Object.values(p.colorPrices).forEach(x => { if (typeof x === 'number') vals.push(x); });
+  if (typeof p.price === 'number') vals.push(p.price);
+  return vals.length ? Math.max(...vals) : 0;
+}
 // HTML pentru prețul de pe card. Prețurile se afișează mereu ca „de la …" (nu fixe).
-// Pentru categoriile fără preț se afișează „Preț la cerere".
+// Dacă prețul variază, se arată intervalul „de la MIN – MAX". Categoriile fără preț: „Preț la cerere".
 function cardPrice(p) {
   if (isPriceless(p)) return '<span class="price-req">Preț la cerere</span>';
-  return '<span class="price-from">de la </span>' + formatPrice(priceMin(p));
+  const lo = priceMin(p), hi = priceMax(p);
+  const body = hi > lo ? (formatPrice(lo).replace(/\s*lei$/, '') + ' – ' + formatPrice(hi)) : formatPrice(lo);
+  return '<span class="price-from">de la </span>' + body;
 }
 // Alias-uri de brand pentru afișare (ex. WTB → Wetterbest).
 const BRAND_ALIASES = { 'wtb': 'Wetterbest' };
