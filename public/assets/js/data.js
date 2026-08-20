@@ -207,8 +207,11 @@ function categoryName(id) { const c = getCategory(id); return c ? c.name : id; }
    Dacă fișierul lipsește, se afișează automat ilustrația SVG (onerror fallback).
    Astfel poți adăuga pozele treptat, fără nicio modificare de cod. */
 function productMedia(p) {
+  // Preferă poza principală încărcată din admin (D1, /api/pf/<id>/main); altfel
+  // un fișier din repo; altfel fallback SVG (placeholder alb) la eroare.
+  const file = (p && p.img) || `assets/img/products/${p.id}.jpg`;
   return `<img class="pmedia" alt="${p.name}" data-imgkey="p:${p.id}"
-    data-file="assets/img/products/${p.id}.jpg" loading="lazy">`;
+    data-file="${file}" loading="lazy">`;
 }
 function categoryMedia(c) {
   return `<img class="pmedia" alt="${c.name}" data-imgkey="c:${c.id}"

@@ -181,7 +181,16 @@ async function adminDelete(request, env, username) {
 async function productsList(env) {
   if (!env.DB) return json([]);
   const r = await env.DB.prepare('SELECT * FROM products WHERE active=1 ORDER BY rowid').all();
-  return json((r.results || []).map(rowToProduct));
+  const products = (r.results || []).map(rowToProduct);
+  // Atașează URL-ul pozei principale (din D1) pentru cardurile din listă/grilă,
+  // dintr-o singură interogare (nu un fetch /api/pf per produs).
+  try {
+    const pf = await env.DB.prepare("SELECT product_id, LENGTH(data) AS len FROM product_files WHERE kind='main'").all();
+    const mainMap = {};
+    (pf.results || []).forEach(x => { mainMap[x.product_id] = x.len || 0; });
+    products.forEach(p => { if (p.id in mainMap) p.img = `/api/pf/${encodeURIComponent(p.id)}/main?v=${mainMap[p.id]}`; });
+  } catch (e) { /* fără poze — cad pe fișier/placeholder */ }
+  return json(products);
 }
 async function productsCreate(request, env) {
   if (!await requireAdmin(request, env)) return json({ error: 'Neautorizat' }, 401);
