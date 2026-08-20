@@ -222,6 +222,9 @@
     .pf-name { font-size: .9rem; color: #dcebe3; }
     .pf-ok { color: var(--em-accent-2); font-weight: 700; font-size: .82rem; margin-left: 4px; }
     .pf-actions { display: flex; gap: 8px; }
+    .conv-box { margin: 4px 0 14px; padding: 12px 14px; background: var(--em-card, #fff); border: 1px solid var(--em-border, #e5e7eb); border-radius: 12px; }
+    .conv-bar { height: 8px; background: rgba(52,211,153,.15); border-radius: 6px; overflow: hidden; margin-bottom: 8px; }
+    .conv-bar span { display: block; height: 100%; width: 0; background: var(--em-accent, #34d399); transition: width .25s ease; }
 
     /* Stat carduri cu grafice */
     .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px; margin-bottom: 18px; }
@@ -397,7 +400,12 @@
           <input type="file" accept=".xlsx,.csv" hidden onchange="importFile(this.files[0]); this.value='';">
         </label>
         <button class="a-btn-sm" onclick="seedFromCatalog()">Importă din catalog</button>
+        <button class="a-btn-sm" onclick="convertExistingPhotos()" title="Reprocesează toate pozele deja încărcate: fundal alb + WebP">🖼 Optimizează pozele (WebP + fundal alb)</button>
         <button class="btn btn-primary" style="padding:9px 16px" onclick="openEditor()">+ Produs nou</button>
+      </div>
+      <div id="convert-progress" class="conv-box" style="display:none">
+        <div class="conv-bar"><span id="conv-fill"></span></div>
+        <div id="conv-status" class="muted-sm"></div>
       </div>
       <div id="products-box"></div>
     </div>
@@ -2681,6 +2689,63 @@
         reader.onload = () => send(reader.result, file.type || 'application/pdf', file.name);
         reader.readAsDataURL(file);
       }
+    }
+    // Ca imgToWhiteWebp, dar pentru un Blob deja descărcat (poze existente din D1).
+    function blobToWhiteWebp(blob, maxW, quality) {
+      return new Promise((resolve, reject) => {
+        const url = URL.createObjectURL(blob);
+        const img = new Image();
+        img.onload = () => {
+          URL.revokeObjectURL(url);
+          const scale = Math.min(1, maxW / img.width);
+          const w = Math.max(1, Math.round(img.width * scale)), h = Math.max(1, Math.round(img.height * scale));
+          const c = document.createElement('canvas'); c.width = w; c.height = h;
+          const ctx = c.getContext('2d');
+          ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, w, h);
+          ctx.drawImage(img, 0, 0, w, h);
+          const webp = canvasWebp();
+          const mime = webp ? 'image/webp' : 'image/jpeg';
+          resolve({ dataUrl: c.toDataURL(mime, quality), mime });
+        };
+        img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('imagine invalidă')); };
+        img.src = url;
+      });
+    }
+    // Reprocesează toate pozele de produs deja încărcate: fundal alb + WebP.
+    async function convertExistingPhotos() {
+      if (!confirm('Reprocesez TOATE pozele de produs deja încărcate: fundal alb + WebP.\n\nPoate dura un minut. Documentele PDF nu sunt atinse. Continui?')) return;
+      const box = document.getElementById('convert-progress');
+      const fill = document.getElementById('conv-fill');
+      const status = document.getElementById('conv-status');
+      box.style.display = 'block';
+      const setP = (pct, txt) => { fill.style.width = Math.max(0, Math.min(100, pct)) + '%'; if (txt != null) status.textContent = txt; };
+      setP(2, 'Se încarcă lista de produse…');
+      let products = allProducts;
+      if (!products || !products.length) { try { products = await (await api('/products')).json(); } catch (e) { products = []; } }
+      let done = 0, converted = 0, skipped = 0, errors = 0;
+      const total = products.length || 1;
+      for (const p of products) {
+        done++;
+        setP(2 + done / total * 96, `Produs ${done}/${total}: ${p.id} — convertite ${converted}, sărite ${skipped}` + (errors ? `, erori ${errors}` : ''));
+        let files = [];
+        try { files = await (await fetch('/api/pf/' + encodeURIComponent(p.id))).json(); } catch (e) { continue; }
+        for (const f of (files || [])) {
+          if (/^doc_/.test(f.kind)) continue; // documente (PDF) — nu se ating
+          try {
+            const blob = await (await fetch(f.url)).blob();
+            if (!blob.type.startsWith('image/')) { skipped++; continue; }
+            if (blob.type === 'image/webp' && /\.webp$/i.test(f.name || '')) { skipped++; continue; } // deja procesată
+            const { dataUrl, mime } = await blobToWhiteWebp(blob, 1600, 0.85);
+            if (dataUrl.length > 4200000) { skipped++; continue; }
+            const name = (f.name || f.kind).replace(/\.[^.]+$/, '') + (mime === 'image/webp' ? '.webp' : '.jpg');
+            const res = await api('/product-files', { method: 'POST', body: JSON.stringify({ product_id: p.id, kind: f.kind, mime, data: dataUrl, name }) });
+            const d = await res.json();
+            if (d && d.ok) converted++; else errors++;
+          } catch (e) { errors++; }
+        }
+      }
+      setP(100, `Gata: ${converted} poze convertite, ${skipped} sărite (deja WebP / non-imagine), ${errors} erori.`);
+      setTimeout(() => { box.style.display = 'none'; }, 8000);
     }
     async function delPF(pid, kind) {
       if (!confirm('Ștergi acest fișier?')) return;
