@@ -305,7 +305,9 @@
           </div>
           <div class="card-actions">
             <a href="produs.html?id=${p.id}" class="btn btn-outline">Detalii</a>
-            <button class="btn btn-primary" onclick="Cart.add('${p.id}');showToast('Adăugat în coș')">În coș</button>
+            ${isPriceless(p)
+              ? `<a href="contact.html" class="btn btn-primary">Cere ofertă</a>`
+              : `<button class="btn btn-primary" onclick="Cart.add('${p.id}');showToast('Adăugat în coș')">În coș</button>`}
           </div>
         </div></div>`;
     }

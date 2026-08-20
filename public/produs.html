@@ -150,6 +150,10 @@
             <p class="pd-desc">${p.desc}</p>
             ${renderOptions(p)}
             <div class="pd-specs">${specsRows}</div>
+            ${isPriceless(p) ? `
+            <div class="pd-actions">
+              <a href="contact.html" class="btn btn-primary btn-lg">Cere ofertă</a>
+            </div>` : `
             <div class="qty-row">
               <div class="qty-stepper">
                 <button type="button" onclick="chgQty(-1)">−</button>
@@ -161,7 +165,7 @@
             <div class="pd-actions">
               <button class="btn btn-primary btn-lg" onclick="addToCart()">Adaugă în coș</button>
               <a href="cos.html" class="btn btn-outline btn-lg" onclick="addToCart(true)">Cumpără acum</a>
-            </div>
+            </div>`}
             <div class="pd-perks">
               <div class="perk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg> Livrare în toată țara în 24-72h</div>
               <div class="perk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 4 5v6c0 5 3.4 8.9 8 11 4.6-2.1 8-6 8-11V5z"/></svg> Garanție și certificate incluse</div>
@@ -186,7 +190,9 @@
             <div class="price-row"><span class="price">${cardPrice(rp)} <span class="unit">/ ${rp.unit}</span></span></div>
             <div class="card-actions">
               <a href="produs.html?id=${rp.id}" class="btn btn-outline">Detalii</a>
-              <button class="btn btn-primary" onclick="Cart.add('${rp.id}');showToast('Adăugat în coș')">În coș</button>
+              ${isPriceless(rp)
+                ? `<a href="contact.html" class="btn btn-primary">Cere ofertă</a>`
+                : `<button class="btn btn-primary" onclick="Cart.add('${rp.id}');showToast('Adăugat în coș')">În coș</button>`}
             </div>
           </div></div>`).join('');
       hydrateImages();
