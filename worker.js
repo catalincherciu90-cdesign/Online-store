@@ -334,6 +334,18 @@ async function categoryDelete(request, env, id) {
   await env.DB.prepare('DELETE FROM categories WHERE id=?').bind(id).run();
   return json({ ok: true });
 }
+async function categoryMoveProducts(request, env) {
+  if (!await requireAdmin(request, env)) return json({ error: 'Neautorizat' }, 401);
+  if (!env.DB) return json({ error: 'Baza de date nu este configurată.' }, 500);
+  const { from, to } = await request.json().catch(() => ({}));
+  if (!from || !to) return json({ error: 'Alege categoria sursă și destinație.' }, 400);
+  if (from === to) return json({ error: 'Sursa și destinația sunt identice.' }, 400);
+  const dest = await env.DB.prepare('SELECT 1 FROM categories WHERE id=?').bind(to).first();
+  if (!dest) return json({ error: 'Categoria destinație nu există.' }, 404);
+  const cnt = await env.DB.prepare('SELECT COUNT(*) AS n FROM products WHERE cat=?').bind(from).first();
+  await env.DB.prepare('UPDATE products SET cat=? WHERE cat=?').bind(to, from).run();
+  return json({ ok: true, moved: (cnt && cnt.n) || 0 });
+}
 async function categoriesReorder(request, env) {
   if (!await requireAdmin(request, env)) return json({ error: 'Neautorizat' }, 401);
   if (!env.DB) return json({ error: 'Baza de date nu este configurată.' }, 500);
@@ -917,6 +929,7 @@ async function api(request, env, url) {
   if (p === '/api/categories' && m === 'GET') return categoriesList(env);
   if (p === '/api/categories' && m === 'POST') return categoryUpsert(request, env);
   if (p === '/api/categories/reorder' && m === 'POST') return categoriesReorder(request, env);
+  if (p === '/api/categories/move-products' && m === 'POST') return categoryMoveProducts(request, env);
   const catDel = p.match(/^\/api\/categories\/(.+)$/);
   if (catDel && m === 'DELETE') return categoryDelete(request, env, decodeURIComponent(catDel[1]));
   if (p === '/api/admins' && m === 'GET') return adminsList(request, env);
