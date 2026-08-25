@@ -166,10 +166,14 @@
 
     // Construiește filtrele de categorie
     const catFilters = document.getElementById('cat-filters');
-    catFilters.innerHTML = `<label class="filter-opt"><input type="radio" name="cat" value="all"> Toate categoriile</label>` +
-      CATEGORIES.map(c => `<label class="filter-opt"><input type="radio" name="cat" value="${c.id}"> ${c.name}</label>`).join('');
-    // Marchează categoria activă
-    (catFilters.querySelector(`input[value="${activeCat}"]`) || catFilters.querySelector('input[value="all"]')).checked = true;
+    // Construiește lista de categorii (reapelat după ce se încarcă din admin/D1).
+    function buildCatFilters() {
+      catFilters.innerHTML = `<label class="filter-opt"><input type="radio" name="cat" value="all"> Toate categoriile</label>` +
+        CATEGORIES.map(c => `<label class="filter-opt"><input type="radio" name="cat" value="${c.id}"> ${c.name}</label>`).join('');
+      const sel = catFilters.querySelector(`input[value="${activeCat}"]`) || catFilters.querySelector('input[value="all"]');
+      if (sel) sel.checked = true;
+    }
+    buildCatFilters();
 
     // La schimbarea categoriei (deschiderea unei secțiuni), derulează sus la rezultate.
     function scrollToResults() {
@@ -315,6 +319,7 @@
     updateHeader();
     document.getElementById('product-grid').innerHTML = skeletonCards(9);
     loadCatalog().then(() => {
+      buildCatFilters(); // categoriile pot veni din admin (D1)
       buildBrandFilters();
       if (paramProducer) {
         const match = brandList.find(b => b.toLowerCase() === paramProducer.trim().toLowerCase());

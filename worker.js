@@ -80,6 +80,7 @@ async function ensureSchema(env) {
         `CREATE TABLE IF NOT EXISTS product_files (product_id TEXT NOT NULL, kind TEXT NOT NULL, mime TEXT, data TEXT, name TEXT, updated_at TEXT DEFAULT (datetime('now')), PRIMARY KEY (product_id, kind))`,
         `CREATE TABLE IF NOT EXISTS chat_messages (id INTEGER PRIMARY KEY AUTOINCREMENT, session_id TEXT, role TEXT, content TEXT, created_at TEXT DEFAULT (datetime('now')))`,
         `CREATE INDEX IF NOT EXISTS idx_chat_session ON chat_messages (session_id, id)`,
+        `CREATE TABLE IF NOT EXISTS categories (id TEXT PRIMARY KEY, name TEXT NOT NULL, tag TEXT, descr TEXT, icon TEXT, options TEXT, sort INTEGER DEFAULT 0, active INTEGER NOT NULL DEFAULT 1)`,
       ];
       for (const s of stmts) { try { await env.DB.prepare(s).run(); } catch (e) { console.error('ensureSchema', e); } }
       // Coloane adăugate ulterior pe produse (ALTER nu e idempotent → ignoră „duplicate column").
@@ -94,6 +95,17 @@ async function ensureSchema(env) {
         try { await env.DB.prepare(`ALTER TABLE orders ADD COLUMN ${col}`).run(); } catch (e) { /* există deja */ }
         try { await env.DB.prepare(`ALTER TABLE quotes ADD COLUMN ${col}`).run(); } catch (e) { /* există deja */ }
       }
+      // Prima rulare: populează categoriile din valorile implicite, dacă tabelul e gol.
+      try {
+        const cnt = await env.DB.prepare('SELECT COUNT(*) AS n FROM categories').first();
+        if (!cnt || !cnt.n) {
+          let sort = 0;
+          for (const c of DEFAULT_CATEGORIES) {
+            await env.DB.prepare('INSERT OR IGNORE INTO categories (id,name,tag,descr,icon,options,sort,active) VALUES (?,?,?,?,?,?,?,1)')
+              .bind(c.id, c.name, c.tag || null, c.desc || null, c.icon || null, JSON.stringify(c.options || []), sort++).run();
+          }
+        }
+      } catch (e) { console.error('seed categories', e); }
     })();
   }
   return SCHEMA_READY;
@@ -279,6 +291,59 @@ async function quotesList(request, env) {
 }
 
 // ── Proprietăți globale (finisaje / grosimi / culori) ──
+// Categorii implicite (folosite la prima populare a tabelului `categories`).
+const DEFAULT_CATEGORIES = [
+  { id: 'tigla-metalica', name: 'Țiglă metalică', icon: 'tigla', tag: 'clasic, modular', desc: 'Soluții pentru acoperișuri rezidențiale, într-o varietate de profile, finisaje și culori.', options: ['finisaj', 'grosime', 'culoare'] },
+  { id: 'tabla-faltuita', name: 'Tablă fălțuită', icon: 'falt', tag: 'standing seam, click', desc: 'Aspect modern și linii curate pentru proiecte rezidențiale și arhitectură contemporană.', options: ['finisaj', 'grosime', 'culoare'] },
+  { id: 'panouri-sandwich', name: 'Panouri sandwich', icon: 'panou', tag: 'PUR, PIR', desc: 'Soluții eficiente pentru hale, spații industriale și construcții comerciale.', options: ['culoare'] },
+  { id: 'sistem-pluvial', name: 'Sisteme pluviale', icon: 'pluvial', tag: 'jgheaburi, burlane', desc: 'Jgheaburi, burlane și accesorii pentru evacuarea eficientă a apei.', options: ['finisaj', 'culoare'] },
+  { id: 'borduri', name: 'Borduri și tinichigerie', icon: 'accesoriu', tag: 'coame, șorțuri, dolii', desc: 'Coame, șorțuri, dolii, pazii și parazăpezi pentru finisarea și etanșarea acoperișului.', options: ['finisaj', 'culoare'] },
+  { id: 'ventilatii', name: 'Ventilații acoperiș', icon: 'accesoriu', tag: 'coșuri, treceri cabluri', desc: 'Coșuri de ventilație, treceri cabluri și elemente de aerisire pentru acoperiș.', options: ['finisaj', 'culoare'] },
+  { id: 'folii-membrane', name: 'Folii și membrane', icon: 'folie', tag: 'anticondens, difuzie', desc: 'Protecție suplimentară și control al umidității pentru sistemul de acoperiș.', options: ['finisaj'] },
+  { id: 'suruburi', name: 'Șuruburi', icon: 'accesoriu', tag: 'autoforante, torx', desc: 'Șuruburi autoforante cu cap torx și garnitură, în diverse dimensiuni și culori RAL.', options: ['finisaj', 'culoare'] },
+  { id: 'accesorii', name: 'Altele', icon: 'accesoriu', tag: 'coame, parazăpezi', desc: 'Elementele necesare pentru un sistem complet și un montaj corect.', options: ['finisaj', 'culoare'] },
+];
+function rowToCategory(r) {
+  let options = [];
+  try { options = r.options ? JSON.parse(r.options) : []; } catch (e) { options = []; }
+  return { id: r.id, name: r.name, tag: r.tag || '', desc: r.descr || '', icon: r.icon || 'accesoriu', options, sort: r.sort || 0 };
+}
+async function categoriesList(env) {
+  if (!env.DB) return json(DEFAULT_CATEGORIES);
+  const r = await env.DB.prepare('SELECT * FROM categories WHERE active=1 ORDER BY sort, rowid').all();
+  const list = (r.results || []).map(rowToCategory);
+  return json(list.length ? list : DEFAULT_CATEGORIES);
+}
+async function categoryUpsert(request, env) {
+  if (!await requireAdmin(request, env)) return json({ error: 'Neautorizat' }, 401);
+  if (!env.DB) return json({ error: 'Baza de date nu este configurată.' }, 500);
+  const c = await request.json().catch(() => null);
+  if (!c || !c.id || !c.name) return json({ error: 'Categorie incompletă (id și nume obligatorii).' }, 400);
+  const id = String(c.id).trim().toLowerCase().replace(/[^a-z0-9\-]+/g, '-').replace(/^-+|-+$/g, '');
+  if (!id) return json({ error: 'ID invalid.' }, 400);
+  await env.DB.prepare('INSERT OR REPLACE INTO categories (id,name,tag,descr,icon,options,sort,active) VALUES (?,?,?,?,?,?,?,1)')
+    .bind(id, String(c.name).trim(), c.tag || null, c.desc || null, c.icon || 'accesoriu',
+      JSON.stringify(Array.isArray(c.options) ? c.options : []), Number(c.sort) || 0).run();
+  return json({ ok: true, id });
+}
+async function categoryDelete(request, env, id) {
+  if (!await requireAdmin(request, env)) return json({ error: 'Neautorizat' }, 401);
+  if (!env.DB) return json({ error: 'Baza de date nu este configurată.' }, 500);
+  const used = await env.DB.prepare('SELECT COUNT(*) AS n FROM products WHERE cat=? AND active=1').bind(id).first();
+  if (used && used.n) return json({ error: `Categoria are ${used.n} produse. Mută-le în altă categorie înainte de ștergere.` }, 409);
+  await env.DB.prepare('DELETE FROM categories WHERE id=?').bind(id).run();
+  return json({ ok: true });
+}
+async function categoriesReorder(request, env) {
+  if (!await requireAdmin(request, env)) return json({ error: 'Neautorizat' }, 401);
+  if (!env.DB) return json({ error: 'Baza de date nu este configurată.' }, 500);
+  const { order } = await request.json().catch(() => ({ order: [] }));
+  let sort = 0;
+  for (const id of (order || [])) {
+    await env.DB.prepare('UPDATE categories SET sort=? WHERE id=?').bind(sort++, id).run();
+  }
+  return json({ ok: true });
+}
 async function optionsList(env) {
   if (!env.DB) return json({});
   const r = await env.DB.prepare('SELECT * FROM option_values ORDER BY grp, sort, rowid').all();
@@ -849,6 +914,11 @@ async function api(request, env, url) {
   if (p === '/api/options/seed' && m === 'POST') return optionsSeed(request, env);
   const ov = p.match(/^\/api\/options\/([^/]+)\/(.+)$/);
   if (ov && m === 'DELETE') return optionDelete(request, env, decodeURIComponent(ov[1]), decodeURIComponent(ov[2]));
+  if (p === '/api/categories' && m === 'GET') return categoriesList(env);
+  if (p === '/api/categories' && m === 'POST') return categoryUpsert(request, env);
+  if (p === '/api/categories/reorder' && m === 'POST') return categoriesReorder(request, env);
+  const catDel = p.match(/^\/api\/categories\/(.+)$/);
+  if (catDel && m === 'DELETE') return categoryDelete(request, env, decodeURIComponent(catDel[1]));
   if (p === '/api/admins' && m === 'GET') return adminsList(request, env);
   if (p === '/api/admins' && m === 'POST') return adminUpsert(request, env);
   const adm = p.match(/^\/api\/admins\/(.+)$/);

@@ -75,7 +75,7 @@ const SVG = {
     </svg>`,
 };
 
-const CATEGORIES = [
+let CATEGORIES = [
   { id: 'tigla-metalica', name: 'Țiglă metalică', icon: 'tigla', tag: 'clasic, modular',
     desc: 'Soluții pentru acoperișuri rezidențiale, într-o varietate de profile, finisaje și culori.' },
   { id: 'tabla-faltuita', name: 'Tablă fălțuită', icon: 'falt', tag: 'standing seam, click',
@@ -325,6 +325,9 @@ function productOptions(p) {
     return g;
   }
   if (Array.isArray(p.options)) return p.options;
+  // Axele de opțiuni ale categoriei (din categoria editabilă, altfel din maparea implicită).
+  const cat = getCategory(p.cat);
+  if (cat && Array.isArray(cat.options) && cat.options.length) return cat.options;
   return CATEGORY_OPTIONS[p.cat] || [];
 }
 function defaultOpts(p) {
@@ -472,9 +475,30 @@ function loadOptions() {
 }
 
 let CATALOG_READY = null;
+// Încarcă categoriile editabile din admin (D1). Fallback: categoriile implicite.
+let CATEGORIES_READY = null;
+function loadCategories() {
+  if (CATEGORIES_READY) return CATEGORIES_READY;
+  CATEGORIES_READY = (async () => {
+    try {
+      const res = await fetch('/api/categories', { headers: { Accept: 'application/json' } });
+      if (res.ok) {
+        const list = await res.json();
+        if (Array.isArray(list) && list.length) {
+          // păstrează iconițele implicite dacă lipsesc din DB
+          const byId = {}; CATEGORIES.forEach(c => byId[c.id] = c);
+          CATEGORIES = list.map(c => ({ ...c, icon: c.icon || (byId[c.id] && byId[c.id].icon) || 'accesoriu' }));
+        }
+      }
+    } catch (e) { /* fără API → rămân categoriile implicite */ }
+    return CATEGORIES;
+  })();
+  return CATEGORIES_READY;
+}
 function loadCatalog() {
   if (CATALOG_READY) return CATALOG_READY;
   CATALOG_READY = (async () => {
+    await loadCategories();
     await loadOptions();
     try {
       const res = await fetch('/api/products', { headers: { Accept: 'application/json' } });

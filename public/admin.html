@@ -222,6 +222,16 @@
     .pf-name { font-size: .9rem; color: #dcebe3; }
     .pf-ok { color: var(--em-accent-2); font-weight: 700; font-size: .82rem; margin-left: 4px; }
     .pf-actions { display: flex; gap: 8px; }
+    .cat-card { display: flex; gap: 12px; align-items: flex-start; background: var(--em-card, #fff); border: 1px solid var(--em-border, #e5e7eb); border-radius: 12px; padding: 14px; margin-bottom: 12px; }
+    .cat-move { display: flex; flex-direction: column; gap: 6px; padding-top: 22px; }
+    .a-btn-xs { width: 30px; height: 28px; border: 1px solid var(--em-border, #e5e7eb); background: transparent; color: inherit; border-radius: 7px; cursor: pointer; font-size: 1rem; line-height: 1; }
+    .a-btn-xs:disabled { opacity: .35; cursor: default; }
+    .cat-fields { flex: 1; min-width: 0; }
+    .cat-row { display: flex; gap: 12px; flex-wrap: wrap; }
+    .cat-row .field { flex: 1; min-width: 160px; }
+    .cat-axes { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin: 10px 0; }
+    .cat-ax { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; font-weight: 500; }
+    .cat-actions { display: flex; gap: 10px; }
     .conv-box { margin: 4px 0 14px; padding: 12px 14px; background: var(--em-card, #fff); border: 1px solid var(--em-border, #e5e7eb); border-radius: 12px; }
     .conv-bar { height: 8px; background: rgba(52,211,153,.15); border-radius: 6px; overflow: hidden; margin-bottom: 8px; }
     .conv-bar span { display: block; height: 100%; width: 0; background: var(--em-accent, #34d399); transition: width .25s ease; }
@@ -332,6 +342,7 @@
         <div class="nav-cap">Magazin</div>
         <button data-tab="produse" onclick="showTab('produse')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8 12 3 3 8l9 5 9-5Z"/><path d="M3 8v8l9 5 9-5V8"/><path d="m12 13 0 8"/></svg>Produse</button>
         <button data-tab="proprietati" onclick="showTab('proprietati')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><circle cx="9" cy="6" r="2.4"/><line x1="4" y1="12" x2="20" y2="12"/><circle cx="15" cy="12" r="2.4"/><line x1="4" y1="18" x2="20" y2="18"/><circle cx="8" cy="18" r="2.4"/></svg>Proprietăți</button>
+        <button data-tab="categorii" onclick="showTab('categorii')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Categorii</button>
         <button data-tab="producatori" onclick="showTab('producatori')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20h20"/><path d="M4 20V8l5-3 5 3"/><path d="M14 20V11l6-3v12"/><path d="M8 20v-4h2v4"/></svg>Producători</button>
         <button data-tab="comenzi" onclick="showTab('comenzi')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M2 3h2.2l2.1 12.4a1.5 1.5 0 0 0 1.5 1.2h9.2a1.5 1.5 0 0 0 1.5-1.2L21 7H5"/></svg>Comenzi</button>
         <button data-tab="cereri" onclick="showTab('cereri')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/><line x1="9" y1="11" x2="15" y2="11"/><line x1="9" y1="15" x2="13" y2="15"/></svg>Cereri ofertă</button>
@@ -417,6 +428,15 @@
       </div>
       <p class="muted-sm" style="margin-bottom:16px">Valorile de aici apar la toate produsele. Adaugă culori, grosimi sau finisaje noi — se văd imediat în editorul de produs și pe site.</p>
       <div id="props-box"></div>
+    </div>
+
+    <div id="tab-categorii" style="display:none">
+      <div class="toolbar">
+        <h2 class="grow" style="font-size:1.3rem">Categorii</h2>
+        <button class="a-btn-sm" onclick="addCategory()">+ Categorie nouă</button>
+      </div>
+      <p class="muted-sm" style="margin-bottom:16px">Redenumește, adaugă sau reordonează categoriile de produse. Numele apare pe site și în editorul de produs. Bifează ce opțiuni (finisaj / grosime / culoare) se aplică produselor din categoria respectivă. O categorie cu produse nu poate fi ștearsă — mută întâi produsele.</p>
+      <div id="cats-box"></div>
     </div>
 
     <div id="tab-bannere" style="display:none">
@@ -1012,7 +1032,7 @@
       document.getElementById('login-view').style.display = 'none';
       document.getElementById('dash-view').style.display = 'grid';
       document.getElementById('whoami').style.display = 'flex';
-      loadProps().then(loadProducts); loadOrders(); loadQuotes(); loadReviews(); loadBanners(); loadSettings(); loadPosts(); loadNav(); loadTerms(); loadHowto(); loadPage('livrare'); loadPage('privacy'); loadPage('cookies'); loadPage('faq'); loadServicii(); loadTracking(); loadChatbot(); loadSeo(); loadComing(); loadSocial(); loadDespre(); loadDashboard(); injectHelp();
+      (typeof loadCategories === 'function' ? loadCategories() : Promise.resolve()).then(() => loadProps().then(loadProducts)); loadOrders(); loadQuotes(); loadReviews(); loadBanners(); loadSettings(); loadPosts(); loadNav(); loadTerms(); loadHowto(); loadPage('livrare'); loadPage('privacy'); loadPage('cookies'); loadPage('faq'); loadServicii(); loadTracking(); loadChatbot(); loadSeo(); loadComing(); loadSocial(); loadDespre(); loadDashboard(); injectHelp();
     }
 
     // Mic tutorial afișat sub titlul fiecărei secțiuni
@@ -1073,11 +1093,12 @@
     }
 
     function showTab(t) {
-      ['dashboard', 'produse', 'proprietati', 'producatori', 'bannere', 'recenzii', 'blog', 'meniu', 'social', 'comenzi', 'cereri', 'despre', 'servicii', 'howto', 'livrare', 'termeni', 'privacy', 'cookies', 'faq', 'integrari', 'chatbot', 'chatlog', 'seo', 'utilizatori', 'setari'].forEach(x => {
+      ['dashboard', 'produse', 'proprietati', 'categorii', 'producatori', 'bannere', 'recenzii', 'blog', 'meniu', 'social', 'comenzi', 'cereri', 'despre', 'servicii', 'howto', 'livrare', 'termeni', 'privacy', 'cookies', 'faq', 'integrari', 'chatbot', 'chatlog', 'seo', 'utilizatori', 'setari'].forEach(x => {
         document.getElementById('tab-' + x).style.display = x === t ? 'block' : 'none';
         document.querySelector(`.side-nav [data-tab="${x}"]`).classList.toggle('active', x === t);
       });
       if (t === 'chatlog') loadChatLogs();
+      if (t === 'categorii') loadCategoriesAdmin();
       if (window.innerWidth <= 900) toggleNav(false);
     }
 
@@ -2024,6 +2045,105 @@
       const options = { finisaj: OPTIONS.finisaj.values, grosime: OPTIONS.grosime.values, culoare: OPTIONS.culoare.values };
       try { const res = await api('/options/seed', { method: 'POST', body: JSON.stringify({ options }) }); const d = await res.json(); alert('Inițializat: ' + d.imported + ' valori.'); loadProps(); }
       catch (e) { alert('Eroare: ' + e.message); }
+    }
+
+    // ── Categorii ──
+    let ADMIN_CATS = [];
+    function esc2(t) { return String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+    async function loadCategoriesAdmin() {
+      const box = document.getElementById('cats-box');
+      try {
+        const res = await fetch('/api/categories', { headers: { Accept: 'application/json' } });
+        ADMIN_CATS = await res.json();
+        if (!Array.isArray(ADMIN_CATS)) ADMIN_CATS = [];
+      } catch (e) { box.innerHTML = `<div class="a-empty">Eroare la încărcare.</div>`; return; }
+      renderCats();
+    }
+    function renderCats() {
+      const box = document.getElementById('cats-box');
+      const AX = [['finisaj', 'Finisaj'], ['grosime', 'Grosime'], ['culoare', 'Culoare']];
+      box.innerHTML = ADMIN_CATS.map((c, i) => {
+        const opts = Array.isArray(c.options) ? c.options : [];
+        return `<div class="cat-card">
+          <div class="cat-move">
+            <button type="button" class="a-btn-xs" title="Mai sus" onclick="moveCat(${i},-1)" ${i === 0 ? 'disabled' : ''}>↑</button>
+            <button type="button" class="a-btn-xs" title="Mai jos" onclick="moveCat(${i},1)" ${i === ADMIN_CATS.length - 1 ? 'disabled' : ''}>↓</button>
+          </div>
+          <div class="cat-fields">
+            <div class="cat-row">
+              <div class="field"><label>Nume</label><input id="cat-name-${i}" value="${esc2(c.name)}"></div>
+              <div class="field" style="max-width:180px"><label>ID ${c._new ? '' : '(fix)'}</label><input id="cat-id-${i}" value="${esc2(c.id)}" ${c._new ? '' : 'readonly'}></div>
+            </div>
+            <div class="cat-row">
+              <div class="field"><label>Etichetă scurtă</label><input id="cat-tag-${i}" value="${esc2(c.tag || '')}" placeholder="ex. jgheaburi, burlane"></div>
+            </div>
+            <div class="field"><label>Descriere</label><input id="cat-desc-${i}" value="${esc2(c.desc || '')}"></div>
+            <div class="cat-axes">
+              <span class="muted-sm">Opțiuni:</span>
+              ${AX.map(([id, label]) => `<label class="cat-ax"><input type="checkbox" id="cat-ax-${i}-${id}" ${opts.includes(id) ? 'checked' : ''}> ${label}</label>`).join('')}
+            </div>
+            <div class="cat-actions">
+              <button type="button" class="btn btn-primary a-btn-sm" onclick="saveCategory(${i})">Salvează</button>
+              <button type="button" class="a-btn-sm danger" onclick="delCategory(${i})">Șterge</button>
+            </div>
+          </div>
+        </div>`;
+      }).join('') || `<div class="a-empty">Nicio categorie. Apasă „+ Categorie nouă".</div>`;
+    }
+    function addCategory() {
+      ADMIN_CATS.push({ id: '', name: '', tag: '', desc: '', options: ['finisaj', 'culoare'], _new: true });
+      renderCats();
+      const el = document.getElementById('cat-name-' + (ADMIN_CATS.length - 1)); if (el) el.focus();
+    }
+    function moveCat(i, dir) {
+      const j = i + dir;
+      if (j < 0 || j >= ADMIN_CATS.length) return;
+      // salvează întâi valorile din DOM ca să nu se piardă la re-render
+      readCatRow(i); readCatRow(j);
+      const t = ADMIN_CATS[i]; ADMIN_CATS[i] = ADMIN_CATS[j]; ADMIN_CATS[j] = t;
+      renderCats();
+      const order = ADMIN_CATS.filter(c => !c._new && c.id).map(c => c.id);
+      api('/categories/reorder', { method: 'POST', body: JSON.stringify({ order }) }).catch(() => {});
+    }
+    function readCatRow(i) {
+      const c = ADMIN_CATS[i]; if (!c) return c;
+      const gv = id => { const el = document.getElementById(id); return el ? el.value : undefined; };
+      const nm = gv('cat-name-' + i); if (nm !== undefined) c.name = nm.trim();
+      const cid = gv('cat-id-' + i); if (cid !== undefined && c._new) c.id = cid.trim();
+      const tg = gv('cat-tag-' + i); if (tg !== undefined) c.tag = tg.trim();
+      const ds = gv('cat-desc-' + i); if (ds !== undefined) c.desc = ds.trim();
+      const opts = [];
+      ['finisaj', 'grosime', 'culoare'].forEach(g => { const el = document.getElementById(`cat-ax-${i}-${g}`); if (el && el.checked) opts.push(g); });
+      c.options = opts;
+      return c;
+    }
+    async function saveCategory(i) {
+      const c = readCatRow(i);
+      if (!c.name) { alert('Completează numele categoriei.'); return; }
+      if (c._new && !c.id) { alert('Completează ID-ul (ex. tigla-ceramica).'); return; }
+      const body = { id: c.id, name: c.name, tag: c.tag, desc: c.desc, options: c.options, sort: i };
+      try {
+        const res = await api('/categories', { method: 'POST', body: JSON.stringify(body) });
+        const d = await res.json();
+        if (!d.ok) { alert(d.error || 'Eroare la salvare.'); return; }
+        c._new = false; if (d.id) c.id = d.id;
+        // reflectă imediat în editorul de produs
+        if (typeof loadCategories === 'function') { CATEGORIES_READY = null; await loadCategories(); }
+        renderCats();
+      } catch (e) { alert('Eroare: ' + e.message); }
+    }
+    async function delCategory(i) {
+      const c = ADMIN_CATS[i]; if (!c) return;
+      if (c._new) { ADMIN_CATS.splice(i, 1); renderCats(); return; }
+      if (!confirm('Ștergi categoria „' + (c.name || c.id) + '"?')) return;
+      try {
+        const res = await api('/categories/' + encodeURIComponent(c.id), { method: 'DELETE' });
+        const d = await res.json();
+        if (!d.ok) { alert(d.error || 'Eroare.'); return; }
+        ADMIN_CATS.splice(i, 1);
+        if (typeof loadCategories === 'function') { CATEGORIES_READY = null; await loadCategories(); }
+        renderCats();
+      } catch (e) { alert('Eroare: ' + e.message); }
     }
 
     // ── Produse ──
