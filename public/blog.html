@@ -19,7 +19,7 @@
         <a href="index.html">Acasă</a>
         <a href="produse.html">Produse</a>
         <a href="branduri.html">Branduri</a>
-        <a href="blog.html" class="active">Ghidul acoperișului</a>
+        <a href="ghiduri.html" class="active">Ghidul acoperișului</a>
         <a href="despre.html">Despre noi</a>
         <a href="contact.html">Contact</a>
       </nav>
@@ -56,8 +56,9 @@
         <div class="footer-col">
           <h4>Companie</h4>
           <a href="produse.html">Catalog</a>
+          <a href="ghiduri.html">Ghiduri</a>
           <a href="sistem-complet.html">Sistem complet</a>
-          <a href="blog.html">Ghidul acoperișului</a>
+          <a href="ghiduri.html">Ghidul acoperișului</a>
           <a href="contact.html">Contact</a>
           <a href="contact.html">Cere ofertă</a>
         </div>
@@ -93,7 +94,7 @@
         }
         document.title = post.title + ' | ExpoTigla';
         root.innerHTML = `<article class="blog-article">
-          <div class="breadcrumb"><a href="index.html">Acasă</a><span>/</span><a href="blog.html">Ghidul acoperișului</a><span>/</span> ${bEsc(post.title)}</div>
+          <div class="breadcrumb"><a href="index.html">Acasă</a><span>/</span><a href="ghiduri.html">Ghidul acoperișului</a><span>/</span> ${bEsc(post.title)}</div>
           <h1>${bEsc(post.title)}</h1>
           <div class="blog-date">${fmtDate(post.created_at)}</div>
           ${post.image ? `<img class="blog-cover" src="${bEsc(post.image)}" alt="${bEsc(post.title)}">` : ''}
