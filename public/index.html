@@ -19,7 +19,6 @@
       <nav class="nav">
         <a href="index.html" class="active">Acasă</a>
         <a href="produse.html">Produse</a>
-        <a href="branduri.html">Branduri</a>
         <a href="sistem-complet.html">Sistem complet</a>
         <a href="ghiduri.html">Ghiduri</a>
         <a href="despre.html">Despre noi</a>
@@ -95,31 +94,36 @@
   <!-- MONTAJ & CONSULTANȚĂ -->
   <section class="section">
     <div class="container">
-      <div style="display:flex;flex-wrap:wrap;gap:32px;align-items:center;background:linear-gradient(135deg,#faf6ee,#f3ecdd);border:1px solid var(--line);border-radius:22px;padding:38px 34px">
-        <div style="flex:1 1 340px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:38px;align-items:center;background:linear-gradient(135deg,#faf6ee,#f3ecdd);border:1px solid var(--line);border-radius:22px;padding:40px 36px" class="home-montaj">
+        <div>
           <h2 style="margin:6px 0 12px">Oferim montaj și consultanță</h2>
-          <p style="color:var(--muted);font-size:1.06rem;line-height:1.65;margin-bottom:22px">Nu vindem doar materiale. Te ajutăm să alegi corect pentru proiectul tău, calculăm necesarul și, la cerere, montăm sistemul de acoperiș cu echipe specializate.</p>
+          <p style="color:var(--muted);font-size:1.06rem;line-height:1.65;margin-bottom:20px">Nu vindem doar materiale. Te ajutăm să alegi corect pentru proiectul tău, calculăm necesarul și, la cerere, montăm sistemul de acoperiș cu echipe specializate.</p>
+          <ul style="list-style:none;padding:0;margin:0 0 24px;display:grid;gap:12px">
+            <li style="display:flex;gap:10px;align-items:flex-start;color:var(--navy);font-weight:600"><svg viewBox="0 0 24 24" fill="none" stroke="var(--terra)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px;flex-shrink:0;margin-top:2px"><path d="M20 6 9 17l-5-5"/></svg>Consultanță tehnică gratuită</li>
+            <li style="display:flex;gap:10px;align-items:flex-start;color:var(--navy);font-weight:600"><svg viewBox="0 0 24 24" fill="none" stroke="var(--terra)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px;flex-shrink:0;margin-top:2px"><path d="M20 6 9 17l-5-5"/></svg>Calcul de necesar (mp + accesorii)</li>
+            <li style="display:flex;gap:10px;align-items:flex-start;color:var(--navy);font-weight:600"><svg viewBox="0 0 24 24" fill="none" stroke="var(--terra)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px;flex-shrink:0;margin-top:2px"><path d="M20 6 9 17l-5-5"/></svg>Montaj profesional, la cerere</li>
+            <li style="display:flex;gap:10px;align-items:flex-start;color:var(--navy);font-weight:600"><svg viewBox="0 0 24 24" fill="none" stroke="var(--terra)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px;flex-shrink:0;margin-top:2px"><path d="M20 6 9 17l-5-5"/></svg>Recomandări de finisaj, culoare, grosime</li>
+          </ul>
           <a href="servicii.html" class="btn btn-primary">Vezi serviciile</a>
           <a href="sistem-complet.html" class="btn btn-outline" style="margin-left:10px">Configurează sistemul complet</a>
         </div>
-        <ul style="flex:1 1 300px;list-style:none;padding:0;margin:0;display:grid;gap:14px">
-          <li style="display:flex;gap:10px;align-items:flex-start;color:var(--navy);font-weight:600"><svg viewBox="0 0 24 24" fill="none" stroke="var(--terra)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px;flex-shrink:0;margin-top:2px"><path d="M20 6 9 17l-5-5"/></svg>Consultanță tehnică gratuită</li>
-          <li style="display:flex;gap:10px;align-items:flex-start;color:var(--navy);font-weight:600"><svg viewBox="0 0 24 24" fill="none" stroke="var(--terra)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px;flex-shrink:0;margin-top:2px"><path d="M20 6 9 17l-5-5"/></svg>Calcul de necesar (mp + accesorii)</li>
-          <li style="display:flex;gap:10px;align-items:flex-start;color:var(--navy);font-weight:600"><svg viewBox="0 0 24 24" fill="none" stroke="var(--terra)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px;flex-shrink:0;margin-top:2px"><path d="M20 6 9 17l-5-5"/></svg>Montaj profesional, la cerere</li>
-          <li style="display:flex;gap:10px;align-items:flex-start;color:var(--navy);font-weight:600"><svg viewBox="0 0 24 24" fill="none" stroke="var(--terra)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px;flex-shrink:0;margin-top:2px"><path d="M20 6 9 17l-5-5"/></svg>Recomandări de finisaj, culoare, grosime</li>
-        </ul>
+        <img src="assets/img/home-montaj.webp" alt="Consultanță și montaj ExpoTigla" loading="lazy" style="width:100%;height:100%;max-height:360px;object-fit:cover;border-radius:16px;box-shadow:var(--shadow)">
       </div>
     </div>
   </section>
 
-  <!-- PRODUCĂTORI -->
-  <section class="section" id="brands" style="display:none">
+  <!-- SISTEM COMPLET -->
+  <section class="section section-alt">
     <div class="container">
-      <div class="section-head">
-        <h2>Branduri de încredere</h2>
-        <p>Selectăm produse de la producători consacrați, cu specificații tehnice clare, documentație și garanții conforme fiecărei game.</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:38px;align-items:center" class="home-montaj">
+        <img src="assets/img/home-sistem.webp" alt="Sistem complet de acoperiș, strat cu strat" loading="lazy" style="width:100%;height:100%;max-height:360px;object-fit:cover;border-radius:16px;box-shadow:var(--shadow)">
+        <div>
+          <span class="eyebrow">Sistem complet</span>
+          <h2 style="margin:6px 0 12px">Un acoperiș bine ales începe cu toate piesele potrivite</h2>
+          <p style="color:var(--muted);font-size:1.06rem;line-height:1.65;margin-bottom:22px">Configurează materialele, serviciile și preferințele proiectului tău. Primești o ofertă clară, fără componente uitate și fără drumuri între mai mulți furnizori.</p>
+          <a href="sistem-complet.html" class="btn btn-primary">Configurează acoperișul</a>
+        </div>
       </div>
-      <div class="brands-strip" id="home-brands"></div>
     </div>
   </section>
 
@@ -298,8 +302,9 @@
         const names = [];
         (prods || []).slice().sort((a, b) => (a.sort - b.sort) || a.name.localeCompare(b.name, 'ro')).forEach(p => names.push(p.name));
         fromProducts.forEach(n => { if (!byName[n.toLowerCase()]) names.push(n); });
-        if (!names.length) return;
-        document.getElementById('brands').style.display = '';
+        const brandsSec = document.getElementById('brands');
+        if (!names.length || !brandsSec) return; // secțiunea Branduri a fost scoasă de pe homepage
+        brandsSec.style.display = '';
         document.getElementById('home-brands').innerHTML = names.map(n => {
           const p = byName[n.trim().toLowerCase()];
           const inner = p && p.logo ? `<img src="${p.logo}" alt="${escHtml(brandDisplay(n))}" class="brand-logo-img">` : `<span>${escHtml(brandDisplay(n))}</span>`;

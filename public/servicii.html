@@ -10,14 +10,26 @@
   <style>
     .serv-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
     .serv-card { background: #fff; border: 1px solid var(--line); border-radius: 18px; padding: 30px 28px; box-shadow: var(--shadow-sm); }
-    .serv-ico { width: 54px; height: 54px; border-radius: 14px; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, var(--terra), #0b7fb0); color: #fff; margin-bottom: 16px; }
+    .serv-ico { width: 54px; height: 54px; border-radius: 14px; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, var(--terra), var(--terra-dark)); color: #fff; margin-bottom: 16px; }
     .serv-ico svg { width: 28px; height: 28px; }
     .serv-card h2 { font-size: 1.35rem; margin: 0 0 12px; color: var(--navy); }
     .serv-body { color: var(--text); font-size: 1.02rem; line-height: 1.72; white-space: pre-line; }
     .serv-cta { background: var(--navy); color: #fff; border-radius: 20px; padding: 44px 32px; text-align: center; }
     .serv-cta h2 { color: #fff; font-size: 1.7rem; margin: 0 0 10px; }
-    .serv-cta p { color: #cfe3ee; max-width: 620px; margin: 0 auto 22px; font-size: 1.06rem; line-height: 1.6; }
-    @media (max-width: 760px) { .serv-grid { grid-template-columns: 1fr; } }
+    .serv-cta p { color: #e7e3d9; max-width: 620px; margin: 0 auto 22px; font-size: 1.06rem; line-height: 1.6; }
+    /* Pași alternanți (foto + text) */
+    .serv-steps { display: flex; flex-direction: column; gap: 40px; }
+    .serv-step { display: grid; grid-template-columns: 1fr 1fr; gap: 44px; align-items: center; }
+    .serv-step.reverse .serv-step-media { order: 2; }
+    .serv-step-media img { width: 100%; height: 320px; object-fit: cover; border-radius: 18px; box-shadow: var(--shadow); }
+    .serv-step-no { display: inline-block; font-size: .95rem; font-weight: 800; color: var(--terra-dark); letter-spacing: .05em; }
+    .serv-step-copy h3 { font-size: 1.55rem; margin: 8px 0 12px; color: var(--navy); }
+    .serv-step-copy p { color: var(--text); font-size: 1.05rem; line-height: 1.7; margin: 0; }
+    .serv-step-copy .btn { margin-top: 16px; }
+    @media (max-width: 760px) { .serv-grid { grid-template-columns: 1fr; }
+      .serv-step { grid-template-columns: 1fr; gap: 18px; }
+      .serv-step.reverse .serv-step-media { order: 0; }
+      .serv-step-media img { height: 220px; } }
   </style>
 </head>
 <body>
@@ -28,7 +40,6 @@
       <nav class="nav">
         <a href="index.html">Acasă</a>
         <a href="produse.html">Produse</a>
-        <a href="branduri.html">Branduri</a>
         <a href="sistem-complet.html">Sistem complet</a>
         <a href="ghiduri.html">Ghiduri</a>
         <a href="despre.html">Despre noi</a>
@@ -88,6 +99,50 @@ Cu ce te ajutăm:
 
 Trimite-ne dimensiunile sau un plan al acoperișului și îți pregătim o listă completă de materiale, cu ofertă de preț.</div>
         </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" style="padding-top:0">
+    <div class="container">
+      <div class="section-head" style="justify-content:center;text-align:center;margin-bottom:44px">
+        <div>
+          <h2>Cum lucrăm, pas cu pas</h2>
+          <p style="margin:12px auto 0">De la prima discuție până după montaj, te însoțim în fiecare etapă a proiectului.</p>
+        </div>
+      </div>
+      <div class="serv-steps">
+        <article class="serv-step">
+          <div class="serv-step-media"><img src="assets/img/servicii/consultanta.webp" alt="Consultanță de specialitate" loading="lazy"></div>
+          <div class="serv-step-copy"><span class="serv-step-no">01</span><h3>Consultanță de specialitate</h3>
+            <p>Îți înțelegem nevoile și îți recomandăm soluția potrivită pentru proiectul tău și bugetul alocat: calcul de necesar (mp, accesorii, lungimi), recomandări de finisaj, culoare și grosime, explicarea documentelor tehnice și a garanțiilor.</p></div>
+        </article>
+        <article class="serv-step reverse">
+          <div class="serv-step-media"><img src="assets/img/servicii/masuratori.webp" alt="Măsurători și oferte" loading="lazy"></div>
+          <div class="serv-step-copy"><span class="serv-step-no">02</span><h3>Măsurători și oferte</h3>
+            <p>Verificarea structurii și a măsurătorilor înainte de montaj, pentru o ofertă corectă și fără surprize.</p></div>
+        </article>
+        <article class="serv-step">
+          <div class="serv-step-media"><img src="assets/img/servicii/configurare.webp" alt="Configurare sistem complet" loading="lazy"></div>
+          <div class="serv-step-copy"><span class="serv-step-no">03</span><h3>Configurare sistem complet</h3>
+            <p>Configurăm pentru tine un sistem complet de acoperiș, cu toate componentele compatibile și performante.</p>
+            <a href="sistem-complet.html" class="btn btn-outline" style="margin-top:8px">Configurează acoperișul</a></div>
+        </article>
+        <article class="serv-step reverse">
+          <div class="serv-step-media"><img src="assets/img/servicii/transport.webp" alt="Transport planificat" loading="lazy"></div>
+          <div class="serv-step-copy"><span class="serv-step-no">04</span><h3>Transport planificat</h3>
+            <p>Livrăm materialele la timp, în condiții optime, direct pe șantier.</p></div>
+        </article>
+        <article class="serv-step">
+          <div class="serv-step-media"><img src="assets/img/servicii/montaj.webp" alt="Montaj profesionist" loading="lazy"></div>
+          <div class="serv-step-copy"><span class="serv-step-no">05</span><h3>Montaj profesionist</h3>
+            <p>Echipe autorizate și experimentate asigură montajul corect și eficient, conform celor mai înalte standarde.</p></div>
+        </article>
+        <article class="serv-step reverse">
+          <div class="serv-step-media"><img src="assets/img/servicii/suport.webp" alt="Suport după montaj" loading="lazy"></div>
+          <div class="serv-step-copy"><span class="serv-step-no">06</span><h3>Suport după montaj</h3>
+            <p>Oferim garanție, mentenanță și suport tehnic.</p></div>
+        </article>
       </div>
     </div>
   </section>

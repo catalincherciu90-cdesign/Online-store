@@ -966,3 +966,4 @@ a.pd-doc:hover { border-color: var(--terra); }
   #cbot { right: 14px; bottom: 14px; }
   .cbot-panel { bottom: 70px; height: calc(100vh - 100px); }
 }
+@media (max-width: 760px){ .home-montaj{ grid-template-columns:1fr!important; } .home-montaj img{ order:-1; } }
