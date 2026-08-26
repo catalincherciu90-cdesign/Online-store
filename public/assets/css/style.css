@@ -967,3 +967,5 @@ a.pd-doc:hover { border-color: var(--terra); }
   .cbot-panel { bottom: 70px; height: calc(100vh - 100px); }
 }
 @media (max-width: 760px){ .home-montaj{ grid-template-columns:1fr!important; } .home-montaj img{ order:-1; } }
+.despre-hero{ display:grid; grid-template-columns:1.05fr .95fr; gap:44px; align-items:center; }
+@media (max-width:760px){ .despre-hero{ grid-template-columns:1fr; gap:24px; } }
