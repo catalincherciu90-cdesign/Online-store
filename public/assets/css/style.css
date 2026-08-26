@@ -4,21 +4,21 @@
    ========================================================================== */
 
 :root {
-  /* Paletă principală: primar #0099CC, fundal #F7F7F7, text #333333 */
+  /* Paletă de brand ExpoȚigla: gold #D79A08, charcoal #2C2F33, cream #F8F5EE */
   --ink: #222222;
-  --navy: #0b3b4a;         /* teal închis — structură/titluri (armonizează cu primarul) */
-  --navy-dark: #072b37;
-  --navy-light: #0f5a72;
-  --terra: #0099cc;        /* PRIMAR — accent (linkuri, iconuri, eyebrow, focus) */
-  --terra-700: #007ea8;    /* mai închis — fundal butoane, badge-uri (contrast text alb) */
-  --terra-dark: #006c90;   /* cel mai închis — hover butoane */
-  --accent-soft: #e6f6fc;  /* tentă deschisă de primar */
+  --navy: #2c2f33;         /* charcoal — structură/titluri */
+  --navy-dark: #1e2023;
+  --navy-light: #3d4147;
+  --terra: #d79a08;        /* PRIMAR — gold (accent: linkuri, iconuri, eyebrow, focus) */
+  --terra-700: #c2890a;    /* gold mai închis — fundal butoane (contrast text alb) */
+  --terra-dark: #a8770a;   /* gold cel mai închis — hover butoane */
+  --accent-soft: #fbf3e2;  /* tentă gold deschisă */
   --success-deep: #166a3e;
-  --slate: #53627a;
-  --bg: #f7f7f7;           /* FUNDAL */
+  --slate: #63656b;
+  --bg: #f8f5ee;           /* FUNDAL — cream de brand */
   --bg-alt: #ffffff;
-  --line: #e6e8eb;
-  --line-strong: #d4d7dc;
+  --line: #e6e2d9;
+  --line-strong: #d8d6d0;
   --text: #333333;         /* TEXT */
   --muted: #667085;
   --success: #1f9d57;
@@ -153,7 +153,7 @@ h2 { font-size: clamp(1.6rem, 3vw, 2.35rem); letter-spacing: -0.028em; }
   padding: 8px 9px; border-radius: 10px; font-weight: 600; font-size: .9rem; white-space: nowrap;
   color: var(--slate); transition: background .18s, color .18s; position: relative; line-height: 1.2;
 }
-.nav a:hover { background: rgba(0,153,204,.08); color: var(--terra-dark); }
+.nav a:hover { background: rgba(215,154,8,.10); color: var(--terra-dark); }
 .nav a.active { color: var(--navy); }
 .nav a.active::after { content: ""; position: absolute; left: 13px; right: 13px; bottom: 3px; height: 2.5px; background: var(--terra); border-radius: 2px; }
 .header-actions { margin-left: auto; display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
@@ -263,9 +263,9 @@ h2 { font-size: clamp(1.6rem, 3vw, 2.35rem); letter-spacing: -0.028em; }
 .hero {
   position: relative; color: #fff; overflow: hidden;
   background:
-    radial-gradient(1100px 520px at 82% -8%, rgba(0,153,204,.24) 0%, transparent 55%),
-    radial-gradient(900px 500px at 8% 110%, rgba(15,90,114,.55) 0%, transparent 60%),
-    linear-gradient(155deg, #06232c 0%, var(--navy) 62%, #0f5a72 100%);
+    radial-gradient(1100px 520px at 82% -8%, rgba(215,154,8,.26) 0%, transparent 55%),
+    radial-gradient(900px 500px at 8% 110%, rgba(168,119,10,.30) 0%, transparent 60%),
+    linear-gradient(155deg, #1e2023 0%, var(--navy) 62%, #3d4147 100%);
 }
 .hero::after {
   content: ""; position: absolute; inset: 0; opacity: .5; pointer-events: none;
@@ -444,7 +444,7 @@ a.pd-doc:hover { border-color: var(--terra); }
 .filter-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; padding-bottom: 14px; border-bottom: 1px solid var(--line); }
 .filter-head h4 { text-transform: none; letter-spacing: 0; font-size: 1rem; color: var(--navy); }
 .filter-clear { background: none; border: 0; color: var(--terra-700, var(--terra)); font-weight: 600; font-size: .85rem; cursor: pointer; padding: 4px 6px; border-radius: 6px; }
-.filter-clear:hover { background: var(--accent-soft, rgba(0,153,204,.08)); text-decoration: underline; }
+.filter-clear:hover { background: var(--accent-soft, rgba(215,154,8,.10)); text-decoration: underline; }
 .filters h4 { font-size: .8rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin-bottom: 14px; }
 .filter-group { margin-bottom: 24px; padding-bottom: 20px; border-bottom: 1px solid var(--line); }
 .filter-group:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: 0; }
@@ -923,8 +923,8 @@ a.pd-doc:hover { border-color: var(--terra); }
    Chatbot AI (Grok) — widget flotant
    ========================================================================== */
 #cbot { position: fixed; right: 20px; bottom: 20px; z-index: 90; }
-.cbot-fab { width: 58px; height: 58px; border-radius: 50%; border: 0; cursor: pointer; background: linear-gradient(135deg, var(--terra), #0b7fb0); color: #fff; box-shadow: 0 10px 28px rgba(0,90,140,.4); display: flex; align-items: center; justify-content: center; transition: transform .18s, box-shadow .18s; }
-.cbot-fab:hover { transform: translateY(-2px); box-shadow: 0 14px 34px rgba(0,90,140,.5); }
+.cbot-fab { width: 58px; height: 58px; border-radius: 50%; border: 0; cursor: pointer; background: linear-gradient(135deg, var(--terra), var(--terra-dark)); color: #fff; box-shadow: 0 10px 28px rgba(168,119,10,.42); display: flex; align-items: center; justify-content: center; transition: transform .18s, box-shadow .18s; }
+.cbot-fab:hover { transform: translateY(-2px); box-shadow: 0 14px 34px rgba(168,119,10,.52); }
 .cbot-fab svg { width: 26px; height: 26px; }
 .cbot-ic-close { display: none; }
 #cbot.open .cbot-ic-open { display: none; }
