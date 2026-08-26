@@ -84,7 +84,11 @@
         <h2>Cele mai vândute produse</h2>
         <p>Alegerile preferate ale clienților noștri, disponibile pe stoc.</p>
       </div>
-      <div class="product-grid" id="home-featured"></div>
+      <div class="home-carousel">
+        <button type="button" class="hc-btn hc-prev" aria-label="Produsul anterior">‹</button>
+        <div class="hc-track" id="home-featured"></div>
+        <button type="button" class="hc-btn hc-next" aria-label="Produsul următor">›</button>
+      </div>
       <div style="text-align:center;margin-top:40px">
         <a href="produse.html" class="btn btn-outline btn-lg">Vezi tot catalogul</a>
       </div>
@@ -285,13 +289,17 @@
     }
     renderHomeCats();
 
-    // Produse recomandate (badge best seller / premium / nou)
+    // Produse recomandate (badge best seller / premium / nou) — carusel
     document.getElementById('home-featured').innerHTML = skeletonCards(6);
     loadCatalog().then(() => {
       renderHomeCats(); // categoriile pot veni din admin (D1)
-      const featured = PRODUCTS.filter(p => p.badge).slice(0, 6);
+      // Produsele cu badge primele; completăm cu restul ca să nu pară gol.
+      let featured = PRODUCTS.filter(p => p.badge);
+      if (featured.length < 8) featured = featured.concat(PRODUCTS.filter(p => !p.badge));
+      featured = featured.slice(0, 10);
       document.getElementById('home-featured').innerHTML = featured.map(renderProductCard).join('');
       hydrateImages();
+      initFeaturedCarousel();
 
       // Producători (branduri) — cu logo dacă e definit în admin, altfel text
       (async () => {
@@ -365,6 +373,27 @@
               : `<button class="btn btn-primary" onclick="Cart.add('${p.id}');showToast('Adăugat în coș')">În coș</button>`}
           </div>
         </div></div>`;
+    }
+
+    // Carusel produse recomandate: derulează automat, cu săgeți și pauză la hover.
+    function initFeaturedCarousel() {
+      const track = document.getElementById('home-featured');
+      const wrap = track && track.closest('.home-carousel');
+      if (!track || !wrap) return;
+      const overflow = () => track.scrollWidth - track.clientWidth > 8;
+      const prevBtn = wrap.querySelector('.hc-prev'), nextBtn = wrap.querySelector('.hc-next');
+      if (!overflow()) { if (prevBtn) prevBtn.style.display = 'none'; if (nextBtn) nextBtn.style.display = 'none'; return; }
+      const step = () => { const c = track.querySelector('.product-card'); return c ? c.getBoundingClientRect().width + 24 : 320; };
+      const next = () => { const max = track.scrollWidth - track.clientWidth - 8; if (track.scrollLeft >= max) track.scrollTo({ left: 0, behavior: 'smooth' }); else track.scrollBy({ left: step(), behavior: 'smooth' }); };
+      const prev = () => { if (track.scrollLeft <= 8) track.scrollTo({ left: track.scrollWidth, behavior: 'smooth' }); else track.scrollBy({ left: -step(), behavior: 'smooth' }); };
+      nextBtn && nextBtn.addEventListener('click', next);
+      prevBtn && prevBtn.addEventListener('click', prev);
+      let timer = setInterval(next, 3800);
+      const pause = () => { if (timer) { clearInterval(timer); timer = null; } };
+      const resume = () => { if (!timer) timer = setInterval(next, 3800); };
+      wrap.addEventListener('mouseenter', pause);
+      wrap.addEventListener('mouseleave', resume);
+      track.addEventListener('pointerdown', pause);
     }
   </script>
 </body>

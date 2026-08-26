@@ -969,3 +969,13 @@ a.pd-doc:hover { border-color: var(--terra); }
 @media (max-width: 760px){ .home-montaj{ grid-template-columns:1fr!important; } .home-montaj img{ order:-1; } }
 .despre-hero{ display:grid; grid-template-columns:1.05fr .95fr; gap:44px; align-items:center; }
 @media (max-width:760px){ .despre-hero{ grid-template-columns:1fr; gap:24px; } }
+
+/* Carusel produse recomandate (homepage) */
+.home-carousel { position: relative; }
+.hc-track { display: flex; gap: 24px; overflow-x: auto; scroll-snap-type: x mandatory; scroll-behavior: smooth; padding: 6px 2px; -ms-overflow-style: none; scrollbar-width: none; }
+.hc-track::-webkit-scrollbar { display: none; }
+.hc-track > .product-card { flex: 0 0 300px; scroll-snap-align: start; }
+.hc-btn { position: absolute; top: 50%; transform: translateY(-50%); width: 46px; height: 46px; border-radius: 50%; border: 1px solid var(--line-strong); background: #fff; color: var(--navy); font-size: 1.7rem; line-height: 1; cursor: pointer; z-index: 3; box-shadow: var(--shadow); display: flex; align-items: center; justify-content: center; transition: border-color .15s, color .15s; }
+.hc-btn:hover { border-color: var(--terra); color: var(--terra-dark); }
+.hc-prev { left: -12px; } .hc-next { right: -12px; }
+@media (max-width: 600px) { .hc-track > .product-card { flex-basis: 84%; } .hc-btn { display: none; } }
