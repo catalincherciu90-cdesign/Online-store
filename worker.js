@@ -532,9 +532,10 @@ async function getCatalogContext(env) {
 // Furnizori AI compatibili OpenAI. Cheia se ia din env (secret pe Cloudflare).
 const CHAT_PROVIDERS = {
   // Pentru Groq acceptăm și greșeala frecventă GROK_API_KEY (cu K) și un AI_API_KEY generic.
-  groq: { url: 'https://api.groq.com/openai/v1/chat/completions', model: 'llama-3.3-70b-versatile', keys: ['GROQ_API_KEY', 'GROK_API_KEY', 'AI_API_KEY'] },
-  xai: { url: 'https://api.x.ai/v1/chat/completions', model: 'grok-3', keys: ['XAI_API_KEY', 'GROK_API_KEY', 'AI_API_KEY'] },
-  gemini: { url: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions', model: 'gemini-2.0-flash', keys: ['GEMINI_API_KEY', 'GOOGLE_API_KEY', 'AI_API_KEY'] },
+  // `fallbacks` = modele curente încercate dacă cel configurat e scos din uz (Groq retrage des modele).
+  groq: { url: 'https://api.groq.com/openai/v1/chat/completions', model: 'llama-3.3-70b-versatile', keys: ['GROQ_API_KEY', 'GROK_API_KEY', 'AI_API_KEY'], fallbacks: ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'openai/gpt-oss-20b'] },
+  xai: { url: 'https://api.x.ai/v1/chat/completions', model: 'grok-3', keys: ['XAI_API_KEY', 'GROK_API_KEY', 'AI_API_KEY'], fallbacks: ['grok-3', 'grok-2-1212'] },
+  gemini: { url: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions', model: 'gemini-2.0-flash', keys: ['GEMINI_API_KEY', 'GOOGLE_API_KEY', 'AI_API_KEY'], fallbacks: ['gemini-2.0-flash', 'gemini-1.5-flash'] },
 };
 async function chatHandler(request, env) {
   const body = await request.json().catch(() => null);
@@ -563,19 +564,29 @@ async function chatHandler(request, env) {
   const catalog = await getCatalogContext(env);
   if (catalog) system += `\n\nCATALOG DE PRODUSE (nume [brand] · categorie · preț · link — folosește doar de aici):\n${catalog}`;
   const model = (s.chatbot_model && s.chatbot_model.trim()) || prov.model;
+  // Încearcă modelul configurat, apoi modelele curente de rezervă dacă cel ales e scos din uz.
+  const tryModels = [model];
+  for (const fm of (prov.fallbacks || [])) if (fm && !tryModels.includes(fm)) tryModels.push(fm);
   const payload = { model, temperature: 0.4, max_tokens: 600, stream: false,
     messages: [{ role: 'system', content: system }, ...msgs] };
-  let r;
-  try {
-    r = await fetch(prov.url, {
-      method: 'POST',
-      headers: { 'Authorization': 'Bearer ' + key, 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-  } catch (e) { return json({ error: 'Nu am putut contacta serviciul de chat.' }, 502); }
-  if (!r.ok) {
-    const t = await r.text().catch(() => '');
-    return json({ error: 'Serviciul de chat a returnat eroare (' + r.status + ').', detail: t.slice(0, 300) }, 502);
+  let r = null, lastStatus = 0, lastDetail = '';
+  for (const mdl of tryModels) {
+    payload.model = mdl;
+    try {
+      r = await fetch(prov.url, {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + key, 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+    } catch (e) { return json({ error: 'Nu am putut contacta serviciul de chat.' }, 502); }
+    if (r.ok) break;
+    lastStatus = r.status; lastDetail = (await r.text().catch(() => '')).slice(0, 400);
+    // Continuă la modelul următor doar dacă eroarea e legată de model; altfel oprește-te.
+    if (!/model|decommission|not found|does not exist|not exist|unsupported|invalid_request/i.test(lastDetail)) break;
+  }
+  if (!r || !r.ok) {
+    return json({ error: 'Serviciul de chat a returnat eroare (' + (lastStatus || '?') + '). ' +
+      (/model|decommission|not found|does not exist/i.test(lastDetail) ? 'Modelul configurat nu mai există — schimbă-l în tab-ul Chatbot.' : ''), detail: lastDetail }, 502);
   }
   const data = await r.json().catch(() => null);
   const reply = data && data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
