@@ -581,12 +581,18 @@ async function chatHandler(request, env) {
     } catch (e) { return json({ error: 'Nu am putut contacta serviciul de chat.' }, 502); }
     if (r.ok) break;
     lastStatus = r.status; lastDetail = (await r.text().catch(() => '')).slice(0, 400);
-    // Continuă la modelul următor doar dacă eroarea e legată de model; altfel oprește-te.
-    if (!/model|decommission|not found|does not exist|not exist|unsupported|invalid_request/i.test(lastDetail)) break;
+    // Încearcă alt model DOAR dacă cel curent nu mai există (404 / model_not_found).
+    // Pentru 429 (limită), 401/403 (cheie) etc. ne oprim — nu ajută alt model.
+    const modelGone = r.status === 404 || /model_not_found|does not exist|has been decommissioned|decommission/i.test(lastDetail);
+    if (!modelGone) break;
   }
   if (!r || !r.ok) {
-    return json({ error: 'Serviciul de chat a returnat eroare (' + (lastStatus || '?') + '). ' +
-      (/model|decommission|not found|does not exist/i.test(lastDetail) ? 'Modelul configurat nu mai există — schimbă-l în tab-ul Chatbot.' : ''), detail: lastDetail }, 502);
+    let msg;
+    if (lastStatus === 429) msg = 'Limită de utilizare atinsă (429). Ai depășit cota Groq (pe minut sau zilnică) — reîncearcă peste câteva minute. Pentru volum mare, treci pe un plan Groq plătit sau alt provider.';
+    else if (lastStatus === 401 || lastStatus === 403) msg = 'Cheia API a fost respinsă (' + lastStatus + '). Verifică GROQ_API_KEY în Cloudflare.';
+    else if (lastStatus === 404 || /model_not_found|does not exist|decommission/i.test(lastDetail)) msg = 'Modelul configurat nu mai există — schimbă-l în tab-ul Chatbot.';
+    else msg = 'Serviciul de chat a returnat eroare (' + (lastStatus || '?') + ').';
+    return json({ error: msg, detail: lastDetail }, 502);
   }
   const data = await r.json().catch(() => null);
   const reply = data && data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
