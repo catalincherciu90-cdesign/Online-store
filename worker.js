@@ -513,17 +513,24 @@ Când ai suficiente detalii (sau cererea e deja clară), recomandă 1–3 PRODUS
 // Catalog compact pentru recomandări (cache 5 min).
 let CATALOG_CACHE = null, CATALOG_TS = 0;
 const CHAT_CAT_NAMES = { 'tigla-metalica': 'Țiglă metalică', 'tabla-faltuita': 'Tablă fălțuită', 'panouri-sandwich': 'Panouri sandwich', 'sistem-pluvial': 'Sisteme pluviale', 'folii-membrane': 'Folii și membrane', 'borduri': 'Borduri și tinichigerie', 'ventilatii': 'Ventilații acoperiș', 'suruburi': 'Șuruburi', 'accesorii': 'Accesorii' };
+// Trimitem catalogul doar când clientul întreabă despre produse/prețuri/recomandări.
+const CHAT_CATALOG_KW = /(produs|pret|preț|cost|recomand|model|culoar|grosim|finisaj|tigl|țigl|tabl|panou|sandwich|jgheab|burlan|pluvial|folie|membran|surub|șurub|accesor|ventilat|bordur|coam|acoperi|mp\b|metri|ofert|catalog|stoc|disponibil|ieftin|scump|buget)/i;
+function chatNeedsCatalog(msgs) {
+  const recent = msgs.filter(m => m.role === 'user').slice(-2).map(m => m.content).join(' ');
+  return CHAT_CATALOG_KW.test(recent);
+}
 async function getCatalogContext(env) {
   const now = Date.now();
   if (CATALOG_CACHE !== null && now - CATALOG_TS < 300000) return CATALOG_CACHE;
   let out = '';
   try {
     const r = await env.DB.prepare('SELECT id, name, cat, price, unit, producator FROM products WHERE active=1 ORDER BY cat, name').all();
-    out = (r.results || []).slice(0, 220).map(p => {
+    // Format compact (mai puțini tokens): cod|denumire brand|categorie|preț
+    out = (r.results || []).slice(0, 240).map(p => {
       const cat = CHAT_CAT_NAMES[p.cat] || p.cat || '';
-      const pr = p.price ? `de la ${p.price} lei/${p.unit || 'buc'}` : 'preț la cerere';
-      const br = p.producator ? ` [${p.producator}]` : '';
-      return `- ${p.name}${br} · ${cat} · ${pr} · produs.html?id=${p.id}`;
+      const pr = p.price ? `${p.price}lei/${p.unit || 'buc'}` : 'la cerere';
+      const br = p.producator ? ' ' + p.producator : '';
+      return `${p.id}|${p.name}${br}|${cat}|${pr}`;
     }).join('\n');
   } catch (e) { out = ''; }
   CATALOG_CACHE = out; CATALOG_TS = now;
@@ -542,7 +549,7 @@ async function chatHandler(request, env) {
   let msgs = body && Array.isArray(body.messages) ? body.messages : null;
   if (!msgs) return json({ error: 'Mesaje lipsă.' }, 400);
   msgs = msgs.filter(mm => mm && (mm.role === 'user' || mm.role === 'assistant') && typeof mm.content === 'string' && mm.content.trim())
-    .slice(-12).map(mm => ({ role: mm.role, content: mm.content.slice(0, 2000) }));
+    .slice(-6).map(mm => ({ role: mm.role, content: mm.content.slice(0, 1200) }));
   if (!msgs.length || msgs[msgs.length - 1].role !== 'user') return json({ error: 'Mesaj invalid.' }, 400);
   // Setări (provider/prompt/model + contact)
   let s = {};
@@ -561,13 +568,16 @@ async function chatHandler(request, env) {
   if (s.schedule) contact.push('program ' + s.schedule);
   if (contact.length) system += `\n\nDate de contact ale magazinului: ${contact.join(', ')}. Pagina de contact/ofertă: contact.html.`;
   system += `\n\n${CHAT_PAGES_GUIDE}\n\n${CHAT_BEHAVIOR}`;
-  const catalog = await getCatalogContext(env);
-  if (catalog) system += `\n\nCATALOG DE PRODUSE (nume [brand] · categorie · preț · link — folosește doar de aici):\n${catalog}`;
+  // Catalogul (mare) se trimite DOAR când conversația e despre produse — economisește tokens.
+  if (chatNeedsCatalog(msgs)) {
+    const catalog = await getCatalogContext(env);
+    if (catalog) system += `\n\nCATALOG (format: cod|denumire brand|categorie|preț — folosește doar de aici; link produs = produs.html?id=COD):\n${catalog}`;
+  }
   const model = (s.chatbot_model && s.chatbot_model.trim()) || prov.model;
   // Încearcă modelul configurat, apoi modelele curente de rezervă dacă cel ales e scos din uz.
   const tryModels = [model];
   for (const fm of (prov.fallbacks || [])) if (fm && !tryModels.includes(fm)) tryModels.push(fm);
-  const payload = { model, temperature: 0.4, max_tokens: 600, stream: false,
+  const payload = { model, temperature: 0.4, max_tokens: 420, stream: false,
     messages: [{ role: 'system', content: system }, ...msgs] };
   let r = null, lastStatus = 0, lastDetail = '';
   for (const mdl of tryModels) {
