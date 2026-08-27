@@ -253,10 +253,17 @@ async function hydrateImages(root) {
     img.src = img.getAttribute('data-file');
   }
 }
-/* Înlocuiește <img> stricat cu ilustrația SVG corespunzătoare */
+/* Înlocuiește <img> stricat cu un fallback curat (fără ilustrație placeholder) */
 function mediaFallback(img, type, id) {
-  const item = type === 'p' ? getProduct(id) : getCategory(id);
-  const svg = type === 'p' ? (item && item.svg) : (item && SVG[item.icon] && SVG[item.icon](...(CAT_SVG_COLORS[id] || ['#16324f', '#0f2438'])));
+  if (type === 'c') {
+    // Categorie fără poză încărcată: fundal curat de brand, nu o ilustrație placeholder.
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'width:100%;height:100%;background:linear-gradient(135deg,#2c2f33 0%,#3d4147 62%,#5a4a22 150%)';
+    img.replaceWith(wrap);
+    return;
+  }
+  const item = getProduct(id);
+  const svg = item && item.svg;
   if (!svg) { img.style.visibility = 'hidden'; return; }
   const wrap = document.createElement('div');
   wrap.style.cssText = 'width:100%;height:100%';
