@@ -80,13 +80,14 @@ async function ensureSchema(env) {
         `CREATE TABLE IF NOT EXISTS product_files (product_id TEXT NOT NULL, kind TEXT NOT NULL, mime TEXT, data TEXT, name TEXT, updated_at TEXT DEFAULT (datetime('now')), PRIMARY KEY (product_id, kind))`,
         `CREATE TABLE IF NOT EXISTS chat_messages (id INTEGER PRIMARY KEY AUTOINCREMENT, session_id TEXT, role TEXT, content TEXT, created_at TEXT DEFAULT (datetime('now')))`,
         `CREATE INDEX IF NOT EXISTS idx_chat_session ON chat_messages (session_id, id)`,
-        `CREATE TABLE IF NOT EXISTS categories (id TEXT PRIMARY KEY, name TEXT NOT NULL, tag TEXT, descr TEXT, icon TEXT, options TEXT, sort INTEGER DEFAULT 0, active INTEGER NOT NULL DEFAULT 1)`,
+        `CREATE TABLE IF NOT EXISTS categories (id TEXT PRIMARY KEY, name TEXT NOT NULL, tag TEXT, descr TEXT, icon TEXT, options TEXT, image TEXT, sort INTEGER DEFAULT 0, active INTEGER NOT NULL DEFAULT 1)`,
       ];
       for (const s of stmts) { try { await env.DB.prepare(s).run(); } catch (e) { console.error('ensureSchema', e); } }
       // Coloane adăugate ulterior pe produse (ALTER nu e idempotent → ignoră „duplicate column").
       for (const col of ['producator TEXT', 'finish_label TEXT']) {
         try { await env.DB.prepare(`ALTER TABLE products ADD COLUMN ${col}`).run(); } catch (e) { /* există deja */ }
       }
+      try { await env.DB.prepare('ALTER TABLE categories ADD COLUMN image TEXT').run(); } catch (e) { /* există deja */ }
       for (const col of ['align TEXT', 'height TEXT', 'image_mobile TEXT']) {
         try { await env.DB.prepare(`ALTER TABLE banners ADD COLUMN ${col}`).run(); } catch (e) { /* există deja */ }
       }
@@ -306,11 +307,13 @@ const DEFAULT_CATEGORIES = [
 function rowToCategory(r) {
   let options = [];
   try { options = r.options ? JSON.parse(r.options) : []; } catch (e) { options = []; }
-  return { id: r.id, name: r.name, tag: r.tag || '', desc: r.descr || '', icon: r.icon || 'accesoriu', options, sort: r.sort || 0 };
+  const c = { id: r.id, name: r.name, tag: r.tag || '', desc: r.descr || '', icon: r.icon || 'accesoriu', options, sort: r.sort || 0 };
+  if (r.imglen) c.img = `/api/categories/${encodeURIComponent(r.id)}/image?v=${r.imglen}`;
+  return c;
 }
 async function categoriesList(env) {
   if (!env.DB) return json(DEFAULT_CATEGORIES);
-  const r = await env.DB.prepare('SELECT * FROM categories WHERE active=1 ORDER BY sort, rowid').all();
+  const r = await env.DB.prepare('SELECT id,name,tag,descr,icon,options,sort, LENGTH(image) AS imglen FROM categories WHERE active=1 ORDER BY sort, rowid').all();
   const list = (r.results || []).map(rowToCategory);
   return json(list.length ? list : DEFAULT_CATEGORIES);
 }
@@ -321,10 +324,40 @@ async function categoryUpsert(request, env) {
   if (!c || !c.id || !c.name) return json({ error: 'Categorie incompletă (id și nume obligatorii).' }, 400);
   const id = String(c.id).trim().toLowerCase().replace(/[^a-z0-9\-]+/g, '-').replace(/^-+|-+$/g, '');
   if (!id) return json({ error: 'ID invalid.' }, 400);
-  await env.DB.prepare('INSERT OR REPLACE INTO categories (id,name,tag,descr,icon,options,sort,active) VALUES (?,?,?,?,?,?,?,1)')
-    .bind(id, String(c.name).trim(), c.tag || null, c.desc || null, c.icon || 'accesoriu',
-      JSON.stringify(Array.isArray(c.options) ? c.options : []), Number(c.sort) || 0).run();
+  const name = String(c.name).trim(), tag = c.tag || null, descr = c.desc || null,
+    icon = c.icon || 'accesoriu', opts = JSON.stringify(Array.isArray(c.options) ? c.options : []), sort = Number(c.sort) || 0;
+  // UPDATE dacă există (păstrează poza), altfel INSERT.
+  const exists = await env.DB.prepare('SELECT 1 FROM categories WHERE id=?').bind(id).first();
+  if (exists) {
+    await env.DB.prepare('UPDATE categories SET name=?,tag=?,descr=?,icon=?,options=?,sort=?,active=1 WHERE id=?')
+      .bind(name, tag, descr, icon, opts, sort, id).run();
+  } else {
+    await env.DB.prepare('INSERT INTO categories (id,name,tag,descr,icon,options,sort,active) VALUES (?,?,?,?,?,?,?,1)')
+      .bind(id, name, tag, descr, icon, opts, sort).run();
+  }
   return json({ ok: true, id });
+}
+async function categoryImageServe(env, id) {
+  if (!env.DB) return new Response('Not found', { status: 404 });
+  const row = await env.DB.prepare('SELECT image FROM categories WHERE id=?').bind(id).first();
+  const dec = row && row.image ? decodeDataUrl(row.image) : null;
+  if (!dec) return new Response('Not found', { status: 404 });
+  return new Response(dec.bytes, { headers: { 'Content-Type': dec.mime || 'image/webp', 'Cache-Control': 'public, max-age=31536000, immutable' } });
+}
+async function categoryImageUpsert(request, env, id) {
+  if (!await requireAdmin(request, env)) return json({ error: 'Neautorizat' }, 401);
+  if (!env.DB) return json({ error: 'Baza de date nu este configurată.' }, 500);
+  const v = await request.json().catch(() => null);
+  if (!v || !v.data) return json({ error: 'Lipsește imaginea.' }, 400);
+  if (String(v.data).length > 4200000) return json({ error: 'Imagine prea mare (max ~3 MB).' }, 413);
+  const r = await env.DB.prepare('UPDATE categories SET image=? WHERE id=?').bind(v.data, id).run();
+  return json({ ok: true });
+}
+async function categoryImageDelete(request, env, id) {
+  if (!await requireAdmin(request, env)) return json({ error: 'Neautorizat' }, 401);
+  if (!env.DB) return json({ error: 'Baza de date nu este configurată.' }, 500);
+  await env.DB.prepare('UPDATE categories SET image=NULL WHERE id=?').bind(id).run();
+  return json({ ok: true });
 }
 async function categoryDelete(request, env, id) {
   if (!await requireAdmin(request, env)) return json({ error: 'Neautorizat' }, 401);
@@ -930,6 +963,10 @@ async function api(request, env, url) {
   if (p === '/api/categories' && m === 'POST') return categoryUpsert(request, env);
   if (p === '/api/categories/reorder' && m === 'POST') return categoriesReorder(request, env);
   if (p === '/api/categories/move-products' && m === 'POST') return categoryMoveProducts(request, env);
+  const catImg = p.match(/^\/api\/categories\/([^/]+)\/image$/);
+  if (catImg && m === 'GET') return categoryImageServe(env, decodeURIComponent(catImg[1]));
+  if (catImg && m === 'POST') return categoryImageUpsert(request, env, decodeURIComponent(catImg[1]));
+  if (catImg && m === 'DELETE') return categoryImageDelete(request, env, decodeURIComponent(catImg[1]));
   const catDel = p.match(/^\/api\/categories\/(.+)$/);
   if (catDel && m === 'DELETE') return categoryDelete(request, env, decodeURIComponent(catDel[1]));
   if (p === '/api/admins' && m === 'GET') return adminsList(request, env);

@@ -234,6 +234,11 @@
     .cat-axes { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin: 10px 0; }
     .cat-ax { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; font-weight: 500; }
     .cat-actions { display: flex; gap: 10px; }
+    .cat-imgrow { display: flex; align-items: center; gap: 14px; margin: 12px 0; }
+    .cat-thumb { width: 96px; height: 64px; border-radius: 8px; overflow: hidden; background: rgba(255,255,255,.04); border: 1px solid var(--em-border, #e5e7eb); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .cat-thumb img { width: 100%; height: 100%; object-fit: cover; }
+    .cat-thumb span { font-size: .72rem; color: var(--em-muted, #9aa0a6); }
+    .cat-imgctrl { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
     .conv-box { margin: 4px 0 14px; padding: 12px 14px; background: var(--em-card, #fff); border: 1px solid var(--em-border, #e5e7eb); border-radius: 12px; }
     .conv-bar { height: 8px; background: rgba(52,211,153,.15); border-radius: 6px; overflow: hidden; margin-bottom: 8px; }
     .conv-bar span { display: block; height: 100%; width: 0; background: var(--em-accent, #34d399); transition: width .25s ease; }
@@ -2119,6 +2124,14 @@
               <span class="muted-sm">Opțiuni:</span>
               ${AX.map(([id, label]) => `<label class="cat-ax"><input type="checkbox" id="cat-ax-${i}-${id}" ${opts.includes(id) ? 'checked' : ''}> ${label}</label>`).join('')}
             </div>
+            <div class="cat-imgrow">
+              <div class="cat-thumb">${c.img ? `<img src="${esc2(c.img)}" alt="">` : '<span>fără poză</span>'}</div>
+              <div class="cat-imgctrl">
+                ${c._new ? '<span class="muted-sm">Salvează categoria întâi ca să adaugi o poză.</span>' :
+                  `<label class="a-btn-sm" style="cursor:pointer">${c.img ? 'Înlocuiește poza' : 'Încarcă poză'}<input type="file" accept="image/*" hidden onchange="onCatImage('${esc2(c.id)}',this.files[0]);this.value=''"></label>
+                   ${c.img ? `<button type="button" class="a-btn-sm danger" onclick="delCatImage('${esc2(c.id)}')">Șterge poza</button>` : ''}`}
+              </div>
+            </div>
             <div class="cat-actions">
               <button type="button" class="btn btn-primary a-btn-sm" onclick="saveCategory(${i})">Salvează</button>
               <button type="button" class="a-btn-sm danger" onclick="delCategory(${i})">Șterge</button>
@@ -2180,6 +2193,31 @@
         ADMIN_CATS.splice(i, 1);
         if (typeof loadCategories === 'function') { CATEGORIES_READY = null; await loadCategories(); }
         renderCats();
+      } catch (e) { alert('Eroare: ' + e.message); }
+    }
+    async function refreshCatsAfterImage() {
+      await loadCategoriesAdmin();
+      if (typeof loadCategories === 'function') { CATEGORIES_READY = null; await loadCategories(); }
+    }
+    function onCatImage(id, file) {
+      if (!file || !file.type.startsWith('image/')) return;
+      imgToWhiteWebp(file, 900, 0.85, async (dataUrl) => {
+        if (dataUrl.length > 4200000) { alert('Imagine prea mare (max ~3 MB). Comprimă-o și încearcă din nou.'); return; }
+        try {
+          const res = await api('/categories/' + encodeURIComponent(id) + '/image', { method: 'POST', body: JSON.stringify({ data: dataUrl }) });
+          const d = await res.json();
+          if (!d.ok) { alert(d.error || 'Eroare.'); return; }
+          await refreshCatsAfterImage();
+        } catch (e) { alert('Eroare: ' + e.message); }
+      });
+    }
+    async function delCatImage(id) {
+      if (!confirm('Ștergi poza categoriei?')) return;
+      try {
+        const res = await api('/categories/' + encodeURIComponent(id) + '/image', { method: 'DELETE' });
+        const d = await res.json();
+        if (!d.ok) { alert(d.error || 'Eroare.'); return; }
+        await refreshCatsAfterImage();
       } catch (e) { alert('Eroare: ' + e.message); }
     }
 

@@ -214,8 +214,10 @@ function productMedia(p) {
     data-file="${file}" loading="lazy">`;
 }
 function categoryMedia(c) {
+  // Preferă poza încărcată din admin (D1, /api/categories/<id>/image); altfel fișier din repo.
+  const file = (c && c.img) || `assets/img/categories/${c.id}.jpg`;
   return `<img class="pmedia" alt="${c.name}" data-imgkey="c:${c.id}"
-    data-file="assets/img/categories/${c.id}.jpg" loading="lazy">`;
+    data-file="${file}" loading="lazy">`;
 }
 /* Rezolvă sursa fiecărei imagini: 1) poză încărcată în browser (IndexedDB),
    2) fișier din repo (assets/img/...), 3) ilustrație SVG (fallback).
