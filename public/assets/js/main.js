@@ -296,6 +296,7 @@ function injectChatbot(s) {
         <button class="cbot-x" aria-label="Închide" type="button">×</button>
       </div>
       <div class="cbot-msgs" id="cbot-msgs"></div>
+      <div class="cbot-quick" id="cbot-quick"><button type="button" class="cbot-leadtrigger" id="cbot-leadtrigger"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.9.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg> Lasă-ți datele pentru ofertă</button></div>
       <form class="cbot-input" id="cbot-form">
         <input type="text" id="cbot-text" placeholder="Scrie un mesaj…" autocomplete="off" maxlength="1000">
         <button type="submit" aria-label="Trimite"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button>
@@ -371,6 +372,58 @@ function injectChatbot(s) {
     msgsBox.appendChild(box); scroll();
   }
   function removeChips() { const c = msgsBox.querySelector('.cbot-chips'); if (c) c.remove(); }
+
+  // ── Captură de contact (nume / email / telefon) ──
+  const quickBar = wrap.querySelector('#cbot-quick');
+  const leadTrigger = wrap.querySelector('#cbot-leadtrigger');
+  function leadDone() { try { return localStorage.getItem('cbot_lead_' + cbotSid) === '1'; } catch (e) { return false; } }
+  function markLeadDone() { try { localStorage.setItem('cbot_lead_' + cbotSid, '1'); } catch (e) {} if (quickBar) quickBar.style.display = 'none'; }
+  function renderLeadCard() {
+    if (leadDone()) return;
+    if (msgsBox.querySelector('.cbot-lead')) { msgsBox.querySelector('.cbot-lead').scrollIntoView({ block: 'nearest' }); return; }
+    const card = document.createElement('div');
+    card.className = 'cbot-lead';
+    card.innerHTML =
+      '<div class="cbot-lead-t">Vrei să te contacteze un consultant?</div>'
+      + '<div class="cbot-lead-s">Lasă-ți datele și revenim cu o ofertă pentru proiectul tău.</div>'
+      + '<input type="text" class="cbot-lead-name" placeholder="Nume și prenume" autocomplete="name" maxlength="120">'
+      + '<input type="email" class="cbot-lead-email" placeholder="Email" autocomplete="email" inputmode="email" maxlength="160">'
+      + '<input type="tel" class="cbot-lead-phone" placeholder="Telefon" autocomplete="tel" inputmode="tel" maxlength="40">'
+      + '<div class="cbot-lead-err" hidden></div>'
+      + '<div class="cbot-lead-actions"><button type="button" class="cbot-lead-send">Trimite datele</button><button type="button" class="cbot-lead-skip">Poate mai târziu</button></div>';
+    msgsBox.appendChild(card); scroll();
+    const err = card.querySelector('.cbot-lead-err');
+    card.querySelector('.cbot-lead-skip').addEventListener('click', () => card.remove());
+    card.querySelector('.cbot-lead-send').addEventListener('click', () => submitLead(card, err));
+    setTimeout(() => { const n = card.querySelector('.cbot-lead-name'); if (n) n.focus(); }, 60);
+  }
+  async function submitLead(card, err) {
+    const name = card.querySelector('.cbot-lead-name').value.trim();
+    const email = card.querySelector('.cbot-lead-email').value.trim();
+    const phone = card.querySelector('.cbot-lead-phone').value.trim();
+    const showErr = (m) => { err.textContent = m; err.hidden = false; };
+    if (!name) return showErr('Te rog scrie numele.');
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return showErr('Adresa de email nu pare validă.');
+    if (phone.replace(/\D/g, '').length < 9) return showErr('Numărul de telefon nu pare valid.');
+    err.hidden = true;
+    const btn = card.querySelector('.cbot-lead-send'); btn.disabled = true; btn.textContent = 'Se trimite…';
+    const lastMsgs = history.filter(h => h.role === 'user').slice(-3).map(h => h.content).join(' | ');
+    const fd = new FormData();
+    fd.append('nume', name); fd.append('email', email); fd.append('telefon', phone);
+    fd.append('tip', 'Chatbot');
+    fd.append('mesaj', 'Lead din chatbot (sesiune ' + cbotSid + ').' + (lastMsgs ? (' Întrebări: ' + lastMsgs) : ''));
+    try {
+      const r = await fetch('/api/quote', { method: 'POST', body: fd });
+      const d = await r.json().catch(() => ({}));
+      if (r.ok && d.ok) {
+        markLeadDone(); card.remove();
+        addBubble('bot', 'Îți mulțumim, ' + name + '! ✅ Un consultant ExpoTigla te va contacta în cel mai scurt timp. Între timp, cu ce te mai pot ajuta?');
+      } else { btn.disabled = false; btn.textContent = 'Trimite datele'; showErr((d && d.error) || 'Nu am putut trimite datele. Încearcă din nou.'); }
+    } catch (e) { btn.disabled = false; btn.textContent = 'Trimite datele'; showErr('Eroare de conexiune. Încearcă din nou.'); }
+  }
+  if (leadTrigger) leadTrigger.addEventListener('click', renderLeadCard);
+  if (quickBar && leadDone()) quickBar.style.display = 'none';
+
   function openPanel() {
     wrap.classList.add('open');
     if (!msgsBox.dataset.init) { addBubble('bot', greeting); renderChips(); msgsBox.dataset.init = '1'; setTimeout(() => input.focus(), 60); }

@@ -962,6 +962,23 @@ a.pd-doc:hover { border-color: var(--terra); }
 .cbot-input button { width: 42px; flex-shrink: 0; border: 0; border-radius: 10px; background: var(--terra); color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; }
 .cbot-input button:hover { background: var(--terra-dark); }
 .cbot-input button svg { width: 19px; height: 19px; }
+/* Chatbot — bară „lasă datele" + card captură contact */
+.cbot-quick { padding: 8px 12px 0; background: #fff; }
+.cbot-leadtrigger { display: inline-flex; align-items: center; gap: 7px; width: 100%; justify-content: center; background: var(--accent-soft); border: 1px solid var(--terra); color: var(--terra-dark); border-radius: 10px; padding: 9px 12px; font-family: inherit; font-size: .86rem; font-weight: 700; cursor: pointer; transition: background .14s, color .14s; }
+.cbot-leadtrigger:hover { background: var(--terra); color: #fff; }
+.cbot-leadtrigger:hover svg { stroke: #fff; }
+.cbot-lead { align-self: stretch; background: #fff; border: 1px solid var(--terra); border-radius: 14px; padding: 14px; display: flex; flex-direction: column; gap: 8px; box-shadow: 0 6px 20px rgba(44,47,51,.08); }
+.cbot-lead-t { font-weight: 800; color: var(--navy); font-size: .95rem; }
+.cbot-lead-s { font-size: .82rem; color: var(--muted); line-height: 1.45; margin-bottom: 2px; }
+.cbot-lead input { border: 1px solid var(--line-strong); border-radius: 9px; padding: 9px 11px; font-family: inherit; font-size: .9rem; outline: none; }
+.cbot-lead input:focus { border-color: var(--terra); }
+.cbot-lead-err { color: #c0392b; font-size: .8rem; }
+.cbot-lead-actions { display: flex; align-items: center; gap: 10px; margin-top: 2px; }
+.cbot-lead-send { flex: 1; border: 0; border-radius: 10px; background: var(--terra); color: #fff; font-family: inherit; font-weight: 700; font-size: .88rem; padding: 10px; cursor: pointer; transition: background .14s; }
+.cbot-lead-send:hover { background: var(--terra-dark); }
+.cbot-lead-send:disabled { opacity: .6; cursor: default; }
+.cbot-lead-skip { border: 0; background: none; color: var(--muted); font-family: inherit; font-size: .82rem; cursor: pointer; text-decoration: underline; }
+.cbot-lead-skip:hover { color: var(--navy); }
 @media (max-width: 480px) {
   #cbot { right: 14px; bottom: 14px; }
   .cbot-panel { bottom: 70px; height: calc(100vh - 100px); }
