@@ -373,27 +373,32 @@ function injectChatbot(s) {
   }
   function removeChips() { const c = msgsBox.querySelector('.cbot-chips'); if (c) c.remove(); }
 
-  // ── Captură de contact (nume / email / telefon) ──
+  // ── Captură de contact OBLIGATORIE (nume / email / telefon) ──
   const quickBar = wrap.querySelector('#cbot-quick');
-  const leadTrigger = wrap.querySelector('#cbot-leadtrigger');
+  const sendBtn = form.querySelector('button[type="submit"]');
+  let gating = false; // true cât timp așteptăm datele de contact
+  if (quickBar) quickBar.style.display = 'none'; // formularul e afișat la început; bara nu mai e necesară
   function leadDone() { try { return localStorage.getItem('cbot_lead_' + cbotSid) === '1'; } catch (e) { return false; } }
-  function markLeadDone() { try { localStorage.setItem('cbot_lead_' + cbotSid, '1'); } catch (e) {} if (quickBar) quickBar.style.display = 'none'; }
+  function markLeadDone() { try { localStorage.setItem('cbot_lead_' + cbotSid, '1'); } catch (e) {} }
+  function setChatEnabled(on) {
+    input.disabled = !on; if (sendBtn) sendBtn.disabled = !on;
+    input.placeholder = on ? 'Scrie un mesaj…' : 'Completează datele de contact ca să începem…';
+  }
   function renderLeadCard() {
     if (leadDone()) return;
     if (msgsBox.querySelector('.cbot-lead')) { msgsBox.querySelector('.cbot-lead').scrollIntoView({ block: 'nearest' }); return; }
     const card = document.createElement('div');
     card.className = 'cbot-lead';
     card.innerHTML =
-      '<div class="cbot-lead-t">Vrei să te contacteze un consultant?</div>'
-      + '<div class="cbot-lead-s">Lasă-ți datele și revenim cu o ofertă pentru proiectul tău.</div>'
-      + '<input type="text" class="cbot-lead-name" placeholder="Nume și prenume" autocomplete="name" maxlength="120">'
-      + '<input type="email" class="cbot-lead-email" placeholder="Email" autocomplete="email" inputmode="email" maxlength="160">'
-      + '<input type="tel" class="cbot-lead-phone" placeholder="Telefon" autocomplete="tel" inputmode="tel" maxlength="40">'
+      '<div class="cbot-lead-t">Ca să continuăm, lasă-ne datele tale</div>'
+      + '<div class="cbot-lead-s">Toate câmpurile sunt obligatorii. Un consultant ExpoTigla te contactează cu o ofertă.</div>'
+      + '<input type="text" class="cbot-lead-name" placeholder="Nume și prenume *" autocomplete="name" maxlength="120" required>'
+      + '<input type="email" class="cbot-lead-email" placeholder="Email *" autocomplete="email" inputmode="email" maxlength="160" required>'
+      + '<input type="tel" class="cbot-lead-phone" placeholder="Telefon *" autocomplete="tel" inputmode="tel" maxlength="40" required>'
       + '<div class="cbot-lead-err" hidden></div>'
-      + '<div class="cbot-lead-actions"><button type="button" class="cbot-lead-send">Trimite datele</button><button type="button" class="cbot-lead-skip">Poate mai târziu</button></div>';
+      + '<div class="cbot-lead-actions"><button type="button" class="cbot-lead-send">Trimite datele</button></div>';
     msgsBox.appendChild(card); scroll();
     const err = card.querySelector('.cbot-lead-err');
-    card.querySelector('.cbot-lead-skip').addEventListener('click', () => card.remove());
     card.querySelector('.cbot-lead-send').addEventListener('click', () => submitLead(card, err));
     setTimeout(() => { const n = card.querySelector('.cbot-lead-name'); if (n) n.focus(); }, 60);
   }
@@ -402,9 +407,9 @@ function injectChatbot(s) {
     const email = card.querySelector('.cbot-lead-email').value.trim();
     const phone = card.querySelector('.cbot-lead-phone').value.trim();
     const showErr = (m) => { err.textContent = m; err.hidden = false; };
-    if (!name) return showErr('Te rog scrie numele.');
-    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return showErr('Adresa de email nu pare validă.');
-    if (phone.replace(/\D/g, '').length < 9) return showErr('Numărul de telefon nu pare valid.');
+    if (!name) return showErr('Numele este obligatoriu.');
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return showErr('Adresa de email este obligatorie și trebuie să fie validă.');
+    if (phone.replace(/\D/g, '').length < 9) return showErr('Numărul de telefon este obligatoriu și trebuie să fie valid.');
     err.hidden = true;
     const btn = card.querySelector('.cbot-lead-send'); btn.disabled = true; btn.textContent = 'Se trimite…';
     const lastMsgs = history.filter(h => h.role === 'user').slice(-3).map(h => h.content).join(' | ');
@@ -417,16 +422,20 @@ function injectChatbot(s) {
       const d = await r.json().catch(() => ({}));
       if (r.ok && d.ok) {
         markLeadDone(); card.remove();
-        addBubble('bot', 'Îți mulțumim, ' + name + '! ✅ Un consultant ExpoTigla te va contacta în cel mai scurt timp. Între timp, cu ce te mai pot ajuta?');
+        addBubble('bot', 'Îți mulțumim, ' + name + '! ✅ Un consultant ExpoTigla te va contacta în cel mai scurt timp. Acum, cu ce te pot ajuta?');
+        if (gating) { gating = false; setChatEnabled(true); renderChips(); setTimeout(() => input.focus(), 60); }
       } else { btn.disabled = false; btn.textContent = 'Trimite datele'; showErr((d && d.error) || 'Nu am putut trimite datele. Încearcă din nou.'); }
     } catch (e) { btn.disabled = false; btn.textContent = 'Trimite datele'; showErr('Eroare de conexiune. Încearcă din nou.'); }
   }
-  if (leadTrigger) leadTrigger.addEventListener('click', renderLeadCard);
-  if (quickBar && leadDone()) quickBar.style.display = 'none';
 
   function openPanel() {
     wrap.classList.add('open');
-    if (!msgsBox.dataset.init) { addBubble('bot', greeting); renderChips(); msgsBox.dataset.init = '1'; setTimeout(() => input.focus(), 60); }
+    if (!msgsBox.dataset.init) {
+      msgsBox.dataset.init = '1';
+      addBubble('bot', greeting);
+      if (leadDone()) { renderChips(); setChatEnabled(true); setTimeout(() => input.focus(), 60); }
+      else { gating = true; setChatEnabled(false); renderLeadCard(); }
+    }
   }
   function closePanel() { wrap.classList.remove('open'); }
   fab.addEventListener('click', () => wrap.classList.contains('open') ? closePanel() : openPanel());
@@ -452,7 +461,7 @@ function injectChatbot(s) {
   openPanel = function () { hideTeaser(true); _openPanel(); };
   async function sendMessage(text) {
     text = (text || '').trim();
-    if (!text || busy) return;
+    if (!text || busy || gating) return;
     removeChips();
     input.value = '';
     addBubble('user', text);
