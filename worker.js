@@ -1056,6 +1056,13 @@ async function quoteCreate(request, env) {
     mail = await sendEmail(env, payload);
   }
   if (env.DB && !saved && !mail.delivered) return json({ ok: false, error: 'Nu am putut înregistra cererea. Te rugăm sună-ne.' }, 500);
+  // Confirmare către CLIENT (best-effort; necesită RESEND_API_KEY + domeniu verificat)
+  if (email && env.RESEND_API_KEY) {
+    await sendEmail(env, { to: [email], subject: `Am primit cererea ta ${ref} — ExpoTigla`,
+      html: `<h2>Îți mulțumim, ${esc(nume)}!</h2>
+        <p>Am primit cererea ta cu numărul <b>${esc(ref)}</b>. Un consultant ExpoTigla te va contacta în <b>maxim 24 de ore</b> pentru detalii și ofertă.</p>
+        <p>Dacă e ceva urgent, ne poți suna direct.<br>Ai întrebări? Poți răspunde la acest email.<br>— Echipa ExpoTigla</p>` });
+  }
   return json({ ok: true, ref });
 }
 
