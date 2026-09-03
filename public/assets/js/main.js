@@ -222,11 +222,31 @@ function applySettings(s) {
     } catch (e) { /* config invalid → păstrează meniul implicit */ }
     injectProduseDropdown(); // re-aplică dropdown-ul după reconstruirea meniului
   }
+  // Câmpuri de contact care se ASCUND complet dacă nu sunt completate în admin
+  // (ca să nu apară placeholder-e goale: telefon, email, program, adresă).
+  const HIDE_IF_EMPTY = new Set(['phone', 'email', 'email2', 'schedule', 'address']);
+  function hideEmptyField(el) {
+    el.style.display = 'none';
+    // ascunde și <br>-urile alăturate, ca să nu rămână spații goale
+    ['previousElementSibling', 'nextElementSibling'].forEach(k => { const b = el[k]; if (b && b.tagName === 'BR') b.style.display = 'none'; });
+    // urcă și ascunde învelișul (linie <p>/<li>, span din bara de sus, cardul cu titlu)
+    // dacă nu mai are niciun câmp vizibil în el.
+    let wrap = el.closest('p, li, .tb-hide') || el.parentElement;
+    let guard = 0;
+    while (wrap && guard++ < 3) {
+      const fields = wrap.querySelectorAll('[data-site]');
+      if (!fields.length || [...fields].some(f => f.style.display !== 'none')) break;
+      wrap.style.display = 'none';
+      const parent = wrap.parentElement;
+      if (!parent || parent.matches('body, header, footer, section, .container, .header-inner, .footer-col, .site-footer, .site-header')) break;
+      wrap = parent;
+    }
+  }
   // Câmpuri marcate cu data-site (telefon, email, adresă, program, social…)
   document.querySelectorAll('[data-site]').forEach(el => {
     const key = el.getAttribute('data-site');
     const val = s[key];
-    if (val == null || val === '') return;
+    if (val == null || val === '') { if (HIDE_IF_EMPTY.has(key)) hideEmptyField(el); return; }
     const mode = el.getAttribute('data-site-attr');
     if (mode === 'tel') el.setAttribute('href', 'tel:' + val.replace(/\s+/g, ''));
     else if (mode === 'mail') el.setAttribute('href', 'mailto:' + val);
