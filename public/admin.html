@@ -594,6 +594,17 @@
           <span class="form-status" id="tracking-status"></span>
         </div>
       </form>
+
+      <div style="background:var(--em-card);border:1px solid var(--em-border);border-radius:12px;padding:20px;margin-top:24px;max-width:820px">
+        <h3 style="font-size:1.05rem;margin-bottom:6px">Diagnostic email (Resend)</h3>
+        <p style="color:var(--em-muted,#8a8f98);font-size:.9rem;margin:0 0 16px">Verifică dacă serverul „vede" cheia Resend și adresele, apoi trimite un email de test real.</p>
+        <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end">
+          <button type="button" class="btn btn-outline" style="padding:10px 18px" onclick="mailCheck()">Verifică configurarea</button>
+          <div class="field" style="margin:0;flex:1;min-width:220px"><label>Trimite test la</label><input id="mailtest-to" type="email" placeholder="adresa@ta.ro"></div>
+          <button type="button" class="btn btn-primary" style="padding:10px 18px" onclick="mailTest()">Trimite email de test</button>
+        </div>
+        <pre id="mailtest-out" style="margin-top:16px;background:#0d0f12;color:#d7dae0;padding:14px;border-radius:8px;font-size:.82rem;white-space:pre-wrap;word-break:break-word;display:none"></pre>
+      </div>
     </div>
 
     <div id="tab-setari" style="display:none">
@@ -1378,6 +1389,38 @@
         if (d.ok) { st.className = 'form-status'; st.style.color = '#1a8f4c'; st.textContent = '✓ Salvat. Se aplică pe site în ~1 minut.'; }
         else { st.className = 'form-status err'; st.style.color = ''; st.textContent = d.error || 'Eroare.'; }
       } catch (err) { st.className = 'form-status err'; st.style.color = ''; st.textContent = err.message; }
+    }
+
+    // ── Diagnostic email (Resend) ──
+    function mailOut(txt) { const o = document.getElementById('mailtest-out'); o.style.display = 'block'; o.textContent = txt; }
+    async function mailCheck() {
+      mailOut('Se verifică…');
+      try {
+        const d = await (await api('/admin/mailcheck')).json();
+        mailOut(
+          'Cheie Resend (RESEND_API_KEY): ' + (d.resend_key ? '✅ vizibilă' : '❌ LIPSEȘTE în server') + '\n' +
+          'Expeditor (QUOTE_FROM): ' + (d.quote_from || '— (implicit onboarding@resend.dev)') + '\n' +
+          'Primire cereri (QUOTE_TO_EMAIL): ' + (d.quote_to || '❌ nesetat') + '\n' +
+          'Primire comenzi (ORDER_TO_EMAIL): ' + (d.order_to || '— (folosește QUOTE_TO_EMAIL)')
+        );
+      } catch (e) { mailOut('Eroare: ' + e.message); }
+    }
+    async function mailTest() {
+      const to = (document.getElementById('mailtest-to').value || '').trim();
+      if (!to) { mailOut('Completează o adresă de email pentru test.'); return; }
+      mailOut('Se trimite emailul de test către ' + to + '…');
+      try {
+        const d = await (await api('/admin/mail-test', { method: 'POST', body: JSON.stringify({ to }) })).json();
+        if (d.ok) {
+          mailOut('✅ TRIMIS cu succes!\nDe la: ' + d.from + '\nCătre: ' + d.to + '\n\nVerifică inbox-ul (și Spam) + Resend → Emails. Ar trebui să apară acum.');
+        } else {
+          mailOut('❌ NU s-a trimis.\nCheie Resend vizibilă: ' + (d.resend_key ? 'da' : 'NU') + '\nDe la: ' + (d.from || '—') + '\nEroare: ' + (d.error || 'necunoscută') +
+            '\n\nInterpretare:\n' +
+            (!d.resend_key ? '→ Serverul nu vede RESEND_API_KEY: re-salvează secretul în Cloudflare și fă redeploy.\n' : '') +
+            (/403|not verified|domain/i.test(d.error || '') ? '→ Domeniul din QUOTE_FROM nu e verificat în Resend (sau adresa e pe alt domeniu).\n' : '') +
+            (/401|api key/i.test(d.error || '') ? '→ Cheie API greșită.\n' : ''));
+        }
+      } catch (e) { mailOut('Eroare: ' + e.message); }
     }
 
     // ── Cum cumpăr ──

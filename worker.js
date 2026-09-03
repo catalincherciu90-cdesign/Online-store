@@ -201,6 +201,35 @@ async function adminDelete(request, env, username) {
   return json({ ok: true });
 }
 
+/* ── Diagnostic email (Resend) — doar pentru admin ─────────────────────────── */
+async function mailCheck(request, env) {
+  if (!await requireAdmin(request, env)) return json({ error: 'Neautorizat' }, 401);
+  return json({
+    resend_key: !!env.RESEND_API_KEY,
+    quote_from: env.QUOTE_FROM || null,
+    quote_to: env.QUOTE_TO_EMAIL || null,
+    order_to: env.ORDER_TO_EMAIL || null,
+  });
+}
+async function mailTest(request, env) {
+  if (!await requireAdmin(request, env)) return json({ error: 'Neautorizat' }, 401);
+  const { to } = await request.json().catch(() => ({}));
+  const dest = ((to || env.QUOTE_TO_EMAIL || '') + '').trim();
+  if (!EMAIL_RE.test(dest)) return json({ ok: false, error: 'Completează o adresă de email validă pentru test.' }, 400);
+  const mail = await sendEmail(env, {
+    to: [dest],
+    subject: 'Test email — ExpoTigla',
+    html: '<h2>Test reușit ✅</h2><p>Acesta este un email de test trimis din configurarea ExpoTigla. Dacă îl vezi, trimiterea prin Resend funcționează corect.</p>',
+  });
+  return json({
+    ok: !!mail.delivered,
+    resend_key: !!env.RESEND_API_KEY,
+    from: env.QUOTE_FROM || 'onboarding@resend.dev (implicit)',
+    to: dest,
+    error: mail.error || null,
+  });
+}
+
 /* ── Conturi clienți (înregistrare / autentificare / istoric comenzi) ──────── */
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 const CUSTOMER_TOKEN_TTL = 30 * 24 * 3600; // 30 de zile
@@ -1097,6 +1126,9 @@ async function api(request, env, url) {
   if (p === '/api/orders' && m === 'GET') return ordersList(request, env);
   const osm = p.match(/^\/api\/orders\/(\d+)\/status$/);
   if (osm && (m === 'PUT' || m === 'POST')) return orderStatusUpdate(request, env, Number(osm[1]));
+  // Diagnostic email (admin)
+  if (p === '/api/admin/mailcheck' && m === 'GET') return mailCheck(request, env);
+  if (p === '/api/admin/mail-test' && m === 'POST') return mailTest(request, env);
   // Conturi clienți
   if (p === '/api/account/register' && m === 'POST') return accountRegister(request, env);
   if (p === '/api/account/login' && m === 'POST') return accountLogin(request, env);
