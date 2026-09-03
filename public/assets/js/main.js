@@ -261,6 +261,15 @@ function applySettings(s) {
       el.textContent = '';
       el.appendChild(a);
     }
+    else if ((key === 'email' || key === 'email2') && el.tagName !== 'A') {
+      // Adresă de email → mailto (tap = deschide compunerea unui email)
+      const a = document.createElement('a');
+      a.href = 'mailto:' + val.trim();
+      a.className = 'tel-link mail-link';
+      a.textContent = val;
+      el.textContent = '';
+      el.appendChild(a);
+    }
     else el.textContent = val;
   });
   // Iconițe social în footer (doar rețelele pentru care există link în setări)
