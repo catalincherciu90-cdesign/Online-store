@@ -243,13 +243,15 @@ async function hydrateImages(root) {
     img.setAttribute('data-hydrated', '1');
     const key = img.getAttribute('data-imgkey');
     const [type, id] = key.split(':');
+    // Fallback atașat ÎNTOTDEAUNA (inclusiv pe calea IndexedDB), ca o imagine
+    // care nu se încarcă să nu rămână „stricată" (mai ales pe mobil).
+    img.onerror = () => mediaFallback(img, type, id);
     if (stored.has(key)) {
       try {
         const blob = await withTimeout(ImgStore.get(key), 1500);
         if (blob) { img.src = URL.createObjectURL(blob); continue; }
       } catch (e) { /* cade pe fișier/SVG */ }
     }
-    img.onerror = () => mediaFallback(img, type, id);
     img.src = img.getAttribute('data-file');
   }
 }

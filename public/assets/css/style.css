@@ -68,6 +68,10 @@ select:focus-visible, textarea:focus-visible, [tabindex]:focus-visible {
 
 /* Poze reale de produs/categorie: umplu containerul, decupare centrată */
 img.pmedia { width: 100%; height: 100%; object-fit: cover; }
+/* Cât timp o imagine (cu poză din setări) încă nu are src setat de hydrateImages,
+   o ascundem ca să NU apară iconița de „imagine stricată" (mai ales pe mobil, cât
+   se citește IndexedDB). Fundalul containerului rămâne vizibil dedesubt. */
+img[data-imgkey]:not([src]) { visibility: hidden; }
 .product-gallery img.pmedia { object-fit: contain; }
 
 .container {
@@ -371,7 +375,7 @@ h2 { font-size: clamp(1.6rem, 3vw, 2.35rem); letter-spacing: -0.028em; }
   overflow: hidden; box-shadow: var(--shadow-sm); transition: box-shadow .25s, transform .2s;
 }
 .cat-tile:hover { box-shadow: var(--shadow-lg); transform: translateY(-3px); }
-.cat-tile-media { position: absolute; inset: 0; }
+.cat-tile-media { position: absolute; inset: 0; background: linear-gradient(135deg, #2c2f33 0%, #3d4147 62%, #5a4a22 150%); }
 .cat-tile-media img, .cat-tile-media svg { width: 100%; height: 100%; object-fit: cover; transition: transform .45s ease; }
 .cat-tile:hover .cat-tile-media img, .cat-tile:hover .cat-tile-media svg { transform: scale(1.06); }
 .cat-tile-overlay {
