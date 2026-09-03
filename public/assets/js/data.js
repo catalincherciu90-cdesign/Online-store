@@ -246,13 +246,19 @@ async function hydrateImages(root) {
     // Fallback atașat ÎNTOTDEAUNA (inclusiv pe calea IndexedDB), ca o imagine
     // care nu se încarcă să nu rămână „stricată" (mai ales pe mobil).
     img.onerror = () => mediaFallback(img, type, id);
-    if (stored.has(key)) {
+    const dataFile = img.getAttribute('data-file');
+    // Dacă există poză în baza de date (URL /api/...), aceea e sursa unică pentru
+    // TOATE dispozitivele — nu mai folosim copia locală din IndexedDB (care ar
+    // putea diferi de la un browser la altul). IndexedDB rămâne doar ca ultimă
+    // soluție când nu există poză pe server (data-file = fișier din repo).
+    const preferServer = /^\/api\//.test(dataFile || '');
+    if (!preferServer && stored.has(key)) {
       try {
         const blob = await withTimeout(ImgStore.get(key), 1500);
         if (blob) { img.src = URL.createObjectURL(blob); continue; }
       } catch (e) { /* cade pe fișier/SVG */ }
     }
-    img.src = img.getAttribute('data-file');
+    img.src = dataFile;
   }
 }
 /* Înlocuiește <img> stricat cu un fallback curat (fără ilustrație placeholder) */
