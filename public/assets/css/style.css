@@ -168,6 +168,9 @@ h2 { font-size: clamp(1.6rem, 3vw, 2.35rem); letter-spacing: -0.028em; }
 .account-btn { display: inline-flex; align-items: center; justify-content: center; width: 42px; height: 42px; border-radius: var(--radius-sm); border: 1px solid var(--line-strong); background: #fff; color: var(--navy); transition: border-color .18s, color .18s, transform .15s; }
 .account-btn:hover, .account-btn.active { border-color: var(--terra); color: var(--terra-dark); transform: translateY(-1px); }
 .account-btn svg { width: 20px; height: 20px; }
+/* Numere de telefon click-to-call (injectate din setări) */
+.tel-link { color: inherit; text-decoration: none; font-weight: 700; white-space: nowrap; transition: color .15s; }
+.tel-link:hover { color: var(--terra); text-decoration: underline; }
 .cart-total { font-weight: 700; font-size: .92rem; white-space: nowrap; padding-left: 8px; margin-left: 2px; border-left: 1px solid rgba(255,255,255,.22); }
 .cart-count {
   position: absolute; top: -8px; right: -8px; min-width: 22px; height: 22px;

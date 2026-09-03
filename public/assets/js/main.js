@@ -252,6 +252,15 @@ function applySettings(s) {
     else if (mode === 'mail') el.setAttribute('href', 'mailto:' + val);
     else if (mode === 'href') el.setAttribute('href', val);
     else if (mode === 'src') { el.setAttribute('src', val); el.style.display = ''; const fig = el.closest('[data-site-figure]'); if (fig) fig.style.display = ''; }
+    else if (key === 'phone' && el.tagName !== 'A') {
+      // Număr de telefon → click-to-call (tap = sună direct)
+      const a = document.createElement('a');
+      a.href = 'tel:' + val.replace(/[^\d+]/g, '');
+      a.className = 'tel-link';
+      a.textContent = val;
+      el.textContent = '';
+      el.appendChild(a);
+    }
     else el.textContent = val;
   });
   // Iconițe social în footer (doar rețelele pentru care există link în setări)
