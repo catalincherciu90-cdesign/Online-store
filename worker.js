@@ -60,6 +60,14 @@ async function requireAdmin(request, env) {
   try { const p = await verifyJWT(token, env.JWT_SECRET); return p && p.admin ? p : null; }
   catch { return null; }
 }
+// Autentificare client (cont propriu). Tokenul poartă emailul clientului.
+async function requireCustomer(request, env) {
+  if (!env.JWT_SECRET) return null;
+  const token = (request.headers.get('Authorization') || '').replace(/^Bearer\s+/, '');
+  if (!token) return null;
+  try { const p = await verifyJWT(token, env.JWT_SECRET); return p && p.customer ? p : null; }
+  catch { return null; }
+}
 
 // Auto-migrare: creează tabelele care ar putea lipsi (idempotent, CREATE IF NOT
 // EXISTS). Rulează o singură dată per isolate, ca site-ul să meargă fără să fie
@@ -81,6 +89,7 @@ async function ensureSchema(env) {
         `CREATE TABLE IF NOT EXISTS chat_messages (id INTEGER PRIMARY KEY AUTOINCREMENT, session_id TEXT, role TEXT, content TEXT, created_at TEXT DEFAULT (datetime('now')))`,
         `CREATE INDEX IF NOT EXISTS idx_chat_session ON chat_messages (session_id, id)`,
         `CREATE TABLE IF NOT EXISTS categories (id TEXT PRIMARY KEY, name TEXT NOT NULL, tag TEXT, descr TEXT, icon TEXT, options TEXT, image TEXT, sort INTEGER DEFAULT 0, active INTEGER NOT NULL DEFAULT 1)`,
+        `CREATE TABLE IF NOT EXISTS customers (email TEXT PRIMARY KEY, pass_hash TEXT NOT NULL, pass_salt TEXT NOT NULL, name TEXT, phone TEXT, created_at TEXT DEFAULT (datetime('now')))`,
       ];
       for (const s of stmts) { try { await env.DB.prepare(s).run(); } catch (e) { console.error('ensureSchema', e); } }
       // Coloane adăugate ulterior pe produse (ALTER nu e idempotent → ignoră „duplicate column").
@@ -190,6 +199,65 @@ async function adminDelete(request, env, username) {
   if (!env.DB) return json({ error: 'Baza de date nu este configurată.' }, 500);
   await env.DB.prepare('DELETE FROM admins WHERE username=?').bind((username || '').toLowerCase()).run();
   return json({ ok: true });
+}
+
+/* ── Conturi clienți (înregistrare / autentificare / istoric comenzi) ──────── */
+const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+const CUSTOMER_TOKEN_TTL = 30 * 24 * 3600; // 30 de zile
+async function accountRegister(request, env) {
+  if (!env.JWT_SECRET) return json({ ok: false, error: 'Autentificare neconfigurată pe server.' }, 500);
+  if (!env.DB) return json({ ok: false, error: 'Baza de date nu este configurată.' }, 500);
+  const v = await request.json().catch(() => ({}));
+  const email = clip((v.email || '').trim().toLowerCase(), 160);
+  const name = clip((v.name || '').trim(), 120);
+  const phone = clip((v.phone || '').trim(), 40);
+  const password = String(v.password || '');
+  if (!EMAIL_RE.test(email)) return json({ ok: false, error: 'Adresă de email invalidă.' }, 400);
+  if (password.length < 6) return json({ ok: false, error: 'Parola trebuie să aibă minim 6 caractere.' }, 400);
+  if (!name) return json({ ok: false, error: 'Numele este obligatoriu.' }, 400);
+  const existing = await env.DB.prepare('SELECT email FROM customers WHERE email=?').bind(email).first();
+  if (existing) return json({ ok: false, error: 'Există deja un cont cu acest email. Autentifică-te.' }, 409);
+  const { hash, salt } = await hashPassword(password);
+  await env.DB.prepare('INSERT INTO customers (email, pass_hash, pass_salt, name, phone) VALUES (?,?,?,?,?)').bind(email, hash, salt, name, phone).run();
+  const token = await signJWT({ customer: email, name }, env.JWT_SECRET, CUSTOMER_TOKEN_TTL);
+  return json({ ok: true, token, name, email });
+}
+async function accountLogin(request, env) {
+  if (!env.JWT_SECRET) return json({ ok: false, error: 'Autentificare neconfigurată pe server.' }, 500);
+  if (!env.DB) return json({ ok: false, error: 'Baza de date nu este configurată.' }, 500);
+  const v = await request.json().catch(() => ({}));
+  const email = clip((v.email || '').trim().toLowerCase(), 160);
+  const password = String(v.password || '');
+  if (!email || !password) return json({ ok: false, error: 'Completează email și parolă.' }, 400);
+  const row = await env.DB.prepare('SELECT * FROM customers WHERE email=?').bind(email).first();
+  if (row) {
+    const { hash } = await hashPassword(password, row.pass_salt);
+    if (safeEqual(hash, row.pass_hash)) {
+      const token = await signJWT({ customer: email, name: row.name || '' }, env.JWT_SECRET, CUSTOMER_TOKEN_TTL);
+      return json({ ok: true, token, name: row.name || '', email });
+    }
+  }
+  return json({ ok: false, error: 'Email sau parolă greșită.' }, 401);
+}
+async function accountMe(request, env) {
+  const c = await requireCustomer(request, env);
+  if (!c) return json({ error: 'Neautorizat' }, 401);
+  if (!env.DB) return json({ error: 'Baza de date nu este configurată.' }, 500);
+  const row = await env.DB.prepare('SELECT email, name, phone, created_at FROM customers WHERE email=?').bind(c.customer).first();
+  if (!row) return json({ error: 'Cont inexistent.' }, 404);
+  return json(row);
+}
+async function accountOrders(request, env) {
+  const c = await requireCustomer(request, env);
+  if (!c) return json({ error: 'Neautorizat' }, 401);
+  if (!env.DB) return json([]);
+  const r = await env.DB.prepare('SELECT id, ref, status, status_log, items, total, adresa, oras, judet, created_at FROM orders WHERE lower(email)=? ORDER BY id DESC LIMIT 100').bind(c.customer).all();
+  return json((r.results || []).map(o => ({
+    ref: o.ref, status: o.status || 'nou', total: o.total, created_at: o.created_at,
+    adresa: o.adresa, oras: o.oras, judet: o.judet,
+    items: o.items ? JSON.parse(o.items) : [],
+    statusLog: o.status_log ? JSON.parse(o.status_log) : [],
+  })));
 }
 
 async function productsList(env) {
@@ -1029,6 +1097,11 @@ async function api(request, env, url) {
   if (p === '/api/orders' && m === 'GET') return ordersList(request, env);
   const osm = p.match(/^\/api\/orders\/(\d+)\/status$/);
   if (osm && (m === 'PUT' || m === 'POST')) return orderStatusUpdate(request, env, Number(osm[1]));
+  // Conturi clienți
+  if (p === '/api/account/register' && m === 'POST') return accountRegister(request, env);
+  if (p === '/api/account/login' && m === 'POST') return accountLogin(request, env);
+  if (p === '/api/account/me' && m === 'GET') return accountMe(request, env);
+  if (p === '/api/account/orders' && m === 'GET') return accountOrders(request, env);
   if (p === '/api/quotes' && m === 'GET') return quotesList(request, env);
   if (p === '/api/order' && m === 'POST') return orderCreate(request, env);
   if (p === '/api/quote' && m === 'POST') return quoteCreate(request, env);
