@@ -3,6 +3,14 @@ name = "online-store"
 main = "worker.js"
 compatibility_date = "2024-11-01"
 
+# Configurare email (Resend). NU sunt secrete — doar adrese/expeditor.
+# Le ținem aici ca să persiste la fiecare deploy (variabilele Text din dashboard
+# sunt șterse de `wrangler deploy`). Cheia RESEND_API_KEY rămâne SECRET în dashboard.
+[vars]
+QUOTE_FROM = "ExpoTigla <no-reply@expotigla.ro>"
+QUOTE_TO_EMAIL = "comenzi@online.expotigla.ro"
+ORDER_TO_EMAIL = "comenzi@online.expotigla.ro"
+
 # Site static din public/ (servit prin binding-ul ASSETS din worker.js)
 # run_worker_first = worker-ul rulează ÎNAINTEA servirii fișierelor statice,
 # ca să poată aplica modul „În curând", tracking și SEO în <head> pe paginile HTML.
