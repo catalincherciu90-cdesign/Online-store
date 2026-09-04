@@ -3,4 +3,4 @@
   X-Frame-Options: DENY
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: geolocation=(), microphone=(), camera=()
-  Content-Security-Policy: default-src 'self'; img-src 'self' data: https://r3.minicrm.ro; style-src 'self' 'unsafe-inline' https://r3.minicrm.ro https://fonts.googleapis.com; script-src 'self' 'unsafe-inline' https://r3.minicrm.ro; connect-src 'self' https://r3.minicrm.ro; font-src 'self' data: https://fonts.gstatic.com; base-uri 'self'; form-action 'self' https://r3.minicrm.ro; frame-src https://r3.minicrm.ro; frame-ancestors 'none'; object-src 'none'
+  Content-Security-Policy: default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; script-src 'self' 'unsafe-inline'; connect-src 'self'; font-src 'self' data: https://fonts.gstatic.com; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'

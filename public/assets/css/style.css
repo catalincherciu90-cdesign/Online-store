@@ -982,38 +982,6 @@ a.pd-doc:hover { border-color: var(--terra); }
 .despre-hero{ display:grid; grid-template-columns:1.05fr .95fr; gap:44px; align-items:center; }
 @media (max-width:760px){ .despre-hero{ grid-template-columns:1fr; gap:24px; } }
 
-/* ── Formular MiniCRM (Cere ofertă + Configurator) — stilizare pe brand ────── */
-#Web { max-width: 640px; margin: 0 auto; }
-#Web fieldset { border: 0 !important; padding: 0 !important; margin: 0 !important; display: grid !important; grid-template-columns: 1fr 1fr; gap: 0 18px; }
-#Web legend { grid-column: 1 / -1; font-size: 1.05rem; font-weight: 800; color: var(--navy); padding: 0; margin: 0 0 18px; text-align: left !important; float: none !important; width: auto !important; }
-#Web .InputBlock { margin: 0 0 16px !important; padding: 0 !important; display: flex !important; flex-direction: column !important; align-items: stretch !important; min-width: 0; float: none !important; width: auto !important; }
-#Web .InputBlock label { display: block !important; text-align: left !important; float: none !important; width: auto !important; font-size: .82rem !important; font-weight: 700 !important; color: var(--navy) !important; margin: 0 0 6px !important; padding: 0 !important; }
-#Web .InputBlock label.Required::after { content: " *"; color: var(--terra-dark); }
-#Web input[type="text"], #Web input:not([type]) {
-  display: block !important; width: 100% !important; max-width: 100% !important; box-sizing: border-box !important; margin: 0 !important;
-  border: 1px solid var(--line-strong) !important; border-radius: 10px !important; height: auto !important;
-  padding: 12px 13px !important; font-family: inherit; font-size: .95rem; outline: none; background: #fff !important; color: var(--ink, #26282b) !important;
-}
-#Web input[type="text"]:focus, #Web input:not([type]):focus { border-color: var(--terra) !important; box-shadow: 0 0 0 3px rgba(215,154,8,.14); }
-/* câmpuri pe toată lățimea */
-#Web .InputBlock:has(#Contact_Email_3410),
-#Web .InputBlock:has(#Project_ConsumLunarDeEnergie_3408),
-#Web .InputBlock:has(#Project_Judet_3408),
-#Web .InputBlock:has(#Dummy_GDPR_Contribution_) { grid-column: 1 / -1; }
-/* acord GDPR */
-#Web .SetLabel { display: flex; gap: 9px; align-items: flex-start; cursor: pointer; }
-#Web .SetLabel input[type="checkbox"] { width: 18px; height: 18px; margin-top: 2px; flex-shrink: 0; accent-color: var(--terra); }
-#Web .CheckBoxLabel { font-size: .85rem; line-height: 1.5; color: var(--muted); font-weight: 400; }
-#Web .CheckBoxLabel a { color: var(--terra-dark); font-weight: 700; }
-/* mesajul de răspuns */
-#Web .Response { grid-column: 1 / -1; margin: 4px 0 12px; padding: 12px 14px; border-radius: 10px; font-size: .9rem; background: var(--accent-soft); border: 1px solid var(--line); }
-/* buton trimite */
-#Web input[type="Submit" i] {
-  grid-column: 1 / -1; width: 100%; border: 0 !important; border-radius: 11px !important; background: var(--terra) !important; color: #fff !important;
-  font-family: inherit; font-weight: 800; font-size: 1rem; padding: 14px !important; margin-top: 4px; cursor: pointer; transition: background .15s;
-}
-#Web input[type="Submit" i]:hover { background: var(--terra-dark) !important; }
-@media (max-width: 560px) { #Web fieldset { grid-template-columns: 1fr; } }
 
 /* Carusel produse recomandate (homepage) */
 .home-carousel { position: relative; }

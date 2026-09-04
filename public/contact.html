@@ -7,9 +7,6 @@
   <meta name="description" content="Contactează echipa ExpoTigla pentru o ofertă personalizată de sisteme de acoperiș. Consultanță tehnică gratuită.">
   <link rel="stylesheet" href="assets/css/style.css">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23d79a08' d='M12 3 2 12h3v8h14v-8h3z'/%3E%3C/svg%3E">
-  <!-- MiniCRM (formular Cere ofertă) — încărcat în head ca butonul să se lege corect -->
-  <script async src="https://r3.minicrm.ro/api/minicrm.js?t=1788356870"></script>
-  <link rel="stylesheet" href="https://r3.minicrm.ro/api/minicrm.css" />
 </head>
 <body>
 
@@ -70,51 +67,58 @@
 
       <div class="contact-form">
         <h3 style="margin-bottom:18px">Cere o ofertă</h3>
-        <!-- Formular MiniCRM (COMSTORE CONSTRUCT SRL) — scriptul e în <head> -->
-        <form formhash="89685-1d8v2sjdtc05ftrcehl22l9hkpuwkx" action="https://r3.minicrm.ro/Api/Signup" method="post" class="TurnKeyCRM" id="Web">
-          <fieldset>
-            <legend>Persoana</legend>
-            <div class="InputBlock">
-              <label for="Contact_LastName_3410">Nume</label>
-              <input data-field="LastName" data-table="Contact" data-type="Person" name="Contact[3410][LastName]" id="Contact_LastName_3410" language="RO" value type="text" />
+        <form class="checkout-form" id="contact-form" onsubmit="sendContact(event)">
+          <div class="field full">
+            <label>Tip client</label>
+            <div class="ctype-toggle">
+              <label><input type="radio" name="tip_client" value="fizica" checked onchange="toggleCompany(this.form)"> Persoană fizică</label>
+              <label><input type="radio" name="tip_client" value="juridica" onchange="toggleCompany(this.form)"> Persoană juridică</label>
             </div>
-            <div class="InputBlock">
-              <label for="Contact_FirstName_3410" class="Required">Prenume</label>
-              <input data-field="FirstName" data-table="Contact" data-type="Person" name="Contact[3410][FirstName]" id="Contact_FirstName_3410" language="RO" value type="text" />
+          </div>
+          <div class="company-fields" hidden>
+            <div class="field full"><label>Denumire firmă *</label><input name="firma" placeholder="SC Exemplu SRL"></div>
+            <div class="form-row">
+              <div class="field"><label>CUI *</label><input name="cui" placeholder="RO12345678"></div>
+              <div class="field"><label>Nr. Reg. Com.</label><input name="reg_com" placeholder="J40/1234/2020"></div>
             </div>
-            <div class="InputBlock">
-              <label for="Contact_Email_3410" class="Required">Email</label>
-              <input data-field="Email" data-table="Contact" data-type="Person" name="Contact[3410][Email]" id="Contact_Email_3410" language="RO" value type="text" />
-            </div>
-            <div class="InputBlock">
-              <label for="Contact_Phone_3410">Telefon</label>
-              <input data-field="Phone" data-table="Contact" data-type="Person" name="Contact[3410][Phone]" id="Contact_Phone_3410" language="RO" value type="text" />
-            </div>
-            <div class="InputBlock">
-              <label for="Project_TipulLucrarii2_3408">Tipul lucrarii</label>
-              <input data-field="TipulLucrarii2" data-table="Project" data-type name="Project[3408][TipulLucrarii2]" id="Project_TipulLucrarii2_3408" language="RO" value type="text" />
-            </div>
-            <div class="InputBlock">
-              <label for="Project_ConsumLunarDeEnergie_3408">Consum lunar de energie</label>
-              <input data-field="ConsumLunarDeEnergie" data-table="Project" data-type name="Project[3408][ConsumLunarDeEnergie]" id="Project_ConsumLunarDeEnergie_3408" language="RO" value type="text" />
-            </div>
-            <div class="InputBlock">
-              <label for="Project_Judet_3408">Judet</label>
-              <input data-field="Judet" data-table="Project" data-type name="Project[3408][Judet]" id="Project_Judet_3408" language="RO" value type="text" />
-            </div>
-            <div class="InputBlock">
-              <label for="Dummy_GDPR_Contribution_" class="Required">Acord de prelucrare a datelor</label>
-              <div data-field="GDPR_Contribution" data-table="Dummy" data-type id="Dummy_GDPR_Contribution_" language="RO" value>
-                <label class="SetLabel">
-                  <input id="Dummy_GDPR_Contribution__0" type="checkbox" value="1" name="Dummy[][GDPR_Contribution][]" />
-                  <span class="OverflowEllipsis CheckBoxLabel">Sunt de acord cu prelucrare a datelor cu caracter personal în <a href="https://www.minicrm.ro/gdpr/" target="_blank" rel="noopener">sistemul CRM</a> al COMSTORE CONSTRUCT SRL.</span>
-                </label>
-                <br />
+          </div>
+          <div class="form-row">
+            <div class="field"><label>Nume complet *</label><input name="nume" required></div>
+            <div class="field"><label>Telefon *</label><input name="telefon" type="tel" required></div>
+          </div>
+          <div class="field full"><label>Email *</label><input name="email" type="email" required></div>
+          <div class="field full">
+            <label>Tip proiect</label>
+            <select name="tip">
+              <option>Acoperiș casă</option>
+              <option>Acoperiș hală / industrial</option>
+              <option>Anexă / garaj</option>
+              <option>Doar materiale</option>
+              <option>Altele</option>
+            </select>
+          </div>
+          <div class="field full"><label>Suprafață aproximativă acoperiș (mp)</label><input name="suprafata" type="number" min="0" placeholder="ex. 120"></div>
+          <div class="field full"><label>Mesaj *</label><textarea name="mesaj" rows="4" required placeholder="Descrie proiectul: tip material dorit, culoare, termen etc."></textarea></div>
+
+          <div class="field full">
+            <label>Atașează planul acoperișului (opțional)</label>
+            <div class="plan-drop" id="plan-drop">
+              <input type="file" id="plan-input" name="plan" accept=".pdf,.jpg,.jpeg,.png,.webp,.dwg,.dxf,image/*,application/pdf" hidden>
+              <div id="plan-empty">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                <p>Trage fișierul aici sau <b>alege un fișier</b></p>
+                <small>PDF, JPG, PNG, DWG, DXF — max. 15 MB</small>
+              </div>
+              <div class="file-chip" id="plan-chip" hidden>
+                <span class="fc-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span>
+                <span class="fc-meta"><span class="fc-name" id="plan-name"></span><span class="fc-size" id="plan-size"></span></span>
+                <button type="button" class="fc-remove" id="plan-remove" title="Elimină">✕</button>
               </div>
             </div>
-          </fieldset>
-          <div id="Response_89685-1d8v2sjdtc05ftrcehl22l9hkpuwkx" style="display: none;" class="Response"></div>
-          <input id="Submit_89685-1d8v2sjdtc05ftrcehl22l9hkpuwkx" type="Submit" value="Trimite" />
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-block btn-lg" id="quote-submit">Trimite cererea</button>
+          <div class="form-status" id="form-status"></div>
         </form>
       </div>
     </div>
@@ -158,5 +162,79 @@
   <script src="assets/js/cart.js"></script>
   <script src="assets/js/main.js"></script>
   <script src="assets/js/data.js"></script>
+  <script>
+    const MAX_SIZE = 15 * 1024 * 1024; // 15 MB
+    const drop = document.getElementById('plan-drop');
+    const input = document.getElementById('plan-input');
+    const empty = document.getElementById('plan-empty');
+    const chip = document.getElementById('plan-chip');
+    const statusEl = document.getElementById('form-status');
+    const submitBtn = document.getElementById('quote-submit');
+
+    function fmtSize(b) {
+      if (b < 1024) return b + ' B';
+      if (b < 1048576) return (b / 1024).toFixed(0) + ' KB';
+      return (b / 1048576).toFixed(1) + ' MB';
+    }
+    function showFile(file) {
+      document.getElementById('plan-name').textContent = file.name;
+      document.getElementById('plan-size').textContent = fmtSize(file.size);
+      empty.hidden = true; chip.hidden = false;
+    }
+    function clearFile() {
+      input.value = ''; empty.hidden = false; chip.hidden = true;
+    }
+    function setStatus(msg, type) {
+      statusEl.textContent = msg;
+      statusEl.className = 'form-status ' + type;
+    }
+
+    // Selectare fișier
+    drop.addEventListener('click', e => { if (!e.target.closest('#plan-chip')) input.click(); });
+    input.addEventListener('change', () => {
+      const f = input.files[0];
+      if (!f) return clearFile();
+      if (f.size > MAX_SIZE) { setStatus('Fișierul e prea mare (max. 15 MB).', 'err'); clearFile(); return; }
+      statusEl.className = 'form-status';
+      showFile(f);
+    });
+    document.getElementById('plan-remove').addEventListener('click', clearFile);
+
+    // Drag & drop
+    ['dragenter', 'dragover'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('drag'); }));
+    ['dragleave', 'drop'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove('drag'); }));
+    drop.addEventListener('drop', e => {
+      const f = e.dataTransfer.files[0];
+      if (!f) return;
+      if (f.size > MAX_SIZE) { setStatus('Fișierul e prea mare (max. 15 MB).', 'err'); return; }
+      const dt = new DataTransfer(); dt.items.add(f); input.files = dt.files;
+      showFile(f);
+    });
+
+    // Trimitere cerere
+    async function sendContact(e) {
+      e.preventDefault();
+      const form = e.target;
+      const fd = new FormData(form);
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Se trimite...';
+      setStatus('', '');
+      try {
+        const res = await fetch('/api/quote', { method: 'POST', body: fd });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok && data.ok) {
+          setStatus('✓ Mulțumim! Cererea ta' + (data.ref ? ' (' + data.ref + ')' : '') + ' a fost trimisă. Te contactăm în maxim 24 de ore.', 'ok');
+          form.reset(); clearFile();
+        } else {
+          throw new Error(data.error || 'send failed');
+        }
+      } catch (err) {
+        setStatus('Nu am putut trimite cererea online. Sună-ne la 0740 000 000 sau scrie la oferte@acoperispro.ro.', 'err');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Trimite cererea';
+      }
+    }
+  </script>
 </body>
 </html>
