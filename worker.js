@@ -90,6 +90,7 @@ async function ensureSchema(env) {
         `CREATE INDEX IF NOT EXISTS idx_chat_session ON chat_messages (session_id, id)`,
         `CREATE TABLE IF NOT EXISTS categories (id TEXT PRIMARY KEY, name TEXT NOT NULL, tag TEXT, descr TEXT, icon TEXT, options TEXT, image TEXT, sort INTEGER DEFAULT 0, active INTEGER NOT NULL DEFAULT 1)`,
         `CREATE TABLE IF NOT EXISTS customers (email TEXT PRIMARY KEY, pass_hash TEXT NOT NULL, pass_salt TEXT NOT NULL, name TEXT, phone TEXT, created_at TEXT DEFAULT (datetime('now')))`,
+        `CREATE TABLE IF NOT EXISTS email_templates (id TEXT PRIMARY KEY, name TEXT NOT NULL, subject TEXT, blocks TEXT, updated_at TEXT DEFAULT (datetime('now')))`,
       ];
       for (const s of stmts) { try { await env.DB.prepare(s).run(); } catch (e) { console.error('ensureSchema', e); } }
       // Coloane adăugate ulterior pe produse (ALTER nu e idempotent → ignoră „duplicate column").
@@ -672,6 +673,95 @@ async function settingsSave(request, env) {
   return json({ ok: true });
 }
 
+// ── Bibliotecă șabloane email (reutilizabile pentru campanii) ───────────────
+async function emailTemplatesList(request, env) {
+  if (!await requireAdmin(request, env)) return json({ error: 'Neautorizat' }, 401);
+  if (!env.DB) return json({ items: [] });
+  const r = await env.DB.prepare('SELECT id,name,subject,blocks,updated_at FROM email_templates ORDER BY updated_at DESC').all();
+  return json({ items: r.results || [] });
+}
+async function emailTemplateSave(request, env) {
+  if (!await requireAdmin(request, env)) return json({ error: 'Neautorizat' }, 401);
+  if (!env.DB) return json({ error: 'Baza de date nu este configurată.' }, 500);
+  const b = await request.json().catch(() => null);
+  if (!b || !b.name || !String(b.name).trim()) return json({ error: 'Numele șablonului lipsește.' }, 400);
+  const id = (b.id && String(b.id)) || ('tpl_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7));
+  const blocks = typeof b.blocks === 'string' ? b.blocks : JSON.stringify(b.blocks || []);
+  if (blocks.length > 3000000) return json({ error: 'Șablon prea mare.' }, 413);
+  await env.DB.prepare('INSERT OR REPLACE INTO email_templates (id,name,subject,blocks,updated_at) VALUES (?,?,?,?,?)')
+    .bind(id, String(b.name).slice(0, 200), String(b.subject || '').slice(0, 500), blocks, new Date().toISOString()).run();
+  return json({ ok: true, id });
+}
+async function emailTemplateDelete(request, env, id) {
+  if (!await requireAdmin(request, env)) return json({ error: 'Neautorizat' }, 401);
+  if (env.DB) await env.DB.prepare('DELETE FROM email_templates WHERE id=?').bind(id).run();
+  return json({ ok: true });
+}
+
+// ── Integrare Mailchimp (proxy server-side; cheia nu ajunge în browser) ─────
+async function mcKey(env) {
+  let k = env.MAILCHIMP_API_KEY || '';
+  if (!k && env.DB) { try { const r = await env.DB.prepare("SELECT value FROM settings WHERE key='mailchimp_api_key'").first(); k = (r && r.value) || ''; } catch (e) {} }
+  return String(k).trim();
+}
+const mcDc = key => { const i = key.lastIndexOf('-'); return i > 0 ? key.slice(i + 1) : ''; };
+async function mcFetch(env, path, method, body) {
+  const key = await mcKey(env), dc = mcDc(key);
+  if (!key || !dc) return { error: 'Cheia Mailchimp lipsește sau are format invalid (trebuie să se termine în „-usX").' };
+  try {
+    const res = await fetch(`https://${dc}.api.mailchimp.com/3.0${path}`, {
+      method: method || 'GET',
+      headers: { 'Authorization': 'Basic ' + btoa('key:' + key), 'Content-Type': 'application/json' },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    const txt = await res.text(); let data; try { data = JSON.parse(txt); } catch (e) { data = { raw: txt }; }
+    return { ok: res.ok, status: res.status, data };
+  } catch (e) { return { error: 'Conexiune eșuată: ' + e.message }; }
+}
+const mcErr = r => (r.data && (r.data.detail || r.data.title)) || ('Eroare ' + (r.status || ''));
+async function mailchimpPing(request, env) {
+  if (!await requireAdmin(request, env)) return json({ error: 'Neautorizat' }, 401);
+  const r = await mcFetch(env, '/');
+  if (r.error) return json({ ok: false, error: r.error });
+  if (!r.ok) return json({ ok: false, error: mcErr(r) });
+  return json({ ok: true, account: r.data.account_name, email: r.data.email, subscribers: r.data.total_subscribers });
+}
+async function mailchimpLists(request, env) {
+  if (!await requireAdmin(request, env)) return json({ error: 'Neautorizat' }, 401);
+  const r = await mcFetch(env, '/lists?count=100&fields=lists.id,lists.name,lists.stats.member_count');
+  if (r.error) return json({ ok: false, error: r.error });
+  if (!r.ok) return json({ ok: false, error: mcErr(r) });
+  return json({ ok: true, lists: (r.data.lists || []).map(l => ({ id: l.id, name: l.name, members: (l.stats && l.stats.member_count) || 0 })) });
+}
+async function mailchimpPushTemplate(request, env) {
+  if (!await requireAdmin(request, env)) return json({ error: 'Neautorizat' }, 401);
+  const b = await request.json().catch(() => null);
+  if (!b || !b.html || !b.name) return json({ ok: false, error: 'Lipsește numele sau conținutul.' });
+  const r = await mcFetch(env, '/templates', 'POST', { name: String(b.name).slice(0, 50), html: b.html });
+  if (r.error) return json({ ok: false, error: r.error });
+  if (!r.ok) return json({ ok: false, error: mcErr(r) });
+  return json({ ok: true, id: r.data.id, name: r.data.name });
+}
+async function mailchimpCreateCampaign(request, env) {
+  if (!await requireAdmin(request, env)) return json({ error: 'Neautorizat' }, 401);
+  const b = await request.json().catch(() => null);
+  if (!b || !b.html || !b.list_id) return json({ ok: false, error: 'Alege audiența și adaugă conținut.' });
+  const fromName = String(env.QUOTE_FROM || 'ExpoTigla').replace(/<[^>]*>/g, '').trim() || 'ExpoTigla';
+  const emailMatch = String(env.QUOTE_FROM || '').match(/<([^>]+)>/);
+  const replyTo = (b.reply_to || (emailMatch && emailMatch[1]) || env.QUOTE_TO_EMAIL || env.ORDER_TO_EMAIL || '').trim();
+  if (!replyTo) return json({ ok: false, error: 'Lipsește adresa de răspuns (reply-to). Configurează QUOTE_FROM cu un email valid.' });
+  const c = await mcFetch(env, '/campaigns', 'POST', {
+    type: 'regular', recipients: { list_id: b.list_id },
+    settings: { subject_line: b.subject || 'ExpoTigla', preview_text: (b.preview || '').slice(0, 150), title: (b.title || b.subject || 'Campanie ExpoTigla').slice(0, 100), from_name: fromName, reply_to: replyTo },
+  });
+  if (c.error) return json({ ok: false, error: c.error });
+  if (!c.ok) return json({ ok: false, error: mcErr(c) });
+  const cid = c.data.id;
+  const ct = await mcFetch(env, `/campaigns/${cid}/content`, 'PUT', { html: b.html });
+  if (ct.error || !ct.ok) return json({ ok: false, error: 'Campanie creată, dar conținutul a eșuat: ' + (ct.error || mcErr(ct)), id: cid });
+  return json({ ok: true, id: cid, status: c.data.status });
+}
+
 // ── Chatbot AI (Grok / xAI) ────────────────────────────────────────────────
 // Proxy server-side către api.x.ai. Cheia stă în env.XAI_API_KEY (secret pe
 // Cloudflare), nu ajunge niciodată în browser. Promptul/modelul se pot edita
@@ -1243,6 +1333,16 @@ async function api(request, env, url) {
   if (p === '/api/quotes' && m === 'GET') return quotesList(request, env);
   const qUpd = p.match(/^\/api\/quotes\/(\d+)$/);
   if (qUpd && (m === 'PUT' || m === 'POST')) return quoteUpdate(request, env, Number(qUpd[1]));
+  // Bibliotecă șabloane email
+  if (p === '/api/email-templates' && m === 'GET') return emailTemplatesList(request, env);
+  if (p === '/api/email-templates' && m === 'POST') return emailTemplateSave(request, env);
+  const etDel = p.match(/^\/api\/email-templates\/([\w-]+)$/);
+  if (etDel && m === 'DELETE') return emailTemplateDelete(request, env, etDel[1]);
+  // Integrare Mailchimp (admin)
+  if (p === '/api/admin/mailchimp/ping' && m === 'GET') return mailchimpPing(request, env);
+  if (p === '/api/admin/mailchimp/lists' && m === 'GET') return mailchimpLists(request, env);
+  if (p === '/api/admin/mailchimp/push-template' && m === 'POST') return mailchimpPushTemplate(request, env);
+  if (p === '/api/admin/mailchimp/create-campaign' && m === 'POST') return mailchimpCreateCampaign(request, env);
   if (p === '/api/order' && m === 'POST') return orderCreate(request, env);
   if (p === '/api/quote' && m === 'POST') return quoteCreate(request, env);
   return json({ error: 'Ruta nu există.' }, 404);

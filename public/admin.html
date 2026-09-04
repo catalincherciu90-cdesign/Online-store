@@ -192,6 +192,7 @@
     .rt-editor ul { margin: .4em 0; padding-left: 22px; }
     .rt-toolbar { border-radius: 8px; border-bottom: 1px solid var(--em-border,#33363a); }
     /* Constructor email pe blocuri */
+    .qe-libbar { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; background: var(--em-card,#26282c); border: 1px solid var(--em-border,#33363a); border-radius: 12px; padding: 14px 16px; margin-bottom: 14px; }
     .qe-grid { display: grid; grid-template-columns: 1fr 380px; gap: 18px; align-items: start; }
     .qe-side { position: sticky; top: 12px; }
     .qe-preview { border: 1px solid var(--em-border,#33363a); border-radius: 10px; overflow: hidden; max-height: 72vh; overflow-y: auto; }
@@ -750,7 +751,7 @@
       <div class="subtabs">
         <button class="subtab active" id="sub-pipeline" onclick="cereriSub('pipeline')">Pipeline</button>
         <button class="subtab" id="sub-raport" onclick="cereriSub('raport')">Raport</button>
-        <button class="subtab" id="sub-email" onclick="cereriSub('email')">Email confirmare</button>
+        <button class="subtab" id="sub-email" onclick="cereriSub('email')">Șabloane email</button>
       </div>
 
       <div id="csub-pipeline">
@@ -773,14 +774,38 @@
       </div>
 
       <div id="csub-email" style="display:none">
+        <!-- Bibliotecă de șabloane -->
+        <div class="qe-libbar">
+          <div style="min-width:210px">
+            <div class="muted-sm" style="margin-bottom:4px">Șablon salvat</div>
+            <select id="tpl-select" class="qe-sel" style="width:100%" onchange="tplLoad(this.value)">
+              <option value="">— Șablon nou —</option>
+            </select>
+          </div>
+          <button type="button" class="a-btn-sm" onclick="tplNew()">＋ Nou gol</button>
+          <button type="button" class="a-btn-sm" onclick="tplDelete()">🗑 Șterge</button>
+          <span class="rt-sep" style="height:34px"></span>
+          <div>
+            <div class="muted-sm" style="margin-bottom:4px">Pornește de la un model</div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap">
+              <button type="button" class="a-btn-sm" onclick="qePredef('confirm')">Confirmare cerere</button>
+              <button type="button" class="a-btn-sm" onclick="qePredef('promo')">Promoție</button>
+              <button type="button" class="a-btn-sm" onclick="qePredef('newsletter')">Newsletter</button>
+              <button type="button" class="a-btn-sm" onclick="qePredef('sezon')">Ofertă sezonieră</button>
+            </div>
+          </div>
+        </div>
+
         <div class="qe-grid">
           <!-- Constructor -->
           <div style="background:var(--em-card,#26282c);border:1px solid var(--em-border,#33363a);border-radius:12px;padding:18px;min-width:0">
-            <p class="muted-sm" style="margin:0 0 14px">Construiește emailul trimis automat clientului din blocuri (titlu, text, imagine, buton, coloane). Poți folosi oriunde: <b>{nume}</b>, <b>{ref}</b>, <b>{telefon}</b>. Fără blocuri = mesajul implicit.</p>
-            <div class="muted-sm" style="margin-bottom:4px">Subiect</div>
-            <input id="qe-subject" placeholder="Am primit cererea ta {ref} — ExpoTigla" style="width:100%;padding:11px 13px;border-radius:10px;border:1px solid var(--em-border,#3a3d42);background:var(--em-card,#1f2124);color:inherit;font-family:inherit;font-size:.95rem;box-sizing:border-box">
+            <p class="muted-sm" style="margin:0 0 12px">Construiește emailul din blocuri și salvează-l în bibliotecă pentru a-l reutiliza la campanii. În emailul de confirmare cereri poți folosi: <b>{nume}</b>, <b>{ref}</b>, <b>{telefon}</b>.</p>
+            <div class="qe-row" style="gap:10px;margin-bottom:12px">
+              <div style="flex:1;min-width:150px"><div class="muted-sm" style="margin-bottom:4px">Nume șablon</div><input id="tpl-name" class="qe-in full" placeholder="ex: Promoție toamnă"></div>
+              <div style="flex:2;min-width:200px"><div class="muted-sm" style="margin-bottom:4px">Subiect email</div><input id="qe-subject" class="qe-in full" placeholder="Subiectul emailului"></div>
+            </div>
 
-            <div class="rt-toolbar" style="margin-top:14px">
+            <div class="rt-toolbar" style="margin-top:4px">
               <span class="muted-sm" style="margin-right:2px">Text:</span>
               <button type="button" onmousedown="event.preventDefault()" onclick="qeCmd('bold')" title="Îngroșat" style="font-weight:800">B</button>
               <button type="button" onmousedown="event.preventDefault()" onclick="qeCmd('italic')" title="Italic" style="font-style:italic">I</button>
@@ -806,19 +831,46 @@
 
             <div id="qe-blocks" style="margin-top:14px"></div>
 
-            <div style="display:flex;align-items:center;gap:12px;margin-top:18px;flex-wrap:wrap">
-              <button class="btn btn-primary" style="padding:9px 18px" onclick="saveQuoteEmail()">Salvează</button>
-              <button type="button" class="a-btn-sm" onclick="qeLoadTemplate()">Șablon exemplu</button>
-              <button type="button" class="a-btn-sm" onclick="qeReset()">Golește tot</button>
+            <div style="display:flex;align-items:center;gap:8px;margin-top:18px;flex-wrap:wrap">
+              <button class="btn btn-primary" style="padding:9px 16px" onclick="tplSave()">💾 Salvează în bibliotecă</button>
+              <button type="button" class="a-btn-sm" onclick="qeReset()">Golește blocuri</button>
               <span id="qe-msg" class="muted-sm"></span>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;margin-top:12px;flex-wrap:wrap;border-top:1px solid var(--em-border,#33363a);padding-top:12px">
+              <span class="muted-sm">Folosește:</span>
+              <button type="button" class="a-btn-sm" onclick="setAsConfirm()">Setează ca email de confirmare cereri</button>
+              <button type="button" class="a-btn-sm" onclick="qeExport('copy')">⧉ Copiază HTML</button>
+              <button type="button" class="a-btn-sm" onclick="qeExport('download')">⭳ Descarcă .html</button>
+              <span id="qe-msg2" class="muted-sm"></span>
             </div>
           </div>
 
-          <!-- Previzualizare -->
+          <!-- Previzualizare + Mailchimp -->
           <div class="qe-side">
             <div class="muted-sm" style="margin-bottom:6px">Previzualizare</div>
             <div id="qe-preview" class="qe-preview"></div>
-            <p class="muted-sm" style="margin-top:8px;font-size:.8rem">Valorile {nume}/{ref}/{telefon} sunt exemple; în emailul real se completează automat.</p>
+
+            <div style="margin-top:16px;border:1px solid var(--em-border,#33363a);border-radius:10px;padding:14px;background:var(--em-card,#26282c)">
+              <div style="display:flex;align-items:center;gap:8px;font-weight:700;margin-bottom:8px">
+                <span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:#ffe01b"></span> Mailchimp
+              </div>
+              <div class="muted-sm" style="margin-bottom:4px">Cheie API</div>
+              <input id="mc-key" type="password" class="qe-in full" placeholder="xxxxxxxxxxxx-usXX" autocomplete="off">
+              <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
+                <button type="button" class="a-btn-sm" onclick="mcSaveKey()">Salvează cheia</button>
+                <button type="button" class="a-btn-sm" onclick="mcPing()">Testează conexiunea</button>
+              </div>
+              <div id="mc-status" class="muted-sm" style="margin-top:8px"></div>
+              <div style="border-top:1px solid var(--em-border,#33363a);margin:12px 0 10px"></div>
+              <div class="muted-sm" style="margin-bottom:4px">Audiență (listă abonați)</div>
+              <div style="display:flex;gap:6px"><select id="mc-list" class="qe-sel" style="flex:1"><option value="">— apasă ↻ —</option></select><button type="button" class="a-btn-sm" onclick="mcLoadLists()" title="Încarcă listele">↻</button></div>
+              <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">
+                <button type="button" class="a-btn-sm" onclick="mcPushTemplate()">Trimite ca șablon</button>
+                <button type="button" class="btn btn-primary" style="padding:7px 12px" onclick="mcCreateCampaign()">Creează campanie (draft)</button>
+              </div>
+              <div id="mc-msg" class="muted-sm" style="margin-top:8px"></div>
+              <p class="muted-sm" style="margin-top:8px;font-size:.76rem;line-height:1.5">Campania se creează ca <b>DRAFT</b> în Mailchimp — o verifici și o trimiți din contul Mailchimp. Dezabonarea și consimțământul sunt gestionate de Mailchimp.</p>
+            </div>
           </div>
         </div>
       </div>
@@ -3503,7 +3555,7 @@
         const panel = document.getElementById('csub-' + n); if (panel) panel.style.display = n === name ? '' : 'none';
         const btn = document.getElementById('sub-' + n); if (btn) btn.classList.toggle('active', n === name);
       });
-      if (name === 'email' && !qeLoaded) { qeLoaded = true; loadQuoteEmail(); }
+      if (name === 'email' && !qeLoaded) { qeLoaded = true; openEmailTab(); }
     }
     // ── Constructor email pe blocuri (WYSIWYG, fără librării — CSP-safe) ──
     let qeBlocks = [];
@@ -3549,16 +3601,58 @@
       qeRender(); qePreview();
     }
     function qeReset() { if (!confirm('Golești tot conținutul emailului?')) return; qeBlocks = []; qeRender(); qePreview(); }
-    // Șablon predefinit cu imagini + linkuri reale din site
-    function qeTemplateBlocks() {
+    // ── Modele predefinite (imagini + linkuri reale din site, paleta de brand) ──
+    function qePredefData(kind) {
       const S = 'https://expotigla.ro';
-      const GOLD = '#a8770a', INK = '#2c2f33'; // paleta brand ExpoTigla
+      const GOLD = '#a8770a', INK = '#2c2f33';
       const lk = (href, label) => `<a href="${href}" style="color:${GOLD};font-weight:700;text-decoration:none">${label}</a>`;
-      const raw = [
+      const btn = (text, href) => ({ type: 'button', text, href, bg: '#c2890a', color: '#ffffff', align: 'center' });
+      const linksUtile = { type: 'text', html: '<b style="color:' + INK + '">Linkuri utile:</b><br>• ' + lk(S + '/produse.html', 'Produse &amp; branduri') + '<br>• ' + lk(S + '/sistem-complet.html', 'Sistem complet de acoperiș') + '<br>• ' + lk(S + '/ghiduri.html', 'Ghiduri &amp; sfaturi') + '<br>• ' + lk(S + '/servicii.html', 'Montaj &amp; consultanță') + '<br>• ' + lk(S + '/contact.html', 'Contact'), align: 'left' };
+      const semnatura = { type: 'text', html: 'Ai întrebări? Poți răspunde direct la acest email sau ne poți suna.<br>— Echipa <b style="color:' + INK + '">ExpoTigla</b>', align: 'left' };
+      if (kind === 'promo') return { name: 'Promoție', subject: 'Ofertă la sisteme complete de acoperiș 🍂', raw: [
+        { type: 'image', src: S + '/assets/img/home-sistem.webp', alt: 'Ofertă acoperiș ExpoTigla', width: 100, align: 'center', href: S + '/produse.html' },
+        { type: 'heading', text: 'Ofertă la sisteme complete de acoperiș', level: 'h1', align: 'center', color: GOLD },
+        { type: 'text', html: 'Salut {nume}, profită de prețuri speciale la <b>țiglă metalică, tablă fălțuită și accesorii</b>. Comandă acum un sistem complet și beneficiezi de consultanță tehnică gratuită.', align: 'center' },
+        btn('Vezi oferta', S + '/produse.html'),
+        { type: 'divider' },
+        { type: 'columns', cols: [
+          { kind: 'image', src: S + '/assets/img/servicii/montaj.webp', alt: 'Montaj profesional' },
+          { kind: 'image', src: S + '/assets/img/servicii/transport.webp', alt: 'Transport asigurat' },
+        ] },
+        { type: 'columns', cols: [
+          { kind: 'text', html: '<b style="color:' + INK + '">Montaj profesional</b><br>Echipe autorizate, garanție la lucrare.' },
+          { kind: 'text', html: '<b style="color:' + INK + '">Transport asigurat</b><br>Livrare rapidă, direct la tine.' },
+        ] },
+        { type: 'divider' }, linksUtile, { type: 'spacer', h: 8 }, semnatura,
+      ] };
+      if (kind === 'newsletter') return { name: 'Newsletter', subject: 'Noutăți ExpoTigla — ghiduri și sfaturi', raw: [
+        { type: 'heading', text: 'Noutăți de la ExpoTigla', level: 'h1', align: 'center', color: INK },
+        { type: 'text', html: 'Salut {nume}, am pregătit câteva ghiduri utile care te ajută să alegi și să întreții acoperișul corect.', align: 'center' },
+        { type: 'divider' },
+        { type: 'columns', cols: [
+          { kind: 'image', src: S + '/assets/img/ghiduri/featured.webp', alt: 'Ghid acoperiș' },
+          { kind: 'image', src: S + '/assets/img/ghiduri/costuri.webp', alt: 'Costuri acoperiș' },
+        ] },
+        { type: 'columns', cols: [
+          { kind: 'text', html: lk(S + '/ghiduri.html', 'Toate ghidurile →') + '<br>Sfaturi practice pentru acoperișul tău.' },
+          { kind: 'text', html: lk(S + '/ghid-cat-costa-un-acoperis-complet-2026.html', 'Cât costă un acoperiș →') + '<br>Estimări și factori de preț 2026.' },
+        ] },
+        btn('Vezi toate produsele', S + '/produse.html'),
+        { type: 'divider' }, linksUtile, { type: 'spacer', h: 8 }, semnatura,
+      ] };
+      if (kind === 'sezon') return { name: 'Ofertă sezonieră', subject: 'Pregătește-ți acoperișul pentru sezonul rece', raw: [
+        { type: 'image', src: S + '/assets/img/despre-hero.webp', alt: 'Acoperiș pregătit de iarnă', width: 100, align: 'center', href: S },
+        { type: 'heading', text: 'Pregătește-ți acoperișul pentru iarnă', level: 'h1', align: 'center', color: GOLD },
+        { type: 'text', html: 'Salut {nume}, înainte de sezonul rece verifică <b>ventilația, jgheaburile și sistemul pluvial</b>. Îți oferim consultanță gratuită și produsele potrivite.', align: 'center' },
+        btn('Cere consultanță', S + '/contact.html'),
+        { type: 'divider' }, linksUtile, { type: 'spacer', h: 8 }, semnatura,
+      ] };
+      // confirm (implicit)
+      return { name: 'Confirmare cerere', subject: 'Am primit cererea ta {ref} — ExpoTigla', raw: [
         { type: 'image', src: S + '/assets/img/home-sistem.webp', alt: 'Sistem complet de acoperiș ExpoTigla', width: 100, align: 'center', href: S },
         { type: 'heading', text: 'Îți mulțumim, {nume}!', level: 'h2', align: 'center', color: GOLD },
         { type: 'text', html: 'Am primit cererea ta cu numărul <b style="color:' + INK + '">{ref}</b>. Un consultant ExpoTigla te va contacta în <b>maxim 24 de ore</b> pentru detalii și o ofertă personalizată.', align: 'center' },
-        { type: 'button', text: 'Vezi produsele', href: S + '/produse.html', bg: '#c2890a', color: '#ffffff', align: 'center' },
+        btn('Vezi produsele', S + '/produse.html'),
         { type: 'divider' },
         { type: 'heading', text: 'Până atunci, poți explora:', level: 'h3', align: 'left', color: INK },
         { type: 'columns', cols: [
@@ -3569,18 +3663,20 @@
           { kind: 'text', html: lk(S + '/ghiduri.html', 'Ghiduri acoperiș →') + '<br>Sfaturi, costuri și greșeli de evitat.' },
           { kind: 'text', html: lk(S + '/servicii.html', 'Servicii →') + '<br>Consultanță, măsurători și montaj.' },
         ] },
-        { type: 'divider' },
-        { type: 'text', html: '<b style="color:' + INK + '">Linkuri utile:</b><br>• ' + lk(S + '/sistem-complet.html', 'Ce înseamnă un sistem complet') + '<br>• ' + lk(S + '/produse.html', 'Produse &amp; branduri') + '<br>• ' + lk(S + '/despre.html', 'Despre ExpoTigla') + '<br>• ' + lk(S + '/cum-cumpar.html', 'Cum cumperi') + '<br>• ' + lk(S + '/contact.html', 'Contact'), align: 'left' },
-        { type: 'spacer', h: 8 },
-        { type: 'text', html: 'Ai întrebări? Poți răspunde direct la acest email sau ne poți suna.<br>— Echipa <b style="color:' + INK + '">ExpoTigla</b>', align: 'left' },
-      ];
-      return raw.map(b => Object.assign({ id: qeNewId() }, b));
+        { type: 'divider' }, linksUtile, { type: 'spacer', h: 8 }, semnatura,
+      ] };
     }
-    function qeLoadTemplate() {
-      if (qeBlocks.length && !confirm('Înlocuiești conținutul actual cu șablonul exemplu?')) return;
-      qeBlocks = qeTemplateBlocks(); qeRender(); qePreview();
-      const msg = document.getElementById('qe-msg'); if (msg) { msg.style.color = ''; msg.textContent = 'Șablon încărcat — editează-l și apasă Salvează.'; }
+    function qePredef(kind) {
+      const d = qePredefData(kind);
+      if (qeBlocks.length && !confirm('Înlocuiești conținutul actual cu modelul „' + d.name + '"?')) return;
+      tplCurrentId = ''; const sel = document.getElementById('tpl-select'); if (sel) sel.value = '';
+      document.getElementById('tpl-name').value = d.name;
+      document.getElementById('qe-subject').value = d.subject;
+      qeBlocks = d.raw.map(b => Object.assign({ id: qeNewId() }, JSON.parse(JSON.stringify(b))));
+      qeRender(); qePreview();
+      qeMsg('qe-msg', 'Model încărcat — editează-l și salvează-l în bibliotecă.');
     }
+    function qeMsg(id, text, err) { const m = document.getElementById(id); if (m) { m.style.color = err ? '#c0392b' : '#1a8f4c'; m.textContent = text; } }
 
     // Toolbar text: acționează pe ultimul câmp focusat
     function qeCmd(cmd, val) { if (qeActive) qeActive.focus(); try { document.execCommand(cmd, false, val || null); } catch (e) {} qeSyncActive(); }
@@ -3706,19 +3802,73 @@
       box.innerHTML = `<div style="background:#f4f5f4;padding:16px"><div style="max-width:600px;margin:0 auto;background:#fff;border-radius:10px;padding:24px;font-family:Arial,sans-serif;font-size:15px;line-height:1.6;color:#26282b">${sample || '<span style=\'color:#9aa1a8\'>Adaugă blocuri pentru a construi emailul…</span>'}</div></div>`;
     }
 
-    async function loadQuoteEmail() {
+    // ── Bibliotecă de șabloane ──
+    let tplList = [];
+    let tplCurrentId = '';
+    async function openEmailTab() { await loadTemplates(); await loadConfirmIntoBuilder(); }
+    async function loadTemplates() {
+      try { const d = await (await api('/email-templates')).json(); tplList = d.items || []; } catch (e) { tplList = []; }
+      tplRenderSelect();
+    }
+    function tplRenderSelect() {
+      const sel = document.getElementById('tpl-select'); if (!sel) return;
+      sel.innerHTML = '<option value="">— Șablon nou —</option>' + tplList.map(t => `<option value="${t.id}">${qeAv(t.name)}</option>`).join('');
+      sel.value = tplCurrentId || '';
+    }
+    function tplLoad(id) {
+      if (!id) { tplNew(); return; }
+      const t = tplList.find(x => x.id === id); if (!t) return;
+      let blocks = []; try { blocks = JSON.parse(t.blocks || '[]'); } catch (e) {}
+      tplCurrentId = id;
+      document.getElementById('tpl-name').value = t.name || '';
+      document.getElementById('qe-subject').value = t.subject || '';
+      qeBlocks = (Array.isArray(blocks) ? blocks : []).map(b => Object.assign({ id: qeNewId() }, b));
+      qeRender(); qePreview();
+      qeMsg('qe-msg', 'Șablon încărcat.');
+    }
+    function tplNew() {
+      tplCurrentId = ''; const sel = document.getElementById('tpl-select'); if (sel) sel.value = '';
+      document.getElementById('tpl-name').value = '';
+      document.getElementById('qe-subject').value = '';
+      qeBlocks = []; qeRender(); qePreview();
+    }
+    async function tplSave() {
+      const name = document.getElementById('tpl-name').value.trim();
+      if (!name) { qeMsg('qe-msg', 'Adaugă un nume pentru șablon.', true); return; }
+      qeMsg('qe-msg', 'Se salvează…');
+      const body = { id: tplCurrentId || undefined, name, subject: document.getElementById('qe-subject').value.trim(), blocks: JSON.stringify(qeBlocks) };
+      try {
+        const d = await (await api('/email-templates', { method: 'POST', body: JSON.stringify(body) })).json();
+        if (d.ok) { tplCurrentId = d.id; await loadTemplates(); qeMsg('qe-msg', '✓ Salvat în bibliotecă.'); }
+        else qeMsg('qe-msg', d.error || 'Eroare.', true);
+      } catch (e) { qeMsg('qe-msg', e.message, true); }
+    }
+    async function tplDelete() {
+      if (!tplCurrentId) { qeMsg('qe-msg', 'Selectează întâi un șablon salvat.', true); return; }
+      const t = tplList.find(x => x.id === tplCurrentId);
+      if (!confirm('Ștergi șablonul „' + ((t && t.name) || '') + '"?')) return;
+      try {
+        const d = await (await api('/email-templates/' + tplCurrentId, { method: 'DELETE' })).json();
+        if (d.ok) { tplNew(); await loadTemplates(); qeMsg('qe-msg', 'Șablon șters.'); }
+        else qeMsg('qe-msg', d.error || 'Eroare.', true);
+      } catch (e) { qeMsg('qe-msg', e.message, true); }
+    }
+    // Emailul de confirmare cereri (setare separată)
+    async function loadConfirmIntoBuilder() {
       let s = {};
       try { s = await (await api('/settings')).json(); } catch (e) { /* implicit */ }
-      document.getElementById('qe-subject').value = s.quote_confirm_subject || '';
       let blocks = null;
       if (s.quote_confirm_blocks) { try { blocks = JSON.parse(s.quote_confirm_blocks); } catch (e) {} }
-      if (Array.isArray(blocks) && blocks.length) { qeBlocks = blocks; qeBlocks.forEach(b => { if (!b.id) b.id = qeNewId(); }); }
-      else if (s.quote_confirm_body && s.quote_confirm_body.trim()) { qeBlocks = [{ id: qeNewId(), type: 'text', html: s.quote_confirm_body, align: 'left' }]; }
-      else { qeBlocks = []; }
+      tplCurrentId = ''; const sel = document.getElementById('tpl-select'); if (sel) sel.value = '';
+      document.getElementById('tpl-name').value = 'Email confirmare cereri';
+      document.getElementById('qe-subject').value = s.quote_confirm_subject || '';
+      if (Array.isArray(blocks) && blocks.length) qeBlocks = blocks.map(b => Object.assign({ id: qeNewId() }, b));
+      else if (s.quote_confirm_body && s.quote_confirm_body.trim()) qeBlocks = [{ id: qeNewId(), type: 'text', html: s.quote_confirm_body, align: 'left' }];
+      else qeBlocks = qePredefData('confirm').raw.map(b => Object.assign({ id: qeNewId() }, JSON.parse(JSON.stringify(b))));
       qeRender(); qePreview();
     }
-    async function saveQuoteEmail() {
-      const msg = document.getElementById('qe-msg'); msg.style.color = ''; msg.textContent = 'Se salvează…';
+    async function setAsConfirm() {
+      qeMsg('qe-msg2', 'Se salvează…');
       const body = {
         quote_confirm_subject: document.getElementById('qe-subject').value.trim(),
         quote_confirm_body: qeBlocks.length ? qeBuildHtml() : '',
@@ -3726,9 +3876,98 @@
       };
       try {
         const d = await (await api('/settings', { method: 'POST', body: JSON.stringify(body) })).json();
-        if (d.ok) { msg.style.color = '#1a8f4c'; msg.textContent = '✓ Salvat. Se aplică la următoarea cerere.'; }
-        else { msg.style.color = '#c0392b'; msg.textContent = d.error || 'Eroare.'; }
-      } catch (e) { msg.style.color = '#c0392b'; msg.textContent = e.message; }
+        if (d.ok) qeMsg('qe-msg2', '✓ Setat ca email de confirmare cereri.');
+        else qeMsg('qe-msg2', d.error || 'Eroare.', true);
+      } catch (e) { qeMsg('qe-msg2', e.message, true); }
+    }
+    // HTML standalone (email complet, fundal cremă de brand)
+    function qeFullHtml(inner, subject) {
+      return `<!doctype html><html lang="ro"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${String(subject || 'ExpoTigla').replace(/[<>]/g, '')}</title></head>
+<body style="margin:0;padding:0;background:#f8f5ee">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f8f5ee"><tr><td align="center" style="padding:24px 12px">
+<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:600px;max-width:100%;background:#ffffff;border-radius:12px"><tr><td style="padding:28px;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.6;color:#333333">
+${inner}
+</td></tr></table>
+</td></tr></table>
+</body></html>`;
+    }
+    function qeExport(mode) {
+      if (!qeBlocks.length) { qeMsg('qe-msg2', 'Nu ai niciun bloc.', true); return; }
+      const subject = document.getElementById('qe-subject').value.trim();
+      const html = qeFullHtml(qeBuildHtml(), subject);
+      if (mode === 'download') {
+        const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+        a.download = (document.getElementById('tpl-name').value.trim() || 'email').replace(/[^\w-]+/g, '_') + '.html';
+        document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(a.href);
+        qeMsg('qe-msg2', 'Fișier descărcat.');
+      } else {
+        const done = () => qeMsg('qe-msg2', 'HTML copiat în clipboard.');
+        if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(html).then(done, () => qeExportFallback(html));
+        else qeExportFallback(html);
+      }
+    }
+    function qeExportFallback(html) {
+      const ta = document.createElement('textarea'); ta.value = html; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); qeMsg('qe-msg2', 'HTML copiat.'); } catch (e) { qeMsg('qe-msg2', 'Nu am putut copia.', true); } ta.remove();
+    }
+    // ── Mailchimp ──
+    const MC_FOOTER = '<div style="border-top:1px solid #e6e2d9;margin:22px 0 0;padding-top:14px;font-size:12px;color:#8a8a8a;text-align:center">Primești acest email pentru că faci parte din comunitatea ExpoTigla.<br><a href="*|UNSUB|*" style="color:#8a8a8a">Dezabonează-te</a> · *|LIST:ADDRESS|*</div>';
+    function mcHtml() {
+      const inner = qeBuildHtml().replace(/\{nume\}/g, '*|FNAME|*'); // merge tag Mailchimp
+      return qeFullHtml(inner + MC_FOOTER, document.getElementById('qe-subject').value.trim());
+    }
+    async function mcSaveKey() {
+      const key = document.getElementById('mc-key').value.trim();
+      if (!key) { qeMsg('mc-status', 'Introdu cheia API.', true); return; }
+      qeMsg('mc-status', 'Se salvează…');
+      try {
+        const d = await (await api('/settings', { method: 'POST', body: JSON.stringify({ mailchimp_api_key: key }) })).json();
+        if (d.ok) { document.getElementById('mc-key').value = ''; qeMsg('mc-status', '✓ Cheie salvată. Apasă „Testează conexiunea".'); }
+        else qeMsg('mc-status', d.error || 'Eroare.', true);
+      } catch (e) { qeMsg('mc-status', e.message, true); }
+    }
+    async function mcPing() {
+      qeMsg('mc-status', 'Se testează…');
+      try {
+        const d = await (await api('/admin/mailchimp/ping')).json();
+        if (d.ok) qeMsg('mc-status', '✓ Conectat: ' + (d.account || '') + (d.subscribers != null ? ' · ' + d.subscribers + ' abonați' : ''));
+        else qeMsg('mc-status', d.error || 'Eroare.', true);
+      } catch (e) { qeMsg('mc-status', e.message, true); }
+    }
+    async function mcLoadLists() {
+      qeMsg('mc-msg', 'Se încarcă listele…');
+      try {
+        const d = await (await api('/admin/mailchimp/lists')).json();
+        if (!d.ok) { qeMsg('mc-msg', d.error || 'Eroare.', true); return; }
+        const sel = document.getElementById('mc-list');
+        sel.innerHTML = '<option value="">— alege audiența —</option>' + (d.lists || []).map(l => `<option value="${l.id}">${qeAv(l.name)} (${l.members})</option>`).join('');
+        qeMsg('mc-msg', (d.lists || []).length + ' liste încărcate.');
+      } catch (e) { qeMsg('mc-msg', e.message, true); }
+    }
+    async function mcPushTemplate() {
+      if (!qeBlocks.length) { qeMsg('mc-msg', 'Construiește întâi emailul.', true); return; }
+      const name = document.getElementById('tpl-name').value.trim() || 'Șablon ExpoTigla';
+      qeMsg('mc-msg', 'Se trimite în Mailchimp…');
+      try {
+        const d = await (await api('/admin/mailchimp/push-template', { method: 'POST', body: JSON.stringify({ name, html: mcHtml() }) })).json();
+        if (d.ok) qeMsg('mc-msg', '✓ Șablon trimis în Mailchimp (îl găsești la Templates).');
+        else qeMsg('mc-msg', d.error || 'Eroare.', true);
+      } catch (e) { qeMsg('mc-msg', e.message, true); }
+    }
+    async function mcCreateCampaign() {
+      if (!qeBlocks.length) { qeMsg('mc-msg', 'Construiește întâi emailul.', true); return; }
+      const listId = document.getElementById('mc-list').value;
+      if (!listId) { qeMsg('mc-msg', 'Alege o audiență (apasă ↻).', true); return; }
+      const subject = document.getElementById('qe-subject').value.trim();
+      if (!subject) { qeMsg('mc-msg', 'Adaugă un subiect.', true); return; }
+      if (!confirm('Creezi o campanie DRAFT în Mailchimp către audiența selectată? Nu se trimite automat — o trimiți tu din Mailchimp.')) return;
+      qeMsg('mc-msg', 'Se creează campania…');
+      try {
+        const d = await (await api('/admin/mailchimp/create-campaign', { method: 'POST', body: JSON.stringify({ list_id: listId, subject, title: document.getElementById('tpl-name').value.trim() || subject, html: mcHtml() }) })).json();
+        if (d.ok) qeMsg('mc-msg', '✓ Campanie draft creată în Mailchimp. Verific-o și trimite-o de acolo.');
+        else qeMsg('mc-msg', d.error || 'Eroare.', true);
+      } catch (e) { qeMsg('mc-msg', e.message, true); }
     }
     function closeQuoteView() { document.getElementById('quote-view').classList.remove('open'); }
 
