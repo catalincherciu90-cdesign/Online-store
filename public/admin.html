@@ -836,6 +836,7 @@
               <button type="button" onclick="qeAdd('image')">＋ Imagine</button>
               <button type="button" onclick="qeAdd('button')">＋ Buton</button>
               <button type="button" onclick="qeAdd('columns')">＋ Coloane</button>
+              <button type="button" onclick="qeAddContact()">＋ Contact</button>
               <button type="button" onclick="qeAdd('divider')">＋ Separator</button>
               <button type="button" onclick="qeAdd('spacer')">＋ Spațiu</button>
             </div>
@@ -3565,6 +3566,20 @@
     let qeBlocks = [];
     let qeUid = 1;
     let qeActive = null; // ultimul câmp text focusat (pentru toolbar)
+    let qeSite = {};     // datele de contact din setările site-ului
+    function qeContactRows() {
+      const c = qeSite || {}, gold = '#a8770a', r = [];
+      if (c.phone) r.push('📞 <a href="tel:' + String(c.phone).replace(/\s+/g, '') + '" style="color:' + gold + ';text-decoration:none">' + c.phone + '</a>');
+      if (c.email) r.push('✉️ <a href="mailto:' + c.email + '" style="color:' + gold + ';text-decoration:none">' + c.email + '</a>');
+      if (c.schedule) r.push('🕒 ' + c.schedule);
+      if (c.address) r.push('📍 ' + c.address);
+      return r.join('<br>');
+    }
+    function qeAddContact() {
+      const rows = qeContactRows();
+      qeBlocks.push({ id: qeNewId(), type: 'text', html: rows || 'Completează datele de contact în tabul Setări.', align: 'left' });
+      qeRender(); qePreview();
+    }
     const qeNewId = () => 'b' + (qeUid++) + Date.now().toString(36).slice(-3);
     const qeAv = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     const qeSelo = (cur, val, label) => `<option value="${val}"${cur === val ? ' selected' : ''}>${label}</option>`;
@@ -3612,7 +3627,10 @@
       const lk = (href, label) => `<a href="${href}" style="color:${GOLD};font-weight:700;text-decoration:none">${label}</a>`;
       const btn = (text, href) => ({ type: 'button', text, href, bg: '#c2890a', color: '#ffffff', align: 'center' });
       const linksUtile = { type: 'text', html: '<b style="color:' + INK + '">Linkuri utile:</b><br>• ' + lk(S + '/produse.html', 'Produse &amp; branduri') + '<br>• ' + lk(S + '/sistem-complet.html', 'Sistem complet de acoperiș') + '<br>• ' + lk(S + '/ghiduri.html', 'Ghiduri &amp; sfaturi') + '<br>• ' + lk(S + '/servicii.html', 'Montaj &amp; consultanță') + '<br>• ' + lk(S + '/contact.html', 'Contact'), align: 'left' };
-      const semnatura = { type: 'text', html: 'Ai întrebări? Poți răspunde direct la acest email sau ne poți suna.<br>— Echipa <b style="color:' + INK + '">ExpoTigla</b>', align: 'left' };
+      // Marketing (Mailchimp) → contact literal din setări. Confirmare → {contact} (worker completează la trimitere).
+      const rowsLit = qeContactRows();
+      const semnatura = { type: 'text', html: (rowsLit ? 'Ai întrebări? Ne găsești aici:<br>' + rowsLit + '<br>' : 'Ai întrebări? Ne poți contacta oricând.<br>') + '— Echipa <b style="color:' + INK + '">ExpoTigla</b>', align: 'left' };
+      const semnaturaConfirm = { type: 'text', html: 'Ai întrebări? Ne găsești aici:<br>{contact}<br>— Echipa <b style="color:' + INK + '">ExpoTigla</b>', align: 'left' };
       if (kind === 'promo') return { name: 'Promoție', subject: 'Ofertă la sisteme complete de acoperiș 🍂', raw: [
         { type: 'image', src: S + '/assets/img/home-sistem.webp', alt: 'Ofertă acoperiș ExpoTigla', width: 100, align: 'center', href: S + '/produse.html' },
         { type: 'heading', text: 'Ofertă la sisteme complete de acoperiș', level: 'h1', align: 'center', color: GOLD },
@@ -3667,7 +3685,7 @@
           { kind: 'text', html: lk(S + '/ghiduri.html', 'Ghiduri acoperiș →') + '<br>Sfaturi, costuri și greșeli de evitat.' },
           { kind: 'text', html: lk(S + '/servicii.html', 'Servicii →') + '<br>Consultanță, măsurători și montaj.' },
         ] },
-        { type: 'divider' }, linksUtile, { type: 'spacer', h: 8 }, semnatura,
+        { type: 'divider' }, linksUtile, { type: 'spacer', h: 8 }, semnaturaConfirm,
       ] };
     }
     function qePredef(kind) {
@@ -3802,7 +3820,10 @@
     }
     function qePreview() {
       const box = document.getElementById('qe-preview'); if (!box) return;
-      const sample = qeBuildHtml().replace(/\{nume\}/g, 'Ion Popescu').replace(/\{ref\}/g, 'CERERE-4821').replace(/\{telefon\}/g, '0740 123 456');
+      const sample = qeBuildHtml().replace(/\{nume\}/g, 'Ion Popescu').replace(/\{ref\}/g, 'CERERE-4821').replace(/\{telefon\}/g, '0740 123 456')
+        .replace(/\{contact\}/g, qeContactRows() || '(datele de contact din Setări)')
+        .replace(/\{telefon_firma\}/g, qeSite.phone || '(telefon)').replace(/\{email_firma\}/g, qeSite.email || '(email)')
+        .replace(/\{program\}/g, qeSite.schedule || '').replace(/\{adresa\}/g, qeSite.address || '');
       box.innerHTML = `<div style="background:#f4f5f4;padding:16px"><div style="max-width:600px;margin:0 auto;background:#fff;border-radius:10px;padding:24px;font-family:Arial,sans-serif;font-size:15px;line-height:1.6;color:#26282b">${sample || '<span style=\'color:#9aa1a8\'>Adaugă blocuri pentru a construi emailul…</span>'}</div></div>`;
     }
 
@@ -3861,6 +3882,7 @@
     async function loadConfirmIntoBuilder() {
       let s = {};
       try { s = await (await api('/settings')).json(); } catch (e) { /* implicit */ }
+      qeSite = { phone: s.phone || '', email: s.email || '', schedule: s.schedule || '', address: s.address || '', brandName: s.brandName || 'ExpoTigla' };
       let blocks = null;
       if (s.quote_confirm_blocks) { try { blocks = JSON.parse(s.quote_confirm_blocks); } catch (e) {} }
       tplCurrentId = ''; const sel = document.getElementById('tpl-select'); if (sel) sel.value = '';

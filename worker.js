@@ -424,10 +424,11 @@ async function orderStatusUpdate(request, env, id) {
   // Email către client (best-effort; necesită RESEND_API_KEY + emailul clientului)
   let delivered = false;
   if (o.email && env.RESEND_API_KEY && STATUS_CLIENT_MSG[status]) {
+    const c = await getContact(env);
     const res = await sendEmail(env, { to: [o.email], subject: `Comanda ${esc(o.ref)} — ${STATUS_LABEL[status]}`,
       html: `<h2>Salut, ${esc(o.prenume || o.nume)}!</h2><p>${STATUS_CLIENT_MSG[status]}</p>
         <p>Comanda: <b>${esc(o.ref)}</b> · Total: <b>${fmtLei(o.total)}</b> (ramburs)</p>
-        <p>Ai întrebări? Răspunde la acest email.<br>— Echipa ExpoTigla</p>` });
+        ${contactHtml(c)}` });
     delivered = res.delivered;
   }
   return json({ ok: true, status, emailSent: delivered });
@@ -671,6 +672,31 @@ async function settingsSave(request, env) {
     await env.DB.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?,?)').bind(k, val).run();
   }
   return json({ ok: true });
+}
+
+// ── Date de contact din setări (pentru emailuri) ────────────────────────────
+async function getContact(env) {
+  const c = { phone: '', email: '', email2: '', schedule: '', address: '', brandName: 'ExpoTigla' };
+  if (!env.DB) return c;
+  try {
+    const r = await env.DB.prepare("SELECT key,value FROM settings WHERE key IN ('phone','email','email2','schedule','address','brandName')").all();
+    for (const row of (r.results || [])) if (row.value) c[row.key] = row.value;
+  } catch (e) { /* implicit */ }
+  return c;
+}
+function contactRows(c) {
+  const r = [];
+  if (c.phone) r.push(`📞 <a href="tel:${esc(c.phone).replace(/\s+/g, '')}" style="color:#a8770a;text-decoration:none">${esc(c.phone)}</a>`);
+  if (c.email) r.push(`✉️ <a href="mailto:${esc(c.email)}" style="color:#a8770a;text-decoration:none">${esc(c.email)}</a>`);
+  if (c.schedule) r.push(`🕒 ${esc(c.schedule)}`);
+  if (c.address) r.push(`📍 ${esc(c.address)}`);
+  return r.join('<br>');
+}
+function contactHtml(c) {
+  const rows = contactRows(c);
+  return rows
+    ? `<p style="margin-top:14px">Ai întrebări? Ne găsești aici:<br>${rows}<br>— Echipa ${esc(c.brandName || 'ExpoTigla')}</p>`
+    : `<p>— Echipa ${esc(c.brandName || 'ExpoTigla')}</p>`;
 }
 
 // ── Bibliotecă șabloane email (reutilizabile pentru campanii) ───────────────
@@ -1177,13 +1203,14 @@ async function orderCreate(request, env) {
   if (!env.DB && !mail.delivered) return json({ ok: false, error: 'Comanda nu a putut fi înregistrată. Te rugăm contactează-ne telefonic.' }, 500);
   // Email de confirmare către CLIENT (best-effort; necesită RESEND_API_KEY + domeniu verificat)
   if (email && env.RESEND_API_KEY) {
+    const c = await getContact(env);
     await sendEmail(env, { to: [email], subject: `Comanda ta ${ref} — ExpoTigla`,
       html: `<h2>Îți mulțumim pentru comandă, ${esc(prenume || nume)}!</h2>
         <p>Am înregistrat comanda <b>${esc(ref)}</b>. Iată rezumatul:</p>
         <table border="1" cellpadding="6" style="border-collapse:collapse">${rows}</table>
         <p>Subtotal: ${fmtLei(subtotal)} · Livrare: ${delivery ? fmtLei(delivery) : 'gratuită'}<br><b>Total de plată (ramburs): ${fmtLei(total)}</b></p>
         <p>Ce urmează: te contactăm în cel mai scurt timp la <b>${esc(telefon)}</b> pentru confirmare și programarea livrării. Plata se face ramburs, la livrare.</p>
-        <p>Ai întrebări? Răspunde la acest email.<br>— Echipa ExpoTigla</p>` });
+        ${contactHtml(c)}` });
   }
   return json({ ok: true, ref, total, delivered: mail.delivered });
 }
@@ -1240,14 +1267,26 @@ async function quoteCreate(request, env) {
         for (const row of (rc.results || [])) { if (row.key === 'quote_confirm_subject') cs = row.value || ''; if (row.key === 'quote_confirm_body') cb = row.value || ''; }
       } catch (e) { /* implicit */ }
     }
-    const fill = t => String(t).replace(/\{nume\}/g, esc(nume)).replace(/\{ref\}/g, esc(ref)).replace(/\{telefon\}/g, esc(telefon || ''));
+    const c = await getContact(env);
+    const telLink = c.phone ? `<a href="tel:${esc(c.phone).replace(/\s+/g, '')}" style="color:#a8770a;text-decoration:none">${esc(c.phone)}</a>` : '';
+    const mailLink = c.email ? `<a href="mailto:${esc(c.email)}" style="color:#a8770a;text-decoration:none">${esc(c.email)}</a>` : '';
+    // {telefon} = telefonul CLIENTULUI (din formular). {telefon_firma}/{email_firma}/{program}/{adresa}/{contact} = datele firmei din setări.
+    const fill = t => String(t)
+      .replace(/\{nume\}/g, esc(nume))
+      .replace(/\{ref\}/g, esc(ref))
+      .replace(/\{telefon\}/g, esc(telefon || ''))
+      .replace(/\{telefon_firma\}/g, telLink)
+      .replace(/\{email_firma\}/g, mailLink)
+      .replace(/\{program\}/g, esc(c.schedule || ''))
+      .replace(/\{adresa\}/g, esc(c.address || ''))
+      .replace(/\{contact\}/g, contactRows(c));
     const subject = cs.trim() ? fill(cs) : `Am primit cererea ta ${ref} — ExpoTigla`;
     const bodyIsHtml = /<[a-z][\s\S]*>/i.test(cb); // editor vizual → deja HTML; altfel text simplu
     const html = cb.trim()
       ? `<div style="font-family:Arial,sans-serif;font-size:15px;line-height:1.6;color:#26282b">${bodyIsHtml ? fill(cb) : fill(cb).replace(/\n/g, '<br>')}</div>`
       : `<h2>Îți mulțumim, ${esc(nume)}!</h2>
         <p>Am primit cererea ta cu numărul <b>${esc(ref)}</b>. Un consultant ExpoTigla te va contacta în <b>maxim 24 de ore</b> pentru detalii și ofertă.</p>
-        <p>Dacă e ceva urgent, ne poți suna direct.<br>Ai întrebări? Poți răspunde la acest email.<br>— Echipa ExpoTigla</p>`;
+        ${contactHtml(c)}`;
     await sendEmail(env, { to: [email], subject, html });
   }
   return json({ ok: true, ref });
