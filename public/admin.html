@@ -702,6 +702,18 @@
 
     <div id="tab-cereri" style="display:none">
       <h2 style="font-size:1.3rem;margin-bottom:16px">Cereri de ofertă</h2>
+      <div style="background:var(--em-card,#26282c);border:1px solid var(--em-border,#33363a);border-radius:12px;padding:16px;margin-bottom:18px">
+        <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end">
+          <div><div class="muted-sm" style="margin-bottom:4px">De la</div><input type="date" id="rep-from" style="padding:9px 11px;border-radius:9px;border:1px solid var(--em-border,#3a3d42);background:var(--em-card,#1f2124);color:inherit;font-family:inherit"></div>
+          <div><div class="muted-sm" style="margin-bottom:4px">Până la</div><input type="date" id="rep-to" style="padding:9px 11px;border-radius:9px;border:1px solid var(--em-border,#3a3d42);background:var(--em-card,#1f2124);color:inherit;font-family:inherit"></div>
+          <button class="a-btn-sm" onclick="repPreset('month')">Luna curentă</button>
+          <button class="a-btn-sm" onclick="repPreset('30d')">Ultimele 30 zile</button>
+          <button class="a-btn-sm" onclick="repPreset('year')">Anul curent</button>
+          <button class="btn btn-primary" style="padding:8px 16px" onclick="genQuoteReport()">Generează raport</button>
+          <button class="a-btn-sm" onclick="exportQuotesCsv()">Export CSV</button>
+        </div>
+        <div id="rep-out" style="margin-top:14px"></div>
+      </div>
       <div id="quotes-box"></div>
     </div>
 
@@ -3250,6 +3262,7 @@
         quotesData = Array.isArray(list) ? list : [];
         renderNotifs();
         renderQuotesCrm();
+        const rf = document.getElementById('rep-from'); if (rf && !rf.value) repPreset('month');
       } catch (e) { document.getElementById('quotes-box').innerHTML = `<div class="a-empty">Eroare la încărcare.</div>`; }
     }
     function setQuoteFilter(f) { quoteFilter = f; renderQuotesCrm(); }
@@ -3327,6 +3340,54 @@
         if (d.ok) { q.status = status; q.crm_notes = notes; msg.style.color = '#1a8f4c'; msg.textContent = '✓ Salvat'; renderQuotesCrm(); }
         else { msg.style.color = '#c0392b'; msg.textContent = d.error || 'Eroare'; }
       } catch (e) { msg.style.color = '#c0392b'; msg.textContent = e.message; }
+    }
+    // ── Raport cereri pe perioadă ──
+    function repPreset(kind) {
+      const to = new Date(); let from = new Date();
+      if (kind === 'month') from = new Date(to.getFullYear(), to.getMonth(), 1);
+      else if (kind === '30d') from = new Date(to.getTime() - 30 * 86400000);
+      else if (kind === 'year') from = new Date(to.getFullYear(), 0, 1);
+      document.getElementById('rep-from').value = from.toISOString().slice(0, 10);
+      document.getElementById('rep-to').value = to.toISOString().slice(0, 10);
+      genQuoteReport();
+    }
+    function repRange() {
+      const f = document.getElementById('rep-from').value, t = document.getElementById('rep-to').value;
+      const from = f ? new Date(f + 'T00:00:00') : null, to = t ? new Date(t + 'T23:59:59') : null;
+      return (quotesData || []).filter(q => {
+        const d = new Date(String(q.created_at || '').replace(' ', 'T'));
+        if (isNaN(d)) return false;
+        if (from && d < from) return false;
+        if (to && d > to) return false;
+        return true;
+      });
+    }
+    function genQuoteReport() {
+      const rows = repRange(); const out = document.getElementById('rep-out');
+      const counts = {}; QORDER.forEach(s => counts[s] = 0);
+      rows.forEach(q => { const s = q.status || 'nou'; counts[s] = (counts[s] || 0) + 1; });
+      const won = counts.castigat || 0, lost = counts.pierdut || 0;
+      const closed = won + lost;
+      const conv = closed ? Math.round(won / closed * 100) : 0;
+      const kpi = (l, v, extra) => `<div style="background:rgba(255,255,255,.05);border:1px solid var(--em-border,#33363a);border-radius:9px;padding:9px 13px;font-size:.9rem">${l}: <b style="${extra || ''}">${v}</b></div>`;
+      out.innerHTML = `<div style="display:flex;flex-wrap:wrap;gap:10px">
+        ${kpi('Total cereri', rows.length)}
+        ${QORDER.map(s => kpi(QSTATUS[s].label, counts[s] || 0, 'color:' + QSTATUS[s].c)).join('')}
+        ${kpi('Rată de câștig', conv + '%', 'color:#1f9d57')}
+      </div>
+      <div class="muted-sm" style="margin-top:8px">Rata de câștig = câștigate / (câștigate + pierdute). Perioada filtrează după data primirii cererii.</div>`;
+    }
+    function exportQuotesCsv() {
+      const rows = repRange();
+      if (!rows.length) { alert('Nicio cerere în perioada selectată.'); return; }
+      const head = ['Ref', 'Data', 'Nume', 'Telefon', 'Email', 'Tip proiect', 'Suprafata mp', 'Status', 'Firma', 'CUI', 'Judet/Localitate', 'Mesaj', 'Notite CRM'];
+      const ce = v => '"' + String(v == null ? '' : v).replace(/"/g, '""').replace(/\r?\n/g, ' ') + '"';
+      const lines = [head.join(',')];
+      rows.forEach(q => lines.push([q.ref, (q.created_at || '').replace('T', ' ').slice(0, 16), q.nume, q.telefon, q.email, q.tip, q.suprafata, (QSTATUS[q.status || 'nou'] || {}).label, q.firma || '', q.cui || '', q.judet || q.oras || '', q.mesaj, q.crm_notes || ''].map(ce).join(',')));
+      const blob = new Blob(['﻿' + lines.join('\n')], { type: 'text/csv;charset=utf-8' });
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+      const f = document.getElementById('rep-from').value || 'start', t = document.getElementById('rep-to').value || 'azi';
+      a.download = `cereri-oferta_${f}_${t}.csv`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(a.href);
     }
     function closeQuoteView() { document.getElementById('quote-view').classList.remove('open'); }
 
