@@ -105,6 +105,10 @@ async function ensureSchema(env) {
         try { await env.DB.prepare(`ALTER TABLE orders ADD COLUMN ${col}`).run(); } catch (e) { /* există deja */ }
         try { await env.DB.prepare(`ALTER TABLE quotes ADD COLUMN ${col}`).run(); } catch (e) { /* există deja */ }
       }
+      // CRM pe cereri de ofertă: status în pipeline + notițe interne + istoric.
+      for (const col of ["status TEXT DEFAULT 'nou'", 'crm_notes TEXT', 'crm_log TEXT', 'updated_at TEXT']) {
+        try { await env.DB.prepare(`ALTER TABLE quotes ADD COLUMN ${col}`).run(); } catch (e) { /* există deja */ }
+      }
       // Prima rulare: populează categoriile din valorile implicite, dacă tabelul e gol.
       try {
         const cnt = await env.DB.prepare('SELECT COUNT(*) AS n FROM categories').first();
@@ -430,8 +434,34 @@ async function orderStatusUpdate(request, env, id) {
 async function quotesList(request, env) {
   if (!await requireAdmin(request, env)) return json({ error: 'Neautorizat' }, 401);
   if (!env.DB) return json([]);
-  const r = await env.DB.prepare('SELECT * FROM quotes ORDER BY id DESC LIMIT 200').all();
-  return json(r.results || []);
+  const r = await env.DB.prepare('SELECT * FROM quotes ORDER BY id DESC LIMIT 500').all();
+  return json((r.results || []).map(q => ({ ...q, status: q.status || 'nou', crmLog: q.crm_log ? JSON.parse(q.crm_log) : [] })));
+}
+// CRM cereri de ofertă: etapele pipeline-ului.
+const QUOTE_STATUSES = ['nou', 'contactat', 'ofertat', 'castigat', 'pierdut'];
+async function quoteUpdate(request, env, id) {
+  const admin = await requireAdmin(request, env);
+  if (!admin) return json({ error: 'Neautorizat' }, 401);
+  if (!env.DB) return json({ error: 'Baza de date nu este configurată.' }, 500);
+  const v = await request.json().catch(() => ({}));
+  const row = await env.DB.prepare('SELECT status, crm_log FROM quotes WHERE id=?').bind(id).first();
+  if (!row) return json({ error: 'Cererea nu există.' }, 404);
+  const sets = [], binds = [];
+  if (v.status !== undefined) {
+    if (!QUOTE_STATUSES.includes(v.status)) return json({ error: 'Status invalid.' }, 400);
+    sets.push('status=?'); binds.push(v.status);
+    if (v.status !== (row.status || 'nou')) {
+      let log = []; try { log = row.crm_log ? JSON.parse(row.crm_log) : []; } catch (e) { log = []; }
+      log.push({ status: v.status, at: new Date().toISOString(), by: admin.user || 'admin' });
+      sets.push('crm_log=?'); binds.push(JSON.stringify(log.slice(-30)));
+    }
+  }
+  if (typeof v.notes === 'string') { sets.push('crm_notes=?'); binds.push(clip(v.notes, 6000)); }
+  if (!sets.length) return json({ error: 'Nimic de actualizat.' }, 400);
+  sets.push("updated_at=datetime('now')");
+  binds.push(id);
+  await env.DB.prepare(`UPDATE quotes SET ${sets.join(', ')} WHERE id=?`).bind(...binds).run();
+  return json({ ok: true });
 }
 
 // ── Proprietăți globale (finisaje / grosimi / culori) ──
@@ -1197,6 +1227,8 @@ async function api(request, env, url) {
   if (p === '/api/account/me' && m === 'GET') return accountMe(request, env);
   if (p === '/api/account/orders' && m === 'GET') return accountOrders(request, env);
   if (p === '/api/quotes' && m === 'GET') return quotesList(request, env);
+  const qUpd = p.match(/^\/api\/quotes\/(\d+)$/);
+  if (qUpd && (m === 'PUT' || m === 'POST')) return quoteUpdate(request, env, Number(qUpd[1]));
   if (p === '/api/order' && m === 'POST') return orderCreate(request, env);
   if (p === '/api/quote' && m === 'POST') return quoteCreate(request, env);
   return json({ error: 'Ruta nu există.' }, 404);

@@ -3227,30 +3227,53 @@
     function closeOrderView() { document.getElementById('order-view').classList.remove('open'); }
 
     // ── Cereri ──
+    // ── CRM cereri de ofertă ──
+    const QSTATUS = {
+      nou:       { label: 'Nou',            c: '#8a6d1a', bg: '#fbf3e2' },
+      contactat: { label: 'Contactat',      c: '#1f6feb', bg: '#e8f0fe' },
+      ofertat:   { label: 'Ofertă trimisă', c: '#7c3aed', bg: '#efe7fc' },
+      castigat:  { label: 'Câștigat',       c: '#1f9d57', bg: '#e4f6ec' },
+      pierdut:   { label: 'Pierdut',        c: '#c0392b', bg: '#fbe6e3' },
+    };
+    const QORDER = ['nou', 'contactat', 'ofertat', 'castigat', 'pierdut'];
+    let quoteFilter = 'all';
+    function qBadge(s) { const t = QSTATUS[s] || QSTATUS.nou; return `<span style="display:inline-block;font-size:.72rem;font-weight:800;padding:3px 10px;border-radius:999px;color:${t.c};background:${t.bg}">${t.label}</span>`; }
     async function loadQuotes() {
-      const box = document.getElementById('quotes-box');
       try {
         const res = await api('/quotes'); const list = await res.json();
         quotesData = Array.isArray(list) ? list : [];
         renderNotifs();
-        if (!list.length) { box.innerHTML = `<div class="a-empty">Nicio cerere încă.</div>`; return; }
-        box.innerHTML = `<table class="a-table"><thead><tr><th>Ref</th><th>Nume</th><th>Contact</th><th>Proiect</th><th>Plan</th><th>Data</th><th></th></tr></thead><tbody>${
-          list.map((q, i) => `<tr style="cursor:pointer" onclick="openQuote(${i})">
-            <td><b>${esc(q.ref)}</b></td>
-            <td>${esc(q.nume)}</td>
-            <td>${esc(q.telefon)}<br><span class="muted-sm">${esc(q.email)}</span></td>
-            <td>${esc(q.tip)} ${q.suprafata ? `<span class="muted-sm">· ${esc(q.suprafata)} mp</span>` : ''}<br><span class="muted-sm">${esc((q.mesaj || '').slice(0, 80))}</span></td>
-            <td class="muted-sm">${esc(q.plan || '—')}</td>
-            <td class="muted-sm">${esc((q.created_at || '').replace('T', ' ').slice(0, 16))}</td>
-            <td><button class="a-btn-sm" onclick="event.stopPropagation();openQuote(${i})">Deschide</button></td></tr>`).join('')
-        }</tbody></table>`;
-      } catch (e) { box.innerHTML = `<div class="a-empty">Eroare la încărcare.</div>`; }
+        renderQuotesCrm();
+      } catch (e) { document.getElementById('quotes-box').innerHTML = `<div class="a-empty">Eroare la încărcare.</div>`; }
+    }
+    function setQuoteFilter(f) { quoteFilter = f; renderQuotesCrm(); }
+    function renderQuotesCrm() {
+      const box = document.getElementById('quotes-box');
+      const list = quotesData || [];
+      if (!list.length) { box.innerHTML = `<div class="a-empty">Nicio cerere încă.</div>`; return; }
+      const counts = { all: list.length }; QORDER.forEach(s => counts[s] = 0);
+      list.forEach(q => { const s = q.status || 'nou'; counts[s] = (counts[s] || 0) + 1; });
+      const chip = (key, label, n) => { const on = quoteFilter === key; return `<button class="a-btn-sm" onclick="setQuoteFilter('${key}')" style="${on ? 'background:#d79a08;color:#fff;border-color:transparent;' : ''}">${label} <b>${n}</b></button>`; };
+      const chips = `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">${chip('all', 'Toate', counts.all)}${QORDER.map(s => chip(s, QSTATUS[s].label, counts[s] || 0)).join('')}</div>`;
+      const rows = list.filter(q => quoteFilter === 'all' || (q.status || 'nou') === quoteFilter);
+      const table = rows.length ? `<table class="a-table"><thead><tr><th>Ref</th><th>Status</th><th>Nume</th><th>Contact</th><th>Proiect</th><th>Data</th><th></th></tr></thead><tbody>${
+        rows.map(q => { const i = quotesData.indexOf(q); return `<tr style="cursor:pointer" onclick="openQuote(${i})">
+          <td><b>${esc(q.ref)}</b></td>
+          <td>${qBadge(q.status || 'nou')}</td>
+          <td>${esc(q.nume)}</td>
+          <td>${esc(q.telefon)}<br><span class="muted-sm">${esc(q.email)}</span></td>
+          <td>${esc(q.tip)} ${q.suprafata ? `<span class="muted-sm">· ${esc(q.suprafata)} mp</span>` : ''}<br><span class="muted-sm">${esc((q.mesaj || '').slice(0, 70))}</span></td>
+          <td class="muted-sm">${esc((q.created_at || '').replace('T', ' ').slice(0, 16))}</td>
+          <td><button class="a-btn-sm" onclick="event.stopPropagation();openQuote(${i})">Deschide</button></td></tr>`; }).join('')
+      }</tbody></table>` : `<div class="a-empty">Nicio cerere în această etapă.</div>`;
+      box.innerHTML = chips + table;
     }
     function openQuote(i) {
       const q = quotesData[i]; if (!q) return;
       const tel = String(q.telefon || '').replace(/\s+/g, '');
+      const fld = 'width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--em-border,#3a3d42);background:var(--em-card,#26282c);color:inherit;font-family:inherit;font-size:.92rem';
       document.getElementById('quote-view-body').innerHTML = `
-        <h3 style="margin-bottom:2px">Cerere ${esc(q.ref)}</h3>
+        <h3 style="margin-bottom:2px">Cerere ${esc(q.ref)} ${qBadge(q.status || 'nou')}</h3>
         <p class="muted-sm" style="margin-bottom:16px">${esc((q.created_at || '').replace('T', ' ').slice(0, 16))}</p>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px 20px;margin-bottom:18px">
           <div><div class="muted-sm">Nume</div><b>${esc(q.nume)}</b></div>
@@ -3264,11 +3287,34 @@
             : 'Persoană fizică'}</div>
         </div>
         ${q.mesaj ? `<div style="margin-bottom:18px"><div class="muted-sm" style="margin-bottom:4px">Mesaj</div><div style="background:rgba(255,255,255,.05);border-radius:10px;padding:12px 14px;white-space:pre-wrap">${esc(q.mesaj)}</div></div>` : ''}
-        <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px">
           ${tel ? `<a class="btn btn-primary" style="padding:9px 16px" href="tel:${esc(tel)}">Sună clientul</a>` : ''}
           ${q.email ? `<a class="btn btn-outline" style="padding:9px 16px" href="mailto:${esc(q.email)}?subject=Ofertă ExpoTigla — ${esc(q.ref)}">Trimite ofertă pe email</a>` : ''}
+        </div>
+        <div style="border-top:1px solid var(--em-border,#33363a);padding-top:16px">
+          <div style="font-weight:800;margin-bottom:12px">CRM</div>
+          <div class="muted-sm" style="margin-bottom:6px">Etapă</div>
+          <select id="crm-status" style="${fld};margin-bottom:14px">${QORDER.map(s => `<option value="${s}"${(q.status || 'nou') === s ? ' selected' : ''}>${QSTATUS[s].label}</option>`).join('')}</select>
+          <div class="muted-sm" style="margin-bottom:6px">Notițe interne</div>
+          <textarea id="crm-notes" rows="4" style="${fld};resize:vertical" placeholder="Ex: sunat pe 12.09, așteaptă deviz; buget ~15.000 lei...">${esc(q.crm_notes || '')}</textarea>
+          <div style="display:flex;align-items:center;gap:12px;margin-top:12px">
+            <button class="btn btn-primary" style="padding:9px 18px" onclick="saveQuoteCrm(${i})">Salvează</button>
+            <span id="crm-msg" class="muted-sm"></span>
+          </div>
+          ${(q.crmLog && q.crmLog.length) ? `<div class="muted-sm" style="margin-top:16px">Istoric: ${q.crmLog.map(l => (QSTATUS[l.status] || {}).label + ' (' + (l.at || '').slice(0, 10) + ')').join(' → ')}</div>` : ''}
         </div>`;
       document.getElementById('quote-view').classList.add('open');
+    }
+    async function saveQuoteCrm(i) {
+      const q = quotesData[i]; if (!q) return;
+      const status = document.getElementById('crm-status').value;
+      const notes = document.getElementById('crm-notes').value;
+      const msg = document.getElementById('crm-msg'); msg.style.color = ''; msg.textContent = 'Se salvează…';
+      try {
+        const d = await (await api('/quotes/' + q.id, { method: 'POST', body: JSON.stringify({ status, notes }) })).json();
+        if (d.ok) { q.status = status; q.crm_notes = notes; msg.style.color = '#1a8f4c'; msg.textContent = '✓ Salvat'; renderQuotesCrm(); }
+        else { msg.style.color = '#c0392b'; msg.textContent = d.error || 'Eroare'; }
+      } catch (e) { msg.style.color = '#c0392b'; msg.textContent = e.message; }
     }
     function closeQuoteView() { document.getElementById('quote-view').classList.remove('open'); }
 
