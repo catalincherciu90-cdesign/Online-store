@@ -1098,11 +1098,13 @@ async function quoteCreate(request, env) {
       saved = true;
     } catch (e) { console.error('DB quote', e); }
   }
+  const isChat = (tip === 'Chatbot');
+  const srcLabel = isChat ? 'Lead chatbot' : 'Cerere ofertă';
   const to = env.QUOTE_TO_EMAIL;
   let mail = { delivered: false };
   if (to) {
-    const payload = { to: [to], reply_to: email, subject: `Cerere ofertă ${ref} — ${nume}`,
-      html: `<h2>Cerere ofertă ${esc(ref)}</h2><p>${esc(nume)} · ${esc(telefon)} · ${esc(email)}</p>${tipClient === 'juridica' ? `<p><b>Persoană juridică:</b> ${esc(firma)} · CUI ${esc(cui)}${regCom ? ` · Reg. Com. ${esc(regCom)}` : ''}</p>` : '<p>Persoană fizică</p>'}<p>Tip: ${esc(tip)} · ${esc(suprafata)} mp · Plan: ${esc(planInfo)}</p><p>${esc(mesaj)}</p>` };
+    const payload = { to: [to], reply_to: email, subject: `${srcLabel} ${ref} — ${nume}`,
+      html: `<h2>${srcLabel} ${esc(ref)}</h2>${isChat ? '<p style="color:#b97c08"><b>Sursă: chatbot de pe site</b></p>' : ''}<p>${esc(nume)} · ${esc(telefon)} · ${esc(email)}</p>${tipClient === 'juridica' ? `<p><b>Persoană juridică:</b> ${esc(firma)} · CUI ${esc(cui)}${regCom ? ` · Reg. Com. ${esc(regCom)}` : ''}</p>` : '<p>Persoană fizică</p>'}<p>Tip: ${esc(tip)} · ${esc(suprafata)} mp · Plan: ${esc(planInfo)}</p><p>${esc(mesaj)}</p>` };
     if (attachment) payload.attachments = [attachment];
     mail = await sendEmail(env, payload);
   }
