@@ -261,7 +261,19 @@ async function chatTest(request, env) {
     const modelGone = r.status === 404 || /model_not_found|does not exist|decommission/i.test(lastDetail);
     if (!modelGone) break;
   }
-  return json({ ...base, ok: false, model: tryModels[0], status: lastStatus, error: lastDetail || ('HTTP ' + lastStatus) });
+  // La eșec pe Gemini, listăm modelele pe care CHEIA le acceptă (numele diferă între conturi).
+  let available;
+  if (provName === 'gemini') {
+    try {
+      const lr = await fetch('https://generativelanguage.googleapis.com/v1beta/models?key=' + encodeURIComponent(key) + '&pageSize=100');
+      const ld = await lr.json().catch(() => ({}));
+      available = (ld.models || [])
+        .filter(m => (m.supportedGenerationMethods || []).includes('generateContent'))
+        .map(m => (m.name || '').replace(/^models\//, ''))
+        .filter(n => /flash|pro/.test(n));
+    } catch (e) { /* ignoră */ }
+  }
+  return json({ ...base, ok: false, model: tryModels[0], status: lastStatus, error: lastDetail || ('HTTP ' + lastStatus), available });
 }
 
 /* ── Conturi clienți (înregistrare / autentificare / istoric comenzi) ──────── */

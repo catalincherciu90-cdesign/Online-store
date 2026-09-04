@@ -1502,6 +1502,7 @@
         } else {
           o.textContent = '❌ NU merge.\nFurnizor: ' + (PROV[d.provider] || d.provider) + '\nCheie (' + d.key_var + '): ' + (d.key_present ? 'vizibilă' : 'LIPSEȘTE') +
             (d.model ? '\nModel: ' + d.model : '') + (d.status ? '\nStatus: ' + d.status : '') + '\nEroare: ' + (d.error || 'necunoscută') +
+            (d.available && d.available.length ? '\n\nModele acceptate de cheia ta (pune unul în câmpul „Model"):\n• ' + d.available.slice(0, 20).join('\n• ') : '') +
             '\n\n' + (!d.key_present ? '→ Adaugă cheia ' + d.key_var + ' în Cloudflare (secret) și redeploy.' :
               (d.status === 429 ? '→ Ai atins limita furnizorului; așteaptă sau schimbă furnizorul.' :
               ((d.status === 401 || d.status === 403) ? '→ Cheie respinsă/invalidă — verifică valoarea.' : '→ Verifică furnizorul/modelul.')));
