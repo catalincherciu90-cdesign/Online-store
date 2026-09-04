@@ -230,6 +230,40 @@ async function mailTest(request, env) {
   });
 }
 
+async function chatTest(request, env) {
+  if (!await requireAdmin(request, env)) return json({ error: 'Neautorizat' }, 401);
+  let s = {};
+  try {
+    const r = await env.DB.prepare(`SELECT key,value FROM settings WHERE key IN ('chatbot_provider','chatbot_model')`).all();
+    for (const row of (r.results || [])) if (row.value) s[row.key] = row.value;
+  } catch (e) { /* fără DB → implicit */ }
+  const provName = s.chatbot_provider || 'groq';
+  const prov = CHAT_PROVIDERS[provName] || CHAT_PROVIDERS.groq;
+  let key = '', keyVar = '';
+  for (const k of prov.keys) { if (env[k]) { key = env[k]; keyVar = k; break; } }
+  const base = { provider: provName, key_present: !!key, key_var: keyVar || (prov.keys && prov.keys[0]) };
+  if (!key) return json({ ...base, ok: false, error: 'Lipsește cheia ' + (prov.keys && prov.keys[0]) + ' în Cloudflare.' });
+  const model = (s.chatbot_model && s.chatbot_model.trim()) || prov.model;
+  const tryModels = [model];
+  for (const fm of (prov.fallbacks || [])) if (fm && !tryModels.includes(fm)) tryModels.push(fm);
+  let r = null, lastStatus = 0, lastDetail = '';
+  for (const mdl of tryModels) {
+    try {
+      r = await fetch(prov.url, { method: 'POST', headers: { 'Authorization': 'Bearer ' + key, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: mdl, max_tokens: 5, temperature: 0, messages: [{ role: 'user', content: 'Spune doar: ok' }] }) });
+    } catch (e) { return json({ ...base, ok: false, model: mdl, error: 'Nu am putut contacta serviciul.' }); }
+    if (r.ok) {
+      const d = await r.json().catch(() => ({}));
+      const reply = (d.choices && d.choices[0] && d.choices[0].message && d.choices[0].message.content) || '';
+      return json({ ...base, ok: true, model: mdl, reply: reply.slice(0, 80) });
+    }
+    lastStatus = r.status; lastDetail = (await r.text().catch(() => '')).slice(0, 300);
+    const modelGone = r.status === 404 || /model_not_found|does not exist|decommission/i.test(lastDetail);
+    if (!modelGone) break;
+  }
+  return json({ ...base, ok: false, model: tryModels[0], status: lastStatus, error: lastDetail || ('HTTP ' + lastStatus) });
+}
+
 /* ── Conturi clienți (înregistrare / autentificare / istoric comenzi) ──────── */
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 const CUSTOMER_TOKEN_TTL = 30 * 24 * 3600; // 30 de zile
@@ -1138,6 +1172,8 @@ async function api(request, env, url) {
   // Diagnostic email (admin)
   if (p === '/api/admin/mailcheck' && m === 'GET') return mailCheck(request, env);
   if (p === '/api/admin/mail-test' && m === 'POST') return mailTest(request, env);
+  // Diagnostic chatbot (admin)
+  if (p === '/api/admin/chat-test' && m === 'POST') return chatTest(request, env);
   // Conturi clienți
   if (p === '/api/account/register' && m === 'POST') return accountRegister(request, env);
   if (p === '/api/account/login' && m === 'POST') return accountLogin(request, env);
