@@ -694,9 +694,11 @@ async function chatHandler(request, env) {
     if (!modelGone) break;
   }
   if (!r || !r.ok) {
+    const provLabel = { groq: 'Groq', gemini: 'Google Gemini', xai: 'Grok/xAI' }[s.chatbot_provider] || (s.chatbot_provider || 'Groq');
+    const keyName = (prov.keys && prov.keys[0]) || 'cheia API';
     let msg;
-    if (lastStatus === 429) msg = 'Limită de utilizare atinsă (429). Ai depășit cota Groq (pe minut sau zilnică) — reîncearcă peste câteva minute. Pentru volum mare, treci pe un plan Groq plătit sau alt provider.';
-    else if (lastStatus === 401 || lastStatus === 403) msg = 'Cheia API a fost respinsă (' + lastStatus + '). Verifică GROQ_API_KEY în Cloudflare.';
+    if (lastStatus === 429) msg = 'Limită de utilizare atinsă (429). Ai depășit cota gratuită ' + provLabel + ' (pe minut sau zilnică) — reîncearcă peste câteva minute. Pentru volum mai mare, comută pe alt furnizor gratuit (ex. Google Gemini, cu limite mai mari) din tab-ul Chatbot, sau treci pe un plan plătit.';
+    else if (lastStatus === 401 || lastStatus === 403) msg = 'Cheia API a fost respinsă (' + lastStatus + '). Verifică ' + keyName + ' în Cloudflare.';
     else if (lastStatus === 404 || /model_not_found|does not exist|decommission/i.test(lastDetail)) msg = 'Modelul configurat nu mai există — schimbă-l în tab-ul Chatbot.';
     else msg = 'Serviciul de chat a returnat eroare (' + (lastStatus || '?') + ').';
     return json({ error: msg, detail: lastDetail }, 502);
