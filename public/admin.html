@@ -190,6 +190,32 @@
     .rt-editor a { color: #0b6b3a; }
     .rt-editor h3 { font-size: 18px; margin: .4em 0; }
     .rt-editor ul { margin: .4em 0; padding-left: 22px; }
+    .rt-toolbar { border-radius: 8px; border-bottom: 1px solid var(--em-border,#33363a); }
+    /* Constructor email pe blocuri */
+    .qe-grid { display: grid; grid-template-columns: 1fr 380px; gap: 18px; align-items: start; }
+    .qe-side { position: sticky; top: 12px; }
+    .qe-preview { border: 1px solid var(--em-border,#33363a); border-radius: 10px; overflow: hidden; max-height: 72vh; overflow-y: auto; }
+    .qe-palette { display: flex; flex-wrap: wrap; gap: 8px; }
+    .qe-palette button { background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.28); color: #eef3f1; border-radius: 8px; padding: 8px 12px; font-family: inherit; font-size: .85rem; font-weight: 600; cursor: pointer; transition: background .12s, border-color .12s; }
+    .qe-palette button:hover { background: rgba(255,255,255,.18); border-color: #fff; }
+    .qe-card { border: 1px solid var(--em-border,#33363a); border-radius: 10px; padding: 12px 14px; margin-bottom: 12px; background: rgba(255,255,255,.03); }
+    .qe-card .qe-hd { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
+    .qe-card .qe-tag { font-weight: 700; font-size: .82rem; letter-spacing: .02em; color: var(--em-accent,#34d399); text-transform: uppercase; }
+    .qe-card .qe-ops { display: flex; gap: 4px; }
+    .qe-card .qe-ops button { background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.24); color: #eef3f1; border-radius: 6px; width: 28px; height: 28px; line-height: 1; cursor: pointer; font-size: .9rem; }
+    .qe-card .qe-ops button:hover { background: rgba(255,255,255,.18); }
+    .qe-card .qe-ops button.qe-x:hover { background: #c0392b; border-color: #c0392b; }
+    .qe-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    .qe-in, .qe-sel { padding: 8px 10px; border-radius: 8px; border: 1px solid var(--em-border,#3a3d42); background: var(--em-card,#1f2124); color: inherit; font-family: inherit; font-size: .88rem; box-sizing: border-box; }
+    .qe-in.full { width: 100%; }
+    .qe-lbl { font-size: .78rem; color: var(--em-muted,#9aa6a1); margin: 8px 0 4px; }
+    .qe-ed { min-height: 64px; padding: 10px 12px; background: #fff; color: #26282b; border: 1px solid var(--em-border,#33363a); border-radius: 8px; font-family: Arial, sans-serif; font-size: 14px; line-height: 1.55; outline: none; }
+    .qe-ed:focus { border-color: var(--em-accent,#34d399); }
+    .qe-ed:empty:before { content: attr(data-ph); color: #9aa1a8; }
+    .qe-ed a { color: #0b6b3a; }
+    .qe-cols2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    input[type=color].qe-in { padding: 2px; width: 42px; height: 34px; }
+    @media (max-width: 960px) { .qe-grid { grid-template-columns: 1fr; } .qe-side { position: static; } .qe-preview { max-height: none; } }
     .modal { background: #0e2219; border: 1px solid var(--em-border); color: var(--em-text); }
     .modal h3 { color: #fff; }
     .muted-sm { color: var(--em-muted); }
@@ -747,29 +773,51 @@
       </div>
 
       <div id="csub-email" style="display:none">
-        <div style="max-width:760px;background:var(--em-card,#26282c);border:1px solid var(--em-border,#33363a);border-radius:12px;padding:20px">
-          <p class="muted-sm" style="margin:0 0 16px">Emailul trimis automat clientului când completează formularul de ofertă (Contact + Configurator). Poți folosi în text: <b>{nume}</b>, <b>{ref}</b>, <b>{telefon}</b>. Lasă gol pentru mesajul implicit.</p>
-          <div class="muted-sm" style="margin-bottom:4px">Subiect</div>
-          <input id="qe-subject" placeholder="Am primit cererea ta {ref} — ExpoTigla" style="width:100%;padding:11px 13px;border-radius:10px;border:1px solid var(--em-border,#3a3d42);background:var(--em-card,#1f2124);color:inherit;font-family:inherit;font-size:.95rem;box-sizing:border-box">
-          <div class="muted-sm" style="margin:14px 0 6px">Conținut</div>
-          <div class="rt-toolbar">
-            <button type="button" onclick="rtCmd('bold')" title="Îngroșat" style="font-weight:800">B</button>
-            <button type="button" onclick="rtCmd('italic')" title="Italic" style="font-style:italic">I</button>
-            <button type="button" onclick="rtCmd('underline')" title="Subliniat" style="text-decoration:underline">U</button>
-            <button type="button" onclick="rtCmd('formatBlock','H3')" title="Titlu">Titlu</button>
-            <button type="button" onclick="rtCmd('insertUnorderedList')" title="Listă">• Listă</button>
-            <button type="button" onclick="rtLink()" title="Adaugă link">Link</button>
-            <span style="width:1px;background:var(--em-border,#3a3d42);margin:2px 4px"></span>
-            <button type="button" onclick="rtPlaceholder('{nume}')">{nume}</button>
-            <button type="button" onclick="rtPlaceholder('{ref}')">{ref}</button>
-            <button type="button" onclick="rtPlaceholder('{telefon}')">{telefon}</button>
-            <span style="width:1px;background:var(--em-border,#3a3d42);margin:2px 4px"></span>
-            <button type="button" onclick="rtCmd('removeFormat')" title="Curăță formatarea">✕ format</button>
+        <div class="qe-grid">
+          <!-- Constructor -->
+          <div style="background:var(--em-card,#26282c);border:1px solid var(--em-border,#33363a);border-radius:12px;padding:18px;min-width:0">
+            <p class="muted-sm" style="margin:0 0 14px">Construiește emailul trimis automat clientului din blocuri (titlu, text, imagine, buton, coloane). Poți folosi oriunde: <b>{nume}</b>, <b>{ref}</b>, <b>{telefon}</b>. Fără blocuri = mesajul implicit.</p>
+            <div class="muted-sm" style="margin-bottom:4px">Subiect</div>
+            <input id="qe-subject" placeholder="Am primit cererea ta {ref} — ExpoTigla" style="width:100%;padding:11px 13px;border-radius:10px;border:1px solid var(--em-border,#3a3d42);background:var(--em-card,#1f2124);color:inherit;font-family:inherit;font-size:.95rem;box-sizing:border-box">
+
+            <div class="rt-toolbar" style="margin-top:14px">
+              <span class="muted-sm" style="margin-right:2px">Text:</span>
+              <button type="button" onmousedown="event.preventDefault()" onclick="qeCmd('bold')" title="Îngroșat" style="font-weight:800">B</button>
+              <button type="button" onmousedown="event.preventDefault()" onclick="qeCmd('italic')" title="Italic" style="font-style:italic">I</button>
+              <button type="button" onmousedown="event.preventDefault()" onclick="qeCmd('underline')" title="Subliniat" style="text-decoration:underline">U</button>
+              <button type="button" onmousedown="event.preventDefault()" onclick="qeCmd('insertUnorderedList')" title="Listă">• Listă</button>
+              <button type="button" onmousedown="event.preventDefault()" onclick="qeLink()" title="Link">Link</button>
+              <span class="rt-sep"></span>
+              <button type="button" onmousedown="event.preventDefault()" onclick="qeInsert('{nume}')">{nume}</button>
+              <button type="button" onmousedown="event.preventDefault()" onclick="qeInsert('{ref}')">{ref}</button>
+              <button type="button" onmousedown="event.preventDefault()" onclick="qeInsert('{telefon}')">{telefon}</button>
+            </div>
+
+            <div class="muted-sm" style="margin:16px 0 6px">Adaugă bloc</div>
+            <div class="qe-palette">
+              <button type="button" onclick="qeAdd('heading')">＋ Titlu</button>
+              <button type="button" onclick="qeAdd('text')">＋ Text</button>
+              <button type="button" onclick="qeAdd('image')">＋ Imagine</button>
+              <button type="button" onclick="qeAdd('button')">＋ Buton</button>
+              <button type="button" onclick="qeAdd('columns')">＋ Coloane</button>
+              <button type="button" onclick="qeAdd('divider')">＋ Separator</button>
+              <button type="button" onclick="qeAdd('spacer')">＋ Spațiu</button>
+            </div>
+
+            <div id="qe-blocks" style="margin-top:14px"></div>
+
+            <div style="display:flex;align-items:center;gap:12px;margin-top:18px">
+              <button class="btn btn-primary" style="padding:9px 18px" onclick="saveQuoteEmail()">Salvează</button>
+              <button type="button" class="a-btn-sm" onclick="qeReset()">Golește tot</button>
+              <span id="qe-msg" class="muted-sm"></span>
+            </div>
           </div>
-          <div id="qe-body" class="rt-editor" contenteditable="true" data-ph="Îți mulțumim, {nume}! Am primit cererea ta ({ref})..."></div>
-          <div style="display:flex;align-items:center;gap:12px;margin-top:14px">
-            <button class="btn btn-primary" style="padding:9px 18px" onclick="saveQuoteEmail()">Salvează</button>
-            <span id="qe-msg" class="muted-sm"></span>
+
+          <!-- Previzualizare -->
+          <div class="qe-side">
+            <div class="muted-sm" style="margin-bottom:6px">Previzualizare</div>
+            <div id="qe-preview" class="qe-preview"></div>
+            <p class="muted-sm" style="margin-top:8px;font-size:.8rem">Valorile {nume}/{ref}/{telefon} sunt exemple; în emailul real se completează automat.</p>
           </div>
         </div>
       </div>
@@ -3456,31 +3504,192 @@
       });
       if (name === 'email' && !qeLoaded) { qeLoaded = true; loadQuoteEmail(); }
     }
+    // ── Constructor email pe blocuri (WYSIWYG, fără librării — CSP-safe) ──
+    let qeBlocks = [];
+    let qeUid = 1;
+    let qeActive = null; // ultimul câmp text focusat (pentru toolbar)
+    const qeNewId = () => 'b' + (qeUid++) + Date.now().toString(36).slice(-3);
+    const qeAv = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const qeSelo = (cur, val, label) => `<option value="${val}"${cur === val ? ' selected' : ''}>${label}</option>`;
+
+    function qeDefault(type) {
+      const id = qeNewId();
+      if (type === 'heading') return { id, type, text: 'Îți mulțumim, {nume}!', level: 'h2', align: 'left', color: '#26282b' };
+      if (type === 'text') return { id, type, html: 'Am primit cererea ta (<b>{ref}</b>). Un consultant te contactează în maxim 24 de ore.', align: 'left' };
+      if (type === 'image') return { id, type, src: '', alt: '', width: 100, align: 'center', href: '' };
+      if (type === 'button') return { id, type, text: 'Vezi produsele', href: 'https://expotigla.ro', bg: '#0b6b3a', color: '#ffffff', align: 'center' };
+      if (type === 'columns') return { id, type, cols: [{ kind: 'text', html: 'Coloana 1' }, { kind: 'text', html: 'Coloana 2' }] };
+      if (type === 'divider') return { id, type };
+      if (type === 'spacer') return { id, type, h: 24 };
+      return { id, type: 'text', html: '', align: 'left' };
+    }
+    const qeTag = { heading: 'Titlu', text: 'Text', image: 'Imagine', button: 'Buton', columns: 'Coloane', divider: 'Separator', spacer: 'Spațiu' };
+
+    function qeFind(id) { return qeBlocks.find(b => b.id === id); }
+    function qeAdd(type) { qeBlocks.push(qeDefault(type)); qeRender(); qePreview(); }
+    function qeDel(id) { qeBlocks = qeBlocks.filter(b => b.id !== id); qeRender(); qePreview(); }
+    function qeMove(id, dir) {
+      const i = qeBlocks.findIndex(b => b.id === id), j = i + dir;
+      if (i < 0 || j < 0 || j >= qeBlocks.length) return;
+      const t = qeBlocks[i]; qeBlocks[i] = qeBlocks[j]; qeBlocks[j] = t; qeRender(); qePreview();
+    }
+    function qeDup(id) {
+      const i = qeBlocks.findIndex(b => b.id === id); if (i < 0) return;
+      const copy = JSON.parse(JSON.stringify(qeBlocks[i])); copy.id = qeNewId();
+      qeBlocks.splice(i + 1, 0, copy); qeRender(); qePreview();
+    }
+    function qeSet(id, key, val) { const b = qeFind(id); if (b) { b[key] = val; qePreview(); } }
+    function qeEditIn(id, el) { const b = qeFind(id); if (b) { b.html = el.innerHTML; qePreview(); } }
+    function qeColSet(id, ci, key, val) { const b = qeFind(id); if (b && b.cols[ci]) { b.cols[ci][key] = val; qePreview(); } }
+    function qeColEditIn(id, ci, el) { const b = qeFind(id); if (b && b.cols[ci]) { b.cols[ci].html = el.innerHTML; qePreview(); } }
+    function qeColKind(id, ci, kind) {
+      const b = qeFind(id); if (!b || !b.cols[ci]) return;
+      b.cols[ci] = kind === 'image' ? { kind: 'image', src: '', alt: '' } : { kind: 'text', html: '' };
+      qeRender(); qePreview();
+    }
+    function qeReset() { if (!confirm('Golești tot conținutul emailului?')) return; qeBlocks = []; qeRender(); qePreview(); }
+
+    // Toolbar text: acționează pe ultimul câmp focusat
+    function qeCmd(cmd, val) { if (qeActive) qeActive.focus(); try { document.execCommand(cmd, false, val || null); } catch (e) {} qeSyncActive(); }
+    function qeLink() { const u = prompt('Adresa link-ului:', 'https://'); if (u) qeCmd('createLink', u); }
+    function qeInsert(txt) { if (qeActive) { qeActive.focus(); try { document.execCommand('insertText', false, txt); } catch (e) {} } qeSyncActive(); }
+    function qeSyncActive() {
+      if (!qeActive) return; const bid = qeActive.dataset.bid; if (!bid) return; const b = qeFind(bid); if (!b) return;
+      if (qeActive.dataset.col != null && b.cols) b.cols[+qeActive.dataset.col].html = qeActive.innerHTML;
+      else b.html = qeActive.innerHTML;
+      qePreview();
+    }
+
+    function qeAlignSel(id, cur) {
+      return `<select class="qe-sel" onchange="qeSet('${id}','align',this.value)">${qeSelo(cur, 'left', 'Stânga')}${qeSelo(cur, 'center', 'Centru')}${qeSelo(cur, 'right', 'Dreapta')}</select>`;
+    }
+    function qeCardHtml(b) {
+      let inner = '';
+      if (b.type === 'heading') {
+        inner = `<input class="qe-in full" value="${qeAv(b.text)}" oninput="qeSet('${b.id}','text',this.value)" placeholder="Text titlu">
+          <div class="qe-row" style="margin-top:8px">
+            <select class="qe-sel" onchange="qeSet('${b.id}','level',this.value)">${qeSelo(b.level, 'h1', 'Mare')}${qeSelo(b.level, 'h2', 'Mediu')}${qeSelo(b.level, 'h3', 'Mic')}</select>
+            ${qeAlignSel(b.id, b.align)}
+            <input type="color" class="qe-in" value="${qeAv(b.color || '#26282b')}" onchange="qeSet('${b.id}','color',this.value)" title="Culoare">
+          </div>`;
+      } else if (b.type === 'text') {
+        inner = `<div class="qe-ed" contenteditable="true" data-bid="${b.id}" id="ed-${b.id}" data-ph="Scrie textul…" onfocus="qeActive=this" oninput="qeEditIn('${b.id}',this)"></div>
+          <div class="qe-row" style="margin-top:8px"><span class="qe-lbl" style="margin:0">Aliniere</span>${qeAlignSel(b.id, b.align)}</div>`;
+      } else if (b.type === 'image') {
+        inner = `<div class="qe-lbl">Adresă imagine (URL)</div>
+          <input class="qe-in full" value="${qeAv(b.src)}" oninput="qeSet('${b.id}','src',this.value)" placeholder="https://expotigla.ro/assets/img/...">
+          <div class="qe-row" style="margin-top:8px">
+            <input class="qe-in" style="flex:1;min-width:120px" value="${qeAv(b.alt)}" oninput="qeSet('${b.id}','alt',this.value)" placeholder="Descriere (alt)">
+            <input class="qe-in" type="number" min="20" max="100" value="${b.width || 100}" oninput="qeSet('${b.id}','width',+this.value)" title="Lățime %" style="width:80px"> <span class="qe-lbl" style="margin:0">%</span>
+            ${qeAlignSel(b.id, b.align)}
+          </div>
+          <div class="qe-lbl">Link la click (opțional)</div>
+          <input class="qe-in full" value="${qeAv(b.href)}" oninput="qeSet('${b.id}','href',this.value)" placeholder="https://…">`;
+      } else if (b.type === 'button') {
+        inner = `<div class="qe-row"><input class="qe-in" style="flex:1;min-width:120px" value="${qeAv(b.text)}" oninput="qeSet('${b.id}','text',this.value)" placeholder="Text buton">${qeAlignSel(b.id, b.align)}</div>
+          <div class="qe-lbl">Link</div>
+          <input class="qe-in full" value="${qeAv(b.href)}" oninput="qeSet('${b.id}','href',this.value)" placeholder="https://…">
+          <div class="qe-row" style="margin-top:8px">
+            <span class="qe-lbl" style="margin:0">Fundal</span><input type="color" class="qe-in" value="${qeAv(b.bg || '#0b6b3a')}" onchange="qeSet('${b.id}','bg',this.value)">
+            <span class="qe-lbl" style="margin:0">Text</span><input type="color" class="qe-in" value="${qeAv(b.color || '#ffffff')}" onchange="qeSet('${b.id}','color',this.value)">
+          </div>`;
+      } else if (b.type === 'columns') {
+        const colHtml = (c, ci) => {
+          const sel = `<select class="qe-sel" onchange="qeColKind('${b.id}',${ci},this.value)">${qeSelo(c.kind, 'text', 'Text')}${qeSelo(c.kind, 'image', 'Imagine')}</select>`;
+          if (c.kind === 'image') {
+            return `<div><div class="qe-row" style="justify-content:space-between"><span class="qe-lbl" style="margin:0">Col. ${ci + 1}</span>${sel}</div>
+              <input class="qe-in full" style="margin-top:6px" value="${qeAv(c.src)}" oninput="qeColSet('${b.id}',${ci},'src',this.value)" placeholder="URL imagine">
+              <input class="qe-in full" style="margin-top:6px" value="${qeAv(c.alt)}" oninput="qeColSet('${b.id}',${ci},'alt',this.value)" placeholder="Descriere (alt)"></div>`;
+          }
+          return `<div><div class="qe-row" style="justify-content:space-between"><span class="qe-lbl" style="margin:0">Col. ${ci + 1}</span>${sel}</div>
+            <div class="qe-ed" style="margin-top:6px" contenteditable="true" data-bid="${b.id}" data-col="${ci}" id="ed-${b.id}-c${ci}" data-ph="Text coloană…" onfocus="qeActive=this" oninput="qeColEditIn('${b.id}',${ci},this)"></div></div>`;
+        };
+        inner = `<div class="qe-cols2">${colHtml(b.cols[0], 0)}${colHtml(b.cols[1], 1)}</div>`;
+      } else if (b.type === 'divider') {
+        inner = `<div class="qe-lbl" style="margin:0">Linie orizontală de separare.</div>`;
+      } else if (b.type === 'spacer') {
+        inner = `<div class="qe-row"><span class="qe-lbl" style="margin:0">Înălțime spațiu</span><input class="qe-in" type="number" min="4" max="120" value="${b.h || 24}" oninput="qeSet('${b.id}','h',+this.value)" style="width:90px"><span class="qe-lbl" style="margin:0">px</span></div>`;
+      }
+      return `<div class="qe-card">
+        <div class="qe-hd">
+          <span class="qe-tag">${qeTag[b.type] || b.type}</span>
+          <span class="qe-ops">
+            <button type="button" title="Sus" onclick="qeMove('${b.id}',-1)">↑</button>
+            <button type="button" title="Jos" onclick="qeMove('${b.id}',1)">↓</button>
+            <button type="button" title="Duplică" onclick="qeDup('${b.id}')">⧉</button>
+            <button type="button" class="qe-x" title="Șterge" onclick="qeDel('${b.id}')">✕</button>
+          </span>
+        </div>${inner}
+      </div>`;
+    }
+    function qeRender() {
+      const box = document.getElementById('qe-blocks');
+      if (!qeBlocks.length) { box.innerHTML = `<div class="muted-sm" style="border:1px dashed var(--em-border,#33363a);border-radius:10px;padding:18px;text-align:center">Niciun bloc. Folosește butoanele de mai sus pentru a construi emailul (sau lasă gol pentru mesajul implicit).</div>`; return; }
+      box.innerHTML = qeBlocks.map(qeCardHtml).join('');
+      // populează câmpurile editabile (conținut HTML) după inserare
+      qeBlocks.forEach(b => {
+        if (b.type === 'text') { const e = document.getElementById('ed-' + b.id); if (e) e.innerHTML = b.html || ''; }
+        if (b.type === 'columns') b.cols.forEach((c, ci) => { if (c.kind === 'text') { const e = document.getElementById('ed-' + b.id + '-c' + ci); if (e) e.innerHTML = c.html || ''; } });
+      });
+    }
+
+    // Generează HTML email-safe (tabele pentru coloane, stiluri inline)
+    function qeBuildHtml() {
+      const A = a => a === 'center' ? 'center' : a === 'right' ? 'right' : 'left';
+      const at = s => String(s == null ? '' : s).replace(/"/g, '&quot;');
+      return qeBlocks.map(b => {
+        if (b.type === 'heading') {
+          const sz = b.level === 'h1' ? 26 : b.level === 'h3' ? 18 : 22;
+          return `<div style="text-align:${A(b.align)};margin:0 0 12px"><span style="font-size:${sz}px;font-weight:800;line-height:1.25;color:${b.color || '#26282b'}">${b.text || ''}</span></div>`;
+        }
+        if (b.type === 'text') return `<div style="text-align:${A(b.align)};margin:0 0 12px">${b.html || ''}</div>`;
+        if (b.type === 'image') {
+          if (!b.src) return '';
+          const w = Math.max(20, Math.min(100, +b.width || 100));
+          const img = `<img src="${at(b.src)}" alt="${at(b.alt)}" width="${w}%" style="width:${w}%;max-width:100%;height:auto;border:0;display:inline-block">`;
+          const wrap = b.href ? `<a href="${at(b.href)}" target="_blank" rel="noopener">${img}</a>` : img;
+          return `<div style="text-align:${A(b.align)};margin:0 0 14px">${wrap}</div>`;
+        }
+        if (b.type === 'button') {
+          return `<div style="text-align:${A(b.align)};margin:6px 0 16px"><a href="${at(b.href || '#')}" target="_blank" rel="noopener" style="display:inline-block;background:${b.bg || '#0b6b3a'};color:${b.color || '#ffffff'};text-decoration:none;font-weight:700;padding:12px 26px;border-radius:8px;font-size:15px">${(b.text || 'Buton')}</a></div>`;
+        }
+        if (b.type === 'divider') return `<div style="border-top:1px solid #e3e6e4;margin:16px 0"></div>`;
+        if (b.type === 'spacer') { const h = Math.max(4, +b.h || 24); return `<div style="height:${h}px;line-height:${h}px;font-size:1px">&nbsp;</div>`; }
+        if (b.type === 'columns') {
+          const cell = c => c.kind === 'image'
+            ? (c.src ? `<img src="${at(c.src)}" alt="${at(c.alt)}" width="100%" style="width:100%;max-width:100%;height:auto;border:0;display:block">` : '')
+            : (c.html || '');
+          return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 14px;border-collapse:collapse"><tr>`
+            + `<td width="50%" valign="top" style="padding-right:8px;font-size:15px;line-height:1.6;color:#26282b">${cell(b.cols[0])}</td>`
+            + `<td width="50%" valign="top" style="padding-left:8px;font-size:15px;line-height:1.6;color:#26282b">${cell(b.cols[1])}</td>`
+            + `</tr></table>`;
+        }
+        return '';
+      }).join('\n');
+    }
+    function qePreview() {
+      const box = document.getElementById('qe-preview'); if (!box) return;
+      const sample = qeBuildHtml().replace(/\{nume\}/g, 'Ion Popescu').replace(/\{ref\}/g, 'CERERE-4821').replace(/\{telefon\}/g, '0740 123 456');
+      box.innerHTML = `<div style="background:#f4f5f4;padding:16px"><div style="max-width:600px;margin:0 auto;background:#fff;border-radius:10px;padding:24px;font-family:Arial,sans-serif;font-size:15px;line-height:1.6;color:#26282b">${sample || '<span style=\'color:#9aa1a8\'>Adaugă blocuri pentru a construi emailul…</span>'}</div></div>`;
+    }
+
     async function loadQuoteEmail() {
-      try {
-        const s = await (await api('/settings')).json();
-        document.getElementById('qe-subject').value = s.quote_confirm_subject || '';
-        document.getElementById('qe-body').innerHTML = s.quote_confirm_body || '';
-      } catch (e) { /* implicit */ }
-    }
-    function rtCmd(cmd, val) {
-      const ed = document.getElementById('qe-body'); ed.focus();
-      try { document.execCommand(cmd, false, val || null); } catch (e) {}
-    }
-    function rtLink() {
-      const url = prompt('Adresa link-ului (ex: https://expotigla.ro):', 'https://');
-      if (url) rtCmd('createLink', url);
-    }
-    function rtPlaceholder(p) {
-      const ed = document.getElementById('qe-body'); ed.focus();
-      try { document.execCommand('insertText', false, p); } catch (e) {}
+      let s = {};
+      try { s = await (await api('/settings')).json(); } catch (e) { /* implicit */ }
+      document.getElementById('qe-subject').value = s.quote_confirm_subject || '';
+      let blocks = null;
+      if (s.quote_confirm_blocks) { try { blocks = JSON.parse(s.quote_confirm_blocks); } catch (e) {} }
+      if (Array.isArray(blocks) && blocks.length) { qeBlocks = blocks; qeBlocks.forEach(b => { if (!b.id) b.id = qeNewId(); }); }
+      else if (s.quote_confirm_body && s.quote_confirm_body.trim()) { qeBlocks = [{ id: qeNewId(), type: 'text', html: s.quote_confirm_body, align: 'left' }]; }
+      else { qeBlocks = []; }
+      qeRender(); qePreview();
     }
     async function saveQuoteEmail() {
       const msg = document.getElementById('qe-msg'); msg.style.color = ''; msg.textContent = 'Se salvează…';
-      const ed = document.getElementById('qe-body');
       const body = {
         quote_confirm_subject: document.getElementById('qe-subject').value.trim(),
-        quote_confirm_body: ed.textContent.trim() ? ed.innerHTML : '',
+        quote_confirm_body: qeBlocks.length ? qeBuildHtml() : '',
+        quote_confirm_blocks: JSON.stringify(qeBlocks),
       };
       try {
         const d = await (await api('/settings', { method: 'POST', body: JSON.stringify(body) })).json();

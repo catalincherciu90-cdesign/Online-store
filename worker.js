@@ -651,7 +651,7 @@ const PUBLIC_SETTINGS = ['logo', 'brandName', 'phone', 'email', 'email2', 'sched
   'chatbot_enabled', 'chatbot_greeting', 'chatbot_teaser', 'chatbot_suggestions', 'chatbot_provider', 'chatbot_model', 'chatbot_prompt',
   'seo_default_desc', 'seo_areas', 'coming_soon', 'coming_soon_title', 'coming_soon_text',
   'ga4_id', 'gtm_id', 'meta_pixel', 'gsc_verification', 'head_code', 'body_code', 'nav',
-  'quote_confirm_subject', 'quote_confirm_body'];
+  'quote_confirm_subject', 'quote_confirm_body', 'quote_confirm_blocks'];
 async function settingsGet(env) {
   if (!env.DB) return json({});
   const r = await env.DB.prepare('SELECT key, value FROM settings').all();
