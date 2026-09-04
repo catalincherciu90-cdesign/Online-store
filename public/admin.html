@@ -1460,7 +1460,7 @@
           <td>${esc(o.prenume)} ${esc(o.nume)}</td>
           <td>${statusBadge(st(o))}</td>
           <td class="danger-txt">${Math.floor(ageDays(o))} zile</td>
-          <td class="muted-sm">${esc((o.created_at || '').replace('T', ' ').slice(0, 16))}</td></tr>`).join('');
+          <td class="muted-sm">${esc(fmtDT(o.created_at))}</td></tr>`).join('');
         delayedTbl = `<div class="dash-section-t">Comenzi întârziate (peste 3 zile, în lucru) — ${delayed.length}</div>
           <table class="a-table"><thead><tr><th>Ref</th><th>Client</th><th>Status</th><th>Vechime</th><th>Data</th></tr></thead><tbody>${rows}</tbody></table>`;
       }
@@ -1728,7 +1728,19 @@
       } catch (err) { st.className = 'form-status err'; st.style.color = ''; st.textContent = err.message; }
     }
     // ── Discuții chat ──
-    function fmtDT(s) { return (s || '').replace('T', ' ').slice(0, 16); }
+    // Formatează un timestamp (stocat UTC de SQLite) în ora României (Europe/Bucharest).
+    function fmtDT(s) {
+      if (!s) return '';
+      let str = String(s).trim();
+      if (/^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}/.test(str)) {
+        str = str.replace(' ', 'T');
+        if (!/[zZ]|[+-]\d{2}:?\d{2}$/.test(str)) str += 'Z'; // fără fus orar → e UTC (datetime('now'))
+      }
+      const d = new Date(str);
+      if (isNaN(d.getTime())) return String(s).replace('T', ' ').slice(0, 16);
+      try { return d.toLocaleString('ro-RO', { timeZone: 'Europe/Bucharest', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }); }
+      catch (e) { return String(s).replace('T', ' ').slice(0, 16); }
+    }
     async function loadChatLogs() {
       const box = document.getElementById('chatlog-box'); if (!box) return;
       box.innerHTML = '<div class="a-empty">Se încarcă…</div>';
@@ -3364,7 +3376,7 @@
           <td>${esc(o.telefon)}<br><span class="muted-sm">${esc(o.email)}</span></td>
           <td><b>${fmt(o.total)}</b></td>
           <td>${statusBadge(norm(o))}</td>
-          <td class="muted-sm">${esc((o.created_at || '').replace('T', ' ').slice(0, 16))}</td>
+          <td class="muted-sm">${esc(fmtDT(o.created_at))}</td>
           <td><button class="a-btn-sm" onclick="event.stopPropagation();openOrder(${i})">Deschide</button></td></tr>`;
       }).join('') : `<tr><td colspan="7" class="muted-sm" style="text-align:center;padding:24px">Nicio comandă cu acest status.</td></tr>`;
       box.innerHTML = tabs + `<table class="a-table"><thead><tr><th>Ref</th><th>Client</th><th>Contact</th><th>Total</th><th>Status</th><th>Data</th><th></th></tr></thead><tbody>${rows}</tbody></table>`;
@@ -3378,7 +3390,7 @@
         <td style="text-align:right">${fmt((Number(it.pret) || 0) * (Number(it.cant) || 0))}</td></tr>`).join('');
       document.getElementById('order-view-body').innerHTML = `
         <h3 style="margin-bottom:2px">Comandă ${esc(o.ref)}</h3>
-        <p class="muted-sm" style="margin-bottom:12px">${esc((o.created_at || '').replace('T', ' ').slice(0, 16))}</p>
+        <p class="muted-sm" style="margin-bottom:12px">${esc(fmtDT(o.created_at))}</p>
         <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:18px;padding:12px;background:rgba(255,255,255,.05);border-radius:10px">
           <span style="font-weight:600">Status:</span>
           <select id="order-status-sel" style="padding:7px 10px;border:1px solid var(--line-strong);border-radius:8px">
@@ -3452,7 +3464,7 @@
           <td>${esc(q.nume)}</td>
           <td>${esc(q.telefon)}<br><span class="muted-sm">${esc(q.email)}</span></td>
           <td>${esc(q.tip)} ${q.suprafata ? `<span class="muted-sm">· ${esc(q.suprafata)} mp</span>` : ''}<br><span class="muted-sm">${esc((q.mesaj || '').slice(0, 70))}</span></td>
-          <td class="muted-sm">${esc((q.created_at || '').replace('T', ' ').slice(0, 16))}</td>
+          <td class="muted-sm">${esc(fmtDT(q.created_at))}</td>
           <td><button class="a-btn-sm" onclick="event.stopPropagation();openQuote(${i})">Deschide</button></td></tr>`; }).join('')
       }</tbody></table>` : `<div class="a-empty">Nicio cerere în această etapă.</div>`;
       box.innerHTML = chips + table;
@@ -3463,7 +3475,7 @@
       const fld = 'width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--em-border,#3a3d42);background:var(--em-card,#26282c);color:inherit;font-family:inherit;font-size:.92rem';
       document.getElementById('quote-view-body').innerHTML = `
         <h3 style="margin-bottom:2px">Cerere ${esc(q.ref)} ${qBadge(q.status || 'nou')}</h3>
-        <p class="muted-sm" style="margin-bottom:16px">${esc((q.created_at || '').replace('T', ' ').slice(0, 16))}</p>
+        <p class="muted-sm" style="margin-bottom:16px">${esc(fmtDT(q.created_at))}</p>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px 20px;margin-bottom:18px">
           <div><div class="muted-sm">Nume</div><b>${esc(q.nume)}</b></div>
           <div><div class="muted-sm">Telefon</div><b>${esc(q.telefon || '—')}</b></div>
@@ -3519,7 +3531,8 @@
       const f = document.getElementById('rep-from').value, t = document.getElementById('rep-to').value;
       const from = f ? new Date(f + 'T00:00:00') : null, to = t ? new Date(t + 'T23:59:59') : null;
       return (quotesData || []).filter(q => {
-        const d = new Date(String(q.created_at || '').replace(' ', 'T'));
+        const raw = String(q.created_at || '').replace(' ', 'T');
+        const d = new Date(/[zZ]|[+-]\d\d:?\d\d$/.test(raw) ? raw : raw + 'Z'); // stocat UTC
         if (isNaN(d)) return false;
         if (from && d < from) return false;
         if (to && d > to) return false;
@@ -3547,7 +3560,7 @@
       const head = ['Ref', 'Data', 'Nume', 'Telefon', 'Email', 'Tip proiect', 'Suprafata mp', 'Status', 'Firma', 'CUI', 'Judet/Localitate', 'Mesaj', 'Notite CRM'];
       const ce = v => '"' + String(v == null ? '' : v).replace(/"/g, '""').replace(/\r?\n/g, ' ') + '"';
       const lines = [head.join(',')];
-      rows.forEach(q => lines.push([q.ref, (q.created_at || '').replace('T', ' ').slice(0, 16), q.nume, q.telefon, q.email, q.tip, q.suprafata, (QSTATUS[q.status || 'nou'] || {}).label, q.firma || '', q.cui || '', q.judet || q.oras || '', q.mesaj, q.crm_notes || ''].map(ce).join(',')));
+      rows.forEach(q => lines.push([q.ref, fmtDT(q.created_at), q.nume, q.telefon, q.email, q.tip, q.suprafata, (QSTATUS[q.status || 'nou'] || {}).label, q.firma || '', q.cui || '', q.judet || q.oras || '', q.mesaj, q.crm_notes || ''].map(ce).join(',')));
       const blob = new Blob(['﻿' + lines.join('\n')], { type: 'text/csv;charset=utf-8' });
       const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
       const f = document.getElementById('rep-from').value || 'start', t = document.getElementById('rep-to').value || 'azi';
