@@ -655,6 +655,17 @@
         </div>
         <pre id="mailtest-out" style="margin-top:16px;background:#0d0f12;color:#d7dae0;padding:14px;border-radius:8px;font-size:.82rem;white-space:pre-wrap;word-break:break-word;display:none"></pre>
       </div>
+
+      <div style="background:var(--em-card);border:1px solid var(--em-border);border-radius:12px;padding:20px;margin-top:24px;max-width:820px">
+        <h3 style="font-size:1.05rem;margin-bottom:6px;display:flex;align-items:center;gap:8px"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#ffe01b"></span> Mailchimp — email marketing</h3>
+        <p style="color:var(--em-muted,#8a8f98);font-size:.9rem;margin:0 0 16px">Cheia API o iei din Mailchimp: <b>Account → Extras → API keys → Create A Key</b>. Are forma <code>xxxxxxxx-usXX</code>. Cheia se salvează pe server (nu apare în pagină). Apoi o folosești la <b>Cereri ofertă → Șabloane email</b> pentru a crea campanii.</p>
+        <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end">
+          <div class="field" style="margin:0;flex:1;min-width:240px"><label>Cheie API Mailchimp</label><input id="mc-key" type="password" autocomplete="off" placeholder="xxxxxxxxxxxx-usXX"></div>
+          <button type="button" class="btn btn-primary" style="padding:10px 18px" onclick="mcSaveKey()">Salvează cheia</button>
+          <button type="button" class="btn btn-outline" style="padding:10px 18px" onclick="mcPing()">Testează conexiunea</button>
+        </div>
+        <div id="mc-status" class="muted-sm" style="margin-top:14px"></div>
+      </div>
     </div>
 
     <div id="tab-setari" style="display:none">
@@ -854,14 +865,7 @@
               <div style="display:flex;align-items:center;gap:8px;font-weight:700;margin-bottom:8px">
                 <span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:#ffe01b"></span> Mailchimp
               </div>
-              <div class="muted-sm" style="margin-bottom:4px">Cheie API</div>
-              <input id="mc-key" type="password" class="qe-in full" placeholder="xxxxxxxxxxxx-usXX" autocomplete="off">
-              <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
-                <button type="button" class="a-btn-sm" onclick="mcSaveKey()">Salvează cheia</button>
-                <button type="button" class="a-btn-sm" onclick="mcPing()">Testează conexiunea</button>
-              </div>
-              <div id="mc-status" class="muted-sm" style="margin-top:8px"></div>
-              <div style="border-top:1px solid var(--em-border,#33363a);margin:12px 0 10px"></div>
+              <p class="muted-sm" style="margin:0 0 10px;font-size:.8rem">Cheia API se configurează în tabul <b>Integrări</b>. Aici alegi audiența și trimiți șablonul/campania.</p>
               <div class="muted-sm" style="margin-bottom:4px">Audiență (listă abonați)</div>
               <div style="display:flex;gap:6px"><select id="mc-list" class="qe-sel" style="flex:1"><option value="">— apasă ↻ —</option></select><button type="button" class="a-btn-sm" onclick="mcLoadLists()" title="Încarcă listele">↻</button></div>
               <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">
