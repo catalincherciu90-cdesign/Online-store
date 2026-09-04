@@ -840,6 +840,9 @@ a.pd-doc:hover { border-color: var(--terra); }
 .footer-col a { display: flex; align-items: center; padding: 6px 0; color: #b7c6d4; font-size: .92rem; transition: color .2s, transform .2s; }
 .footer-col a:hover { color: var(--terra); transform: translateX(3px); }
 .footer-col p { font-size: .92rem; margin-bottom: 10px; }
+/* Telefon/email din rubrica de contact rămân în linie cu iconul (nu flex-block ca link-urile de nav) */
+.footer-col p a.tel-link { display: inline; padding: 0; transform: none; }
+.footer-col p a.tel-link:hover { transform: none; text-decoration: underline; }
 .footer-bottom { border-top: 1px solid rgba(255,255,255,.1); padding-top: 22px; text-align: center; font-size: .85rem; color: #7f92a3; }
 .footer-anpc { display: flex; flex-wrap: wrap; gap: 14px; justify-content: center; align-items: center; margin-bottom: 20px; }
 .footer-anpc a { display: inline-flex; }

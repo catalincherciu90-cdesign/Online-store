@@ -402,7 +402,7 @@
         <div class="nav-cap">Conținut</div>
         <button data-tab="bannere" onclick="showTab('bannere')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.8"/><path d="m21 16-5-5-9 9"/></svg>Banner</button>
         <button data-tab="recenzii" onclick="showTab('recenzii')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 2.9 5.9 6.1.9-4.4 4.3 1 6.1-5.6-2.9-5.6 2.9 1-6.1L3 9.8l6.1-.9Z"/></svg>Recenzii</button>
-        <button data-tab="blog" onclick="showTab('blog')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v5h5"/><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8Z"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg>Blog</button>
+        <button data-tab="blog" onclick="showTab('blog')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v5h5"/><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8Z"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg>Ghiduri</button>
         <button data-tab="meniu" onclick="showTab('meniu')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg>Meniu</button>
         <button data-tab="social" onclick="showTab('social')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="10.7" x2="15.4" y2="6.3"/><line x1="8.6" y1="13.3" x2="15.4" y2="17.7"/></svg>Social media</button>
         <div class="nav-cap">Pagini</div>
@@ -745,10 +745,10 @@
 
     <div id="tab-blog" style="display:none">
       <div class="toolbar">
-        <h2 class="grow" style="font-size:1.3rem">Blog</h2>
-        <button class="btn btn-primary" style="padding:9px 16px" onclick="openPost()">+ Articol nou</button>
+        <h2 class="grow" style="font-size:1.3rem">Ghiduri</h2>
+        <button class="btn btn-primary" style="padding:9px 16px" onclick="openPost()">+ Ghid nou</button>
       </div>
-      <p class="muted-sm" style="margin-bottom:16px">Articolele active apar pe pagina Blog. Ideal pentru ghiduri (cum alegi țigla, calcul necesar) — bune și pentru Google.</p>
+      <p class="muted-sm" style="margin-bottom:16px">Ghidurile publicate apar pe pagina <a href="ghiduri.html" target="_blank" rel="noopener" style="color:var(--em-accent-2)">Ghiduri</a> și sunt bune pentru Google. Titlu, rezumat, imagine de copertă și conținut (poți folosi HTML simplu).</p>
       <div id="posts-box"></div>
     </div>
 
@@ -1131,7 +1131,7 @@
   <!-- EDITOR ARTICOL BLOG -->
   <div class="overlay" id="post-view">
     <div class="modal" style="max-width:680px">
-      <h3 id="post-title-h" style="margin-bottom:18px">Articol</h3>
+      <h3 id="post-title-h" style="margin-bottom:18px">Ghid</h3>
       <form id="post-form" class="checkout-form" onsubmit="savePost(event)">
         <input type="hidden" name="id">
         <input type="hidden" name="image">
@@ -2170,7 +2170,7 @@
       const f = document.getElementById('post-form'); f.reset();
       document.getElementById('post-status').textContent = '';
       const ed = typeof i === 'number' ? postsData[i] : null;
-      document.getElementById('post-title-h').textContent = ed ? 'Editează articolul' : 'Articol nou';
+      document.getElementById('post-title-h').textContent = ed ? 'Editează ghidul' : 'Ghid nou';
       f.id.value = ed ? ed.id : '';
       f.title.value = ed ? ed.title : '';
       f.slug.value = ed ? ed.slug : '';

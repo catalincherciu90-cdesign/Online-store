@@ -256,8 +256,25 @@
 (function(){
   var grid=document.getElementById('g-grid');var chips=document.querySelectorAll('.g-chip');
   var q='';var cat='all';
-  // fără diacritice, litere mici — ca să potrivim „ventilație" cu „ventilația" etc.
+  // fără diacritice, litere mici — ca să potrivim „ventilație" cu „ventilața" etc.
   function norm(s){return (s||'').toLowerCase().replace(/[ăâ]/g,'a').replace(/î/g,'i').replace(/[șş]/g,'s').replace(/[țţ]/g,'t');}
+
+  // Ghidurile adăugate din admin (tab Ghiduri) — se afișează primele în listă.
+  (function loadDynamicGuides(){
+    var esc=function(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');};
+    fetch('/api/posts',{headers:{Accept:'application/json'}}).then(function(r){return r.ok?r.json():[];}).then(function(list){
+      if(!Array.isArray(list)||!list.length)return;
+      var html=list.map(function(p){
+        var img=p.image?'<img src="'+esc(p.image)+'" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover">':'';
+        var bg=p.image?'':'background:linear-gradient(135deg,#2c2f33,#5a4a22)';
+        return '<a class="g-card" href="blog.html?slug='+encodeURIComponent(p.slug)+'" data-cat="articole" data-title="'+esc(p.title||'')+'" data-kw="'+esc(p.excerpt||'')+'">'
+          +'<div class="g-card-media" style="'+bg+'">'+img+'<span class="tag">Ghid</span></div>'
+          +'<div class="g-card-body"><div class="g-card-meta"><span>Ghid</span><span></span></div><h3>'+esc(p.title||'')+'</h3><p>'+esc(p.excerpt||'')+'</p><span class="more">Citește articolul →</span></div></a>';
+      }).join('');
+      grid.insertAdjacentHTML('afterbegin', html);
+      apply(); // aplică filtrul/căutarea curentă și pe cardurile noi
+    }).catch(function(){});
+  })();
   function apply(){
     var toks=norm(q).split(/\s+/).filter(function(w){return w.length>=3;});
     var any=false;grid.querySelectorAll('.g-card').forEach(function(c){
