@@ -1221,6 +1221,10 @@
       const ordersWk = weekly(orders, 8, dOf);
       const revWk = weekly(orders.filter(o => st(o) === 'livrata'), 8, dOf, o => Number(o.total) || 0);
       const quotesWk = weekly(quotes, 8, q => q.created_at || q.data || '');
+      // CRM cereri: noi vs în lucru (contactat/ofertat) vs câștigate
+      const qs = q => q.status || 'nou';
+      const qNew = quotes.filter(q => qs(q) === 'nou').length;
+      const qWork = quotes.filter(q => qs(q) === 'contactat' || qs(q) === 'ofertat').length;
 
       // Carduri statistice cu grafic (stil dashboard modern)
       const stat = (label, val, series, opts = {}) => {
@@ -1239,7 +1243,9 @@
         ${stat('Total comenzi', orders.length, ordersWk.vals, { delta: pctDelta(ordersWk), click: "showTab('comenzi');setOrderFilter('all')" })}
         ${stat('Venit livrat', fmtShort(venit), revWk.vals, { bars: true, color: '#6ee7b7', delta: pctDelta(revWk) })}
         ${stat('Comenzi noi', nou, ordersWk.vals, { color: '#38bdf8', click: "showTab('comenzi');setOrderFilter('nou')" })}
-        ${stat('Cereri de ofertă', quotes.length, quotesWk.vals, { bars: true, color: '#a7f3d0', click: "showTab('cereri')" })}
+        ${stat('Cereri de ofertă', quotes.length, quotesWk.vals, { bars: true, color: '#a7f3d0', click: "showTab('cereri');setQuoteFilter('all')" })}
+        ${stat('Cereri noi', qNew, quotesWk.vals, { color: '#fbbf24', click: "showTab('cereri');setQuoteFilter('nou')" })}
+        ${stat('Cereri în lucru', qWork, quotesWk.vals, { color: '#c4b5fd', click: "showTab('cereri');setQuoteFilter('inlucru')" })}
       </div>`;
 
       // Panou „Analiză vânzări" — chart mare pe 12 săptămâni
@@ -3254,8 +3260,14 @@
       const counts = { all: list.length }; QORDER.forEach(s => counts[s] = 0);
       list.forEach(q => { const s = q.status || 'nou'; counts[s] = (counts[s] || 0) + 1; });
       const chip = (key, label, n) => { const on = quoteFilter === key; return `<button class="a-btn-sm" onclick="setQuoteFilter('${key}')" style="${on ? 'background:#d79a08;color:#fff;border-color:transparent;' : ''}">${label} <b>${n}</b></button>`; };
-      const chips = `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">${chip('all', 'Toate', counts.all)}${QORDER.map(s => chip(s, QSTATUS[s].label, counts[s] || 0)).join('')}</div>`;
-      const rows = list.filter(q => quoteFilter === 'all' || (q.status || 'nou') === quoteFilter);
+      const workN = (counts.contactat || 0) + (counts.ofertat || 0);
+      const chips = `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">${chip('all', 'Toate', counts.all)}${chip('inlucru', 'În lucru', workN)}${QORDER.map(s => chip(s, QSTATUS[s].label, counts[s] || 0)).join('')}</div>`;
+      const rows = list.filter(q => {
+        const s = q.status || 'nou';
+        if (quoteFilter === 'all') return true;
+        if (quoteFilter === 'inlucru') return s === 'contactat' || s === 'ofertat';
+        return s === quoteFilter;
+      });
       const table = rows.length ? `<table class="a-table"><thead><tr><th>Ref</th><th>Status</th><th>Nume</th><th>Contact</th><th>Proiect</th><th>Data</th><th></th></tr></thead><tbody>${
         rows.map(q => { const i = quotesData.indexOf(q); return `<tr style="cursor:pointer" onclick="openQuote(${i})">
           <td><b>${esc(q.ref)}</b></td>
