@@ -179,6 +179,17 @@
     .subtab { background: none; border: 0; border-bottom: 2px solid transparent; color: var(--em-muted,#9aa6a1); padding: 10px 2px; margin-bottom: -1px; font-family: inherit; font-weight: 700; font-size: .95rem; cursor: pointer; transition: color .14s, border-color .14s; }
     .subtab:hover { color: #fff; }
     .subtab.active { color: #fff; border-bottom-color: var(--em-accent,#34d399); }
+    /* Editor vizual (WYSIWYG) șablon email */
+    .rt-toolbar { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; padding: 8px; background: rgba(255,255,255,.04); border: 1px solid var(--em-border,#33363a); border-bottom: 0; border-radius: 8px 8px 0 0; }
+    .rt-toolbar button { background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.28); color: #eef3f1; border-radius: 6px; padding: 6px 10px; font-family: inherit; font-size: .85rem; cursor: pointer; transition: background .12s, border-color .12s; }
+    .rt-toolbar button:hover { background: rgba(255,255,255,.18); border-color: #fff; }
+    .rt-toolbar .rt-sep { width: 1px; align-self: stretch; background: var(--em-border,#33363a); margin: 2px 4px; }
+    .rt-editor { min-height: 170px; padding: 14px 16px; background: #fff; color: #26282b; border: 1px solid var(--em-border,#33363a); border-radius: 0 0 8px 8px; font-family: Arial, sans-serif; font-size: 15px; line-height: 1.6; outline: none; overflow-y: auto; }
+    .rt-editor:focus { border-color: var(--em-accent,#34d399); }
+    .rt-editor:empty:before { content: attr(data-ph); color: #9aa1a8; }
+    .rt-editor a { color: #0b6b3a; }
+    .rt-editor h3 { font-size: 18px; margin: .4em 0; }
+    .rt-editor ul { margin: .4em 0; padding-left: 22px; }
     .modal { background: #0e2219; border: 1px solid var(--em-border); color: var(--em-text); }
     .modal h3 { color: #fff; }
     .muted-sm { color: var(--em-muted); }
@@ -740,8 +751,22 @@
           <p class="muted-sm" style="margin:0 0 16px">Emailul trimis automat clientului când completează formularul de ofertă (Contact + Configurator). Poți folosi în text: <b>{nume}</b>, <b>{ref}</b>, <b>{telefon}</b>. Lasă gol pentru mesajul implicit.</p>
           <div class="muted-sm" style="margin-bottom:4px">Subiect</div>
           <input id="qe-subject" placeholder="Am primit cererea ta {ref} — ExpoTigla" style="width:100%;padding:11px 13px;border-radius:10px;border:1px solid var(--em-border,#3a3d42);background:var(--em-card,#1f2124);color:inherit;font-family:inherit;font-size:.95rem;box-sizing:border-box">
-          <div class="muted-sm" style="margin:14px 0 4px">Conținut (rândurile noi devin paragrafe)</div>
-          <textarea id="qe-body" rows="9" placeholder="Îți mulțumim, {nume}!&#10;&#10;Am primit cererea ta cu numărul {ref}. Un consultant ExpoTigla te va contacta în maxim 24 de ore.&#10;&#10;— Echipa ExpoTigla" style="width:100%;padding:11px 13px;border-radius:10px;border:1px solid var(--em-border,#3a3d42);background:var(--em-card,#1f2124);color:inherit;font-family:inherit;font-size:.95rem;box-sizing:border-box;resize:vertical"></textarea>
+          <div class="muted-sm" style="margin:14px 0 6px">Conținut</div>
+          <div class="rt-toolbar">
+            <button type="button" onclick="rtCmd('bold')" title="Îngroșat" style="font-weight:800">B</button>
+            <button type="button" onclick="rtCmd('italic')" title="Italic" style="font-style:italic">I</button>
+            <button type="button" onclick="rtCmd('underline')" title="Subliniat" style="text-decoration:underline">U</button>
+            <button type="button" onclick="rtCmd('formatBlock','H3')" title="Titlu">Titlu</button>
+            <button type="button" onclick="rtCmd('insertUnorderedList')" title="Listă">• Listă</button>
+            <button type="button" onclick="rtLink()" title="Adaugă link">Link</button>
+            <span style="width:1px;background:var(--em-border,#3a3d42);margin:2px 4px"></span>
+            <button type="button" onclick="rtPlaceholder('{nume}')">{nume}</button>
+            <button type="button" onclick="rtPlaceholder('{ref}')">{ref}</button>
+            <button type="button" onclick="rtPlaceholder('{telefon}')">{telefon}</button>
+            <span style="width:1px;background:var(--em-border,#3a3d42);margin:2px 4px"></span>
+            <button type="button" onclick="rtCmd('removeFormat')" title="Curăță formatarea">✕ format</button>
+          </div>
+          <div id="qe-body" class="rt-editor" contenteditable="true" data-ph="Îți mulțumim, {nume}! Am primit cererea ta ({ref})..."></div>
           <div style="display:flex;align-items:center;gap:12px;margin-top:14px">
             <button class="btn btn-primary" style="padding:9px 18px" onclick="saveQuoteEmail()">Salvează</button>
             <span id="qe-msg" class="muted-sm"></span>
@@ -3435,14 +3460,27 @@
       try {
         const s = await (await api('/settings')).json();
         document.getElementById('qe-subject').value = s.quote_confirm_subject || '';
-        document.getElementById('qe-body').value = s.quote_confirm_body || '';
+        document.getElementById('qe-body').innerHTML = s.quote_confirm_body || '';
       } catch (e) { /* implicit */ }
+    }
+    function rtCmd(cmd, val) {
+      const ed = document.getElementById('qe-body'); ed.focus();
+      try { document.execCommand(cmd, false, val || null); } catch (e) {}
+    }
+    function rtLink() {
+      const url = prompt('Adresa link-ului (ex: https://expotigla.ro):', 'https://');
+      if (url) rtCmd('createLink', url);
+    }
+    function rtPlaceholder(p) {
+      const ed = document.getElementById('qe-body'); ed.focus();
+      try { document.execCommand('insertText', false, p); } catch (e) {}
     }
     async function saveQuoteEmail() {
       const msg = document.getElementById('qe-msg'); msg.style.color = ''; msg.textContent = 'Se salvează…';
+      const ed = document.getElementById('qe-body');
       const body = {
         quote_confirm_subject: document.getElementById('qe-subject').value.trim(),
-        quote_confirm_body: document.getElementById('qe-body').value,
+        quote_confirm_body: ed.textContent.trim() ? ed.innerHTML : '',
       };
       try {
         const d = await (await api('/settings', { method: 'POST', body: JSON.stringify(body) })).json();

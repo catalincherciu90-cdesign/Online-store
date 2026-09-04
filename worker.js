@@ -1152,8 +1152,9 @@ async function quoteCreate(request, env) {
     }
     const fill = t => String(t).replace(/\{nume\}/g, esc(nume)).replace(/\{ref\}/g, esc(ref)).replace(/\{telefon\}/g, esc(telefon || ''));
     const subject = cs.trim() ? fill(cs) : `Am primit cererea ta ${ref} — ExpoTigla`;
+    const bodyIsHtml = /<[a-z][\s\S]*>/i.test(cb); // editor vizual → deja HTML; altfel text simplu
     const html = cb.trim()
-      ? `<div style="font-family:Arial,sans-serif;font-size:15px;line-height:1.6;color:#26282b">${fill(cb).replace(/\n/g, '<br>')}</div>`
+      ? `<div style="font-family:Arial,sans-serif;font-size:15px;line-height:1.6;color:#26282b">${bodyIsHtml ? fill(cb) : fill(cb).replace(/\n/g, '<br>')}</div>`
       : `<h2>Îți mulțumim, ${esc(nume)}!</h2>
         <p>Am primit cererea ta cu numărul <b>${esc(ref)}</b>. Un consultant ExpoTigla te va contacta în <b>maxim 24 de ore</b> pentru detalii și ofertă.</p>
         <p>Dacă e ceva urgent, ne poți suna direct.<br>Ai întrebări? Poți răspunde la acest email.<br>— Echipa ExpoTigla</p>`;
