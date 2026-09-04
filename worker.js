@@ -673,7 +673,7 @@ const CHAT_PROVIDERS = {
   // `fallbacks` = modele curente încercate dacă cel configurat e scos din uz (Groq retrage des modele).
   groq: { url: 'https://api.groq.com/openai/v1/chat/completions', model: 'llama-3.3-70b-versatile', keys: ['GROQ_API_KEY', 'GROK_API_KEY', 'AI_API_KEY'], fallbacks: ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'openai/gpt-oss-20b'] },
   xai: { url: 'https://api.x.ai/v1/chat/completions', model: 'grok-3', keys: ['XAI_API_KEY', 'GROK_API_KEY', 'AI_API_KEY'], fallbacks: ['grok-3', 'grok-2-1212'] },
-  gemini: { url: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions', model: 'gemini-2.0-flash', keys: ['GEMINI_API_KEY', 'GOOGLE_API_KEY', 'AI_API_KEY'], fallbacks: ['gemini-2.0-flash', 'gemini-1.5-flash'] },
+  gemini: { url: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions', model: 'gemini-flash-latest', keys: ['GEMINI_API_KEY', 'GOOGLE_API_KEY', 'AI_API_KEY'], fallbacks: ['gemini-flash-latest', 'gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-2.5-flash-lite'] },
 };
 async function chatHandler(request, env) {
   const body = await request.json().catch(() => null);
