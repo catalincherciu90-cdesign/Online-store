@@ -722,10 +722,12 @@ async function chatHandler(request, env) {
     } catch (e) { return json({ error: 'Nu am putut contacta serviciul de chat.' }, 502); }
     if (r.ok) break;
     lastStatus = r.status; lastDetail = (await r.text().catch(() => '')).slice(0, 400);
-    // Încearcă alt model DOAR dacă cel curent nu mai există (404 / model_not_found).
-    // Pentru 429 (limită), 401/403 (cheie) etc. ne oprim — nu ajută alt model.
-    const modelGone = r.status === 404 || /model_not_found|does not exist|has been decommissioned|decommission/i.test(lastDetail);
-    if (!modelGone) break;
+    // Încearcă alt model dacă cel curent nu mai există (404 / model_not_found) SAU
+    // dacă furnizorul e temporar suprasolicitat (503 overloaded) — alt model poate
+    // răspunde. Pentru 429 (limită) / 401 / 403 (cheie) ne oprim — nu ajută alt model.
+    const retryable = r.status === 404 || r.status === 503
+      || /model_not_found|does not exist|has been decommissioned|decommission|overloaded|unavailable/i.test(lastDetail);
+    if (!retryable) break;
   }
   if (!r || !r.ok) {
     const provLabel = { groq: 'Groq', gemini: 'Google Gemini', xai: 'Grok/xAI' }[s.chatbot_provider] || (s.chatbot_provider || 'Groq');
@@ -733,6 +735,7 @@ async function chatHandler(request, env) {
     let msg;
     if (lastStatus === 429) msg = 'Limită de utilizare atinsă (429). Ai depășit cota gratuită ' + provLabel + ' (pe minut sau zilnică) — reîncearcă peste câteva minute. Pentru volum mai mare, comută pe alt furnizor gratuit (ex. Google Gemini, cu limite mai mari) din tab-ul Chatbot, sau treci pe un plan plătit.';
     else if (lastStatus === 401 || lastStatus === 403) msg = 'Cheia API a fost respinsă (' + lastStatus + '). Verifică ' + keyName + ' în Cloudflare.';
+    else if (lastStatus === 503 || /overloaded|unavailable/i.test(lastDetail)) msg = 'Serviciul AI e temporar suprasolicitat. Încearcă din nou în câteva secunde.';
     else if (lastStatus === 404 || /model_not_found|does not exist|decommission/i.test(lastDetail)) msg = 'Modelul configurat nu mai există — schimbă-l în tab-ul Chatbot.';
     else msg = 'Serviciul de chat a returnat eroare (' + (lastStatus || '?') + ').';
     return json({ error: msg, detail: lastDetail }, 502);
