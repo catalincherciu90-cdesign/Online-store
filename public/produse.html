@@ -263,24 +263,35 @@
       else if (/^[0-9a-f]{6}$/.test(h)) { h = '#' + h; }
       return /^#[0-9a-f]{6}$/.test(h) ? h : '';
     }
-    // Grupuri de culori (deduplicare pe hex): o singură pastilă per culoare reală,
-    // dar poate acoperi mai multe id-uri duplicate din Proprietăți. Fără hex = ignorat.
+    // Derivă un cod de culoare din RAL/nume, ca pastila să nu fie „goală" (ca la import).
+    function guessHex(name) {
+      const n = (name || '').toLowerCase().trim();
+      const RAL = { '7016': '#383e42', '7024': '#45494e', '9005': '#0a0a0a', '9006': '#a5a8a6', '9002': '#e7ebda', '8017': '#442f29', '8019': '#3d3635', '8004': '#8a3a2a', '3000': '#a72920', '3005': '#5e2129', '3009': '#6b3b32', '3011': '#792423', '5010': '#0e294b', '6020': '#39352a', '6005': '#114232', '1015': '#e6d2b5', '7035': '#c5c7c4', '7037': '#7d7f7d', '9010': '#f1ece1' };
+      for (const k in RAL) if (n.includes(k)) return RAL[k];
+      const NAME = { 'maro': '#4b3621', 'caramiziu': '#8a3a2a', 'cardinal': '#7a2e28', 'granit': '#5b5148', 'negru': '#111111', 'brun': '#3d2b1f', 'grafit': '#383a3c', 'gri': '#808387', 'silver': '#9a9da0', 'argintiu': '#a6a9ac', 'alb': '#eceae3', 'rosu': '#a72920', 'roșu': '#a72920', 'verde': '#2f5233', 'antracit': '#31363b', 'teak': '#6b4423' };
+      for (const k in NAME) if (n === k || n.startsWith(k)) return NAME[k];
+      return '';
+    }
+    const resolveHex = v => normHex(v.hex) || guessHex(v.name);
+    // Grupuri de culori: o singură pastilă per culoare REALĂ (după cod), dar acoperă
+    // toate id-urile duplicate asignate produselor. Nimic nu se pierde din filtrare.
     let colorGroups = [];
     function buildColorFilters() {
       const present = new Set();
       PRODUCTS.forEach(p => productColorSet(p).forEach(c => present.add(c)));
-      const byHex = new Map();
+      const groups = new Map();
       OPTIONS.culoare.values.forEach(v => {
-        if (!present.has(v.id)) return;
-        const hx = normHex(v.hex); if (!hx) return; // sare peste culorile fără cod (cercurile goale)
-        if (!byHex.has(hx)) byHex.set(hx, { key: hx, hex: hx, name: v.name, ids: new Set() });
-        byHex.get(hx).ids.add(v.id);
+        if (!present.has(v.id)) return; // doar culorile chiar asignate produselor
+        const hx = resolveHex(v);
+        const key = hx || ('id:' + v.id);      // fără cod → rămâne pastilă separată (tot filtrabilă)
+        const hex = hx || '#b8bcc0';
+        if (!groups.has(key)) groups.set(key, { key, hex, name: v.name, ids: new Set() });
+        groups.get(key).ids.add(v.id);
       });
-      colorGroups = [...byHex.values()];
+      colorGroups = [...groups.values()];
       const group = document.getElementById('color-group');
       if (!colorGroups.length) { group.style.display = 'none'; if (activeColor !== 'all') activeColor = 'all'; return; }
       group.style.display = '';
-      // dacă selecția curentă nu mai există, revino la „Toate"
       if (activeColor !== 'all' && !colorGroups.some(g => g.key === activeColor)) activeColor = 'all';
       colFilters.innerHTML = `<button type="button" class="fswatch fsw-all ${activeColor === 'all' ? 'sel' : ''}" data-val="all">Toate</button>` +
         colorGroups.map(g => `<button type="button" class="fswatch ${activeColor === g.key ? 'sel' : ''}" data-val="${g.key}" title="${escAttr(g.name)}" style="--sw:${g.hex}"><span></span></button>`).join('');
