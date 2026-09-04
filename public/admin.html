@@ -746,6 +746,7 @@
     <div id="tab-blog" style="display:none">
       <div class="toolbar">
         <h2 class="grow" style="font-size:1.3rem">Ghiduri</h2>
+        <button type="button" class="a-btn-sm" onclick="seedGuides()" title="Importă cele 6 ghiduri existente ca articole editabile">⭳ Încarcă ghidurile din site</button>
         <button class="btn btn-primary" style="padding:9px 16px" onclick="openPost()">+ Ghid nou</button>
       </div>
       <p class="muted-sm" style="margin-bottom:16px">Ghidurile publicate apar pe pagina <a href="ghiduri.html" target="_blank" rel="noopener" style="color:var(--em-accent-2)">Ghiduri</a> și sunt bune pentru Google. Titlu, rezumat, imagine de copertă și conținut (poți folosi HTML simplu).</p>
@@ -2132,6 +2133,41 @@
     // ── Blog ──
     let postsData = [];
     let postImage = '';
+    // Importă cele 6 ghiduri statice existente ca articole editabile (o singură dată).
+    async function seedGuides() {
+      const files = [
+        'ghid-cat-costa-un-acoperis-complet-2026.html',
+        'ghid-ce-contine-un-sistem-complet-de-acoperis.html',
+        'ghid-cum-alegi-culoarea-acoperisului.html',
+        'ghid-de-ce-conteaza-ventilatia-acoperisului.html',
+        'ghid-sapte-greseli-frecvente-acoperis.html',
+        'ghid-tigla-metalica-tabla-faltuita-tabla-cutata.html',
+      ];
+      if (!confirm('Încarc cele 6 ghiduri existente ca articole editabile? Cele deja încărcate se sar.')) return;
+      const have = new Set((postsData || []).map(p => p.slug));
+      let added = 0, skipped = 0, failed = 0;
+      for (const file of files) {
+        const slug = file.replace(/\.html$/, '');
+        if (have.has(slug)) { skipped++; continue; }
+        try {
+          const res = await fetch(file, { headers: { Accept: 'text/html' } });
+          if (!res.ok) { failed++; continue; }
+          const doc = new DOMParser().parseFromString(await res.text(), 'text/html');
+          const body = doc.querySelector('.art-body');
+          if (!body) { failed++; continue; }
+          body.querySelectorAll('script, style').forEach(el => el.remove());
+          const title = ((doc.querySelector('.art-hero h1') || doc.querySelector('h1') || {}).textContent || slug).trim();
+          const excerpt = ((doc.querySelector('.art-hero .lead') || doc.querySelector('.lead') || {}).textContent || '').trim();
+          const imgEl = doc.querySelector('.art-hero-img');
+          const image = imgEl ? imgEl.getAttribute('src') : '';
+          const content = body.innerHTML.trim();
+          const d = await (await api('/posts', { method: 'POST', body: JSON.stringify({ title, slug, excerpt, content, image, active: true }) })).json();
+          if (d.ok) added++; else failed++;
+        } catch (e) { failed++; }
+      }
+      await loadPosts();
+      alert('Gata: ' + added + ' încărcate, ' + skipped + ' existau deja' + (failed ? ', ' + failed + ' eșuate' : '') + '.');
+    }
     async function loadPosts() {
       const box = document.getElementById('posts-box');
       try { const res = await api('/posts?all=1'); postsData = await res.json(); }

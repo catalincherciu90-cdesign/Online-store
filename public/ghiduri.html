@@ -259,17 +259,23 @@
   // fără diacritice, litere mici — ca să potrivim „ventilație" cu „ventilața" etc.
   function norm(s){return (s||'').toLowerCase().replace(/[ăâ]/g,'a').replace(/î/g,'i').replace(/[șş]/g,'s').replace(/[țţ]/g,'t');}
 
-  // Ghidurile adăugate din admin (tab Ghiduri) — se afișează primele în listă.
+  // Ghidurile din admin (tab Ghiduri). Cele importate din paginile statice înlocuiesc
+  // cardul static corespunzător (evită dublarea). Categorie păstrată pentru chips.
+  var SLUG_CAT={'ghid-tigla-metalica-tabla-faltuita-tabla-cutata':'comparatii','ghid-cat-costa-un-acoperis-complet-2026':'costuri','ghid-cum-alegi-culoarea-acoperisului':'inspiratie','ghid-de-ce-conteaza-ventilatia-acoperisului':'intretinere','ghid-sapte-greseli-frecvente-acoperis':'montaj','ghid-ce-contine-un-sistem-complet-de-acoperis':'alegere'};
+  var CAT_TAG={comparatii:'Comparații',costuri:'Costuri',inspiratie:'Inspirație',intretinere:'Întreținere',montaj:'Montaj',alegere:'Alegerea acoperișului',articole:'Ghid'};
   (function loadDynamicGuides(){
     var esc=function(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');};
     fetch('/api/posts',{headers:{Accept:'application/json'}}).then(function(r){return r.ok?r.json():[];}).then(function(list){
       if(!Array.isArray(list)||!list.length)return;
       var html=list.map(function(p){
+        // scoate cardul static cu aceeași temă (importat → dinamic)
+        var stat=grid.querySelector('.g-card[href="'+p.slug+'.html"]'); if(stat) stat.remove();
+        var c=SLUG_CAT[p.slug]||'articole', tag=CAT_TAG[c]||'Ghid';
         var img=p.image?'<img src="'+esc(p.image)+'" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover">':'';
         var bg=p.image?'':'background:linear-gradient(135deg,#2c2f33,#5a4a22)';
-        return '<a class="g-card" href="blog.html?slug='+encodeURIComponent(p.slug)+'" data-cat="articole" data-title="'+esc(p.title||'')+'" data-kw="'+esc(p.excerpt||'')+'">'
-          +'<div class="g-card-media" style="'+bg+'">'+img+'<span class="tag">Ghid</span></div>'
-          +'<div class="g-card-body"><div class="g-card-meta"><span>Ghid</span><span></span></div><h3>'+esc(p.title||'')+'</h3><p>'+esc(p.excerpt||'')+'</p><span class="more">Citește articolul →</span></div></a>';
+        return '<a class="g-card" href="blog.html?slug='+encodeURIComponent(p.slug)+'" data-cat="'+c+'" data-title="'+esc(p.title||'')+'" data-kw="'+esc(p.excerpt||'')+'">'
+          +'<div class="g-card-media" style="'+bg+'">'+img+'<span class="tag">'+esc(tag)+'</span></div>'
+          +'<div class="g-card-body"><div class="g-card-meta"><span>'+esc(tag)+'</span><span></span></div><h3>'+esc(p.title||'')+'</h3><p>'+esc(p.excerpt||'')+'</p><span class="more">Citește articolul →</span></div></a>';
       }).join('');
       grid.insertAdjacentHTML('afterbegin', html);
       apply(); // aplică filtrul/căutarea curentă și pe cardurile noi

@@ -85,7 +85,10 @@
     const bEsc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     const fmtDate = s => (s || '').replace('T', ' ').slice(0, 10);
     function contentHtml(txt) {
-      return bEsc(txt).split(/\n\s*\n/).map(p => `<p>${p.trim().replace(/\n/g, '<br>')}</p>`).join('');
+      const s = String(txt == null ? '' : txt);
+      // Dacă e deja HTML (ghiduri importate / editor), îl afișăm ca atare; altfel text simplu → paragrafe.
+      if (/<[a-z][\s\S]*>/i.test(s)) return s;
+      return bEsc(s).split(/\n\s*\n/).map(p => `<p>${p.trim().replace(/\n/g, '<br>')}</p>`).join('');
     }
 
     if (slug) {
