@@ -3515,10 +3515,10 @@
 
     function qeDefault(type) {
       const id = qeNewId();
-      if (type === 'heading') return { id, type, text: 'Îți mulțumim, {nume}!', level: 'h2', align: 'left', color: '#26282b' };
+      if (type === 'heading') return { id, type, text: 'Îți mulțumim, {nume}!', level: 'h2', align: 'left', color: '#2c2f33' };
       if (type === 'text') return { id, type, html: 'Am primit cererea ta (<b>{ref}</b>). Un consultant te contactează în maxim 24 de ore.', align: 'left' };
       if (type === 'image') return { id, type, src: '', alt: '', width: 100, align: 'center', href: '' };
-      if (type === 'button') return { id, type, text: 'Vezi produsele', href: 'https://expotigla.ro', bg: '#0b6b3a', color: '#ffffff', align: 'center' };
+      if (type === 'button') return { id, type, text: 'Vezi produsele', href: 'https://expotigla.ro', bg: '#c2890a', color: '#ffffff', align: 'center' };
       if (type === 'columns') return { id, type, cols: [{ kind: 'text', html: 'Coloana 1' }, { kind: 'text', html: 'Coloana 2' }] };
       if (type === 'divider') return { id, type };
       if (type === 'spacer') return { id, type, h: 24 };
@@ -3552,25 +3552,27 @@
     // Șablon predefinit cu imagini + linkuri reale din site
     function qeTemplateBlocks() {
       const S = 'https://expotigla.ro';
+      const GOLD = '#a8770a', INK = '#2c2f33'; // paleta brand ExpoTigla
+      const lk = (href, label) => `<a href="${href}" style="color:${GOLD};font-weight:700;text-decoration:none">${label}</a>`;
       const raw = [
         { type: 'image', src: S + '/assets/img/home-sistem.webp', alt: 'Sistem complet de acoperiș ExpoTigla', width: 100, align: 'center', href: S },
-        { type: 'heading', text: 'Îți mulțumim, {nume}!', level: 'h2', align: 'center', color: '#0b6b3a' },
-        { type: 'text', html: 'Am primit cererea ta cu numărul <b>{ref}</b>. Un consultant ExpoTigla te va contacta în <b>maxim 24 de ore</b> pentru detalii și o ofertă personalizată.', align: 'center' },
-        { type: 'button', text: 'Vezi produsele', href: S + '/produse.html', bg: '#0b6b3a', color: '#ffffff', align: 'center' },
+        { type: 'heading', text: 'Îți mulțumim, {nume}!', level: 'h2', align: 'center', color: GOLD },
+        { type: 'text', html: 'Am primit cererea ta cu numărul <b style="color:' + INK + '">{ref}</b>. Un consultant ExpoTigla te va contacta în <b>maxim 24 de ore</b> pentru detalii și o ofertă personalizată.', align: 'center' },
+        { type: 'button', text: 'Vezi produsele', href: S + '/produse.html', bg: '#c2890a', color: '#ffffff', align: 'center' },
         { type: 'divider' },
-        { type: 'heading', text: 'Până atunci, poți explora:', level: 'h3', align: 'left', color: '#26282b' },
+        { type: 'heading', text: 'Până atunci, poți explora:', level: 'h3', align: 'left', color: INK },
         { type: 'columns', cols: [
           { kind: 'image', src: S + '/assets/img/ghiduri/featured.webp', alt: 'Ghiduri acoperiș' },
           { kind: 'image', src: S + '/assets/img/servicii/montaj.webp', alt: 'Servicii montaj' },
         ] },
         { type: 'columns', cols: [
-          { kind: 'text', html: '<b><a href="' + S + '/ghiduri.html">Ghiduri acoperiș →</a></b><br>Sfaturi, costuri și greșeli de evitat.' },
-          { kind: 'text', html: '<b><a href="' + S + '/servicii.html">Servicii →</a></b><br>Consultanță, măsurători și montaj.' },
+          { kind: 'text', html: lk(S + '/ghiduri.html', 'Ghiduri acoperiș →') + '<br>Sfaturi, costuri și greșeli de evitat.' },
+          { kind: 'text', html: lk(S + '/servicii.html', 'Servicii →') + '<br>Consultanță, măsurători și montaj.' },
         ] },
         { type: 'divider' },
-        { type: 'text', html: '<b>Linkuri utile:</b><br>• <a href="' + S + '/sistem-complet.html">Ce înseamnă un sistem complet</a><br>• <a href="' + S + '/produse.html">Produse &amp; branduri</a><br>• <a href="' + S + '/despre.html">Despre ExpoTigla</a><br>• <a href="' + S + '/cum-cumpar.html">Cum cumperi</a><br>• <a href="' + S + '/contact.html">Contact</a>', align: 'left' },
+        { type: 'text', html: '<b style="color:' + INK + '">Linkuri utile:</b><br>• ' + lk(S + '/sistem-complet.html', 'Ce înseamnă un sistem complet') + '<br>• ' + lk(S + '/produse.html', 'Produse &amp; branduri') + '<br>• ' + lk(S + '/despre.html', 'Despre ExpoTigla') + '<br>• ' + lk(S + '/cum-cumpar.html', 'Cum cumperi') + '<br>• ' + lk(S + '/contact.html', 'Contact'), align: 'left' },
         { type: 'spacer', h: 8 },
-        { type: 'text', html: 'Ai întrebări? Poți răspunde direct la acest email sau ne poți suna.<br>— Echipa <b>ExpoTigla</b>', align: 'left' },
+        { type: 'text', html: 'Ai întrebări? Poți răspunde direct la acest email sau ne poți suna.<br>— Echipa <b style="color:' + INK + '">ExpoTigla</b>', align: 'left' },
       ];
       return raw.map(b => Object.assign({ id: qeNewId() }, b));
     }
@@ -3684,7 +3686,7 @@
         if (b.type === 'button') {
           return `<div style="text-align:${A(b.align)};margin:6px 0 16px"><a href="${at(b.href || '#')}" target="_blank" rel="noopener" style="display:inline-block;background:${b.bg || '#0b6b3a'};color:${b.color || '#ffffff'};text-decoration:none;font-weight:700;padding:12px 26px;border-radius:8px;font-size:15px">${(b.text || 'Buton')}</a></div>`;
         }
-        if (b.type === 'divider') return `<div style="border-top:1px solid #e3e6e4;margin:16px 0"></div>`;
+        if (b.type === 'divider') return `<div style="border-top:1px solid #e6e2d9;margin:16px 0"></div>`;
         if (b.type === 'spacer') { const h = Math.max(4, +b.h || 24); return `<div style="height:${h}px;line-height:${h}px;font-size:1px">&nbsp;</div>`; }
         if (b.type === 'columns') {
           const cell = c => c.kind === 'image'
