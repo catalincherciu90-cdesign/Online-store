@@ -796,7 +796,9 @@ const CHAT_DEFAULT_PROMPT = `Ești asistentul virtual al magazinului ExpoTigla (
 Răspunde politicos, concis și clar, în limba română. Ajută clientul să aleagă produsul potrivit, explică diferențele dintre finisaje/culori/grosimi și îndrumă spre pagina de contact pentru ofertă personalizată sau montaj.
 Nu inventa prețuri exacte sau stocuri — pentru prețuri și disponibilitate recomandă cererea de ofertă sau contactarea echipei. Dacă întrebarea nu ține de acoperișuri sau de magazin, redirecționează politicos discuția către subiectul acoperișurilor.`;
 // Ghid de pagini + format link (mereu adăugat, indiferent de promptul personalizat).
-const CHAT_PAGES_GUIDE = `Oferă butoane de navigare folosind EXACT formatul markdown [Text buton](adresa). Pagini: toate produsele → produse.html ; Montaj și consultanță → servicii.html ; Cerere ofertă / Contact → contact.html ; Branduri → branduri.html ; Ghidul acoperișului → blog.html. Categorii: Țiglă metalică → produse.html?cat=tigla-metalica ; Tablă fălțuită → produse.html?cat=tabla-faltuita ; Panouri sandwich → produse.html?cat=panouri-sandwich ; Sisteme pluviale → produse.html?cat=sistem-pluvial ; Folii și membrane → produse.html?cat=folii-membrane ; Borduri și tinichigerie → produse.html?cat=borduri ; Ventilații → produse.html?cat=ventilatii ; Șuruburi → produse.html?cat=suruburi ; Accesorii → produse.html?cat=accesorii. Folosește doar aceste adrese; nu inventa alte linkuri.`;
+const CHAT_PAGES_GUIDE = `Oferă butoane de navigare folosind EXACT formatul markdown [Text buton](adresa). Pagini: toate produsele → produse.html ; Sistem complet de acoperiș → sistem-complet.html ; Montaj și consultanță → servicii.html ; Ghiduri (sfaturi acoperiș) → ghiduri.html ; Despre noi → despre.html ; Cum cumperi → cum-cumpar.html ; Livrare și retur → livrare.html ; Întrebări frecvente → faq.html ; Branduri → branduri.html ; Cerere ofertă / Contact → contact.html. Categorii: Țiglă metalică → produse.html?cat=tigla-metalica ; Tablă fălțuită → produse.html?cat=tabla-faltuita ; Panouri sandwich → produse.html?cat=panouri-sandwich ; Sisteme pluviale → produse.html?cat=sistem-pluvial ; Folii și membrane → produse.html?cat=folii-membrane ; Borduri și tinichigerie → produse.html?cat=borduri ; Ventilații → produse.html?cat=ventilatii ; Șuruburi → produse.html?cat=suruburi ; Accesorii → produse.html?cat=accesorii. Folosește doar aceste adrese; nu inventa alte linkuri.`;
+// Ghiduri reale de pe site — recomandă-le cu link [titlu](adresa) când sunt relevante.
+const CHAT_GUIDES = `GHIDURI (articole reale pe site): Cât costă un acoperiș complet în 2026 → ghid-cat-costa-un-acoperis-complet-2026.html ; Ce trebuie să conțină un sistem complet de acoperiș → ghid-ce-contine-un-sistem-complet-de-acoperis.html ; Cum alegi culoarea acoperișului în funcție de fațadă → ghid-cum-alegi-culoarea-acoperisului.html ; De ce contează ventilația acoperișului → ghid-de-ce-conteaza-ventilatia-acoperisului.html ; 7 greșeli frecvente când alegi și montezi un acoperiș → ghid-sapte-greseli-frecvente-acoperis.html ; Țiglă metalică vs tablă fălțuită vs tablă cutată → ghid-tigla-metalica-tabla-faltuita-tabla-cutata.html. Toate ghidurile: ghiduri.html.`;
 // Comportament de consilier: pune întrebări, apoi recomandă produse concrete.
 const CHAT_BEHAVIOR = `MOD DE LUCRU (consilier): dacă cererea clientului e vagă (ex. „vreau țiglă", „ce-mi trebuie la acoperiș"), pune ÎNTÂI 1–2 întrebări scurte ca să înțelegi nevoia — de exemplu: tipul clădirii (casă/hală/anexă), suprafața aproximativă a acoperișului, bugetul orientativ, aspectul/culoarea dorită și dacă vrea și montaj. Maxim 2 întrebări odată, nu copleși clientul.
 Când ai suficiente detalii (sau cererea e deja clară), recomandă 1–3 PRODUSE CONCRETE din catalogul de mai jos, fiecare cu link direct: [Numele produsului](produs.html?id=COD), plus o frază scurtă de ce se potrivește. Recomandă DOAR produse care există în catalog; nu inventa produse, coduri sau prețuri. Dacă nu găsești ceva potrivit, propune categoria relevantă și cererea de ofertă.`;
@@ -844,7 +846,7 @@ async function chatHandler(request, env) {
   // Setări (provider/prompt/model + contact)
   let s = {};
   try {
-    const r = await env.DB.prepare(`SELECT key,value FROM settings WHERE key IN ('chatbot_provider','chatbot_prompt','chatbot_model','phone','email','schedule')`).all();
+    const r = await env.DB.prepare(`SELECT key,value FROM settings WHERE key IN ('chatbot_provider','chatbot_prompt','chatbot_model','phone','email','schedule','address','about_lead','about_mission','servicii_montaj_content','servicii_consult_content','faq_content','livrare_content')`).all();
     for (const row of (r.results || [])) if (row.value) s[row.key] = row.value;
   } catch (e) { /* fără DB → implicit */ }
   const prov = CHAT_PROVIDERS[s.chatbot_provider] || CHAT_PROVIDERS.groq;
@@ -856,8 +858,21 @@ async function chatHandler(request, env) {
   if (s.phone) contact.push('telefon ' + s.phone);
   if (s.email) contact.push('email ' + s.email);
   if (s.schedule) contact.push('program ' + s.schedule);
+  if (s.address) contact.push('adresă ' + s.address);
   if (contact.length) system += `\n\nDate de contact ale magazinului: ${contact.join(', ')}. Pagina de contact/ofertă: contact.html.`;
-  system += `\n\n${CHAT_PAGES_GUIDE}\n\n${CHAT_BEHAVIOR}`;
+  system += `\n\n${CHAT_PAGES_GUIDE}\n\n${CHAT_GUIDES}\n\n${CHAT_BEHAVIOR}`;
+  // Cunoștințe despre site (rezumat scurt din conținutul real, editabil din admin).
+  const clip = (t, n) => { t = String(t || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim(); return t.length > n ? t.slice(0, n) + '…' : t; };
+  const siteInfo = [];
+  if (s.about_lead) siteInfo.push('Despre ExpoTigla: ' + clip(s.about_lead, 320));
+  if (s.about_mission) siteInfo.push('Misiune: ' + clip(s.about_mission, 220));
+  const serv = [s.servicii_montaj_content, s.servicii_consult_content].filter(Boolean).map(x => clip(x, 220)).join(' ');
+  if (serv) siteInfo.push('Servicii (montaj/consultanță): ' + serv);
+  if (siteInfo.length) system += `\n\nINFORMAȚII DESPRE FIRMĂ (folosește-le natural, nu le cita ca listă): ${siteInfo.join(' | ')}`;
+  // FAQ / livrare — doar când conversația e pe subiect (economie de tokens).
+  const lastUser = msgs.filter(m => m.role === 'user').slice(-2).map(m => m.content).join(' ');
+  if (s.livrare_content && /livr|transport|retur|garanț|garant|plat|ramburs|termen|expedi/i.test(lastUser)) system += `\n\nLIVRARE & RETUR (după politica site-ului): ${clip(s.livrare_content, 800)}`;
+  if (s.faq_content && /întreb|intreb|faq|garanț|garant|cum |de ce|cât dure|cat dure|montaj|retur|plat/i.test(lastUser)) system += `\n\nÎNTREBĂRI FRECVENTE (răspunde pe baza lor): ${clip(s.faq_content, 1200)}`;
   // Catalogul (mare) se trimite DOAR când conversația e despre produse — economisește tokens.
   if (chatNeedsCatalog(msgs)) {
     const catalog = await getCatalogContext(env);
