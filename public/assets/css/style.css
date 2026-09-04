@@ -984,13 +984,14 @@ a.pd-doc:hover { border-color: var(--terra); }
 
 /* ── Formular MiniCRM (Cere ofertă + Configurator) — stilizare pe brand ────── */
 #Web { max-width: 640px; margin: 0 auto; }
-#Web fieldset { border: 0 !important; padding: 0 !important; margin: 0 !important; display: grid; grid-template-columns: 1fr 1fr; gap: 0 18px; }
-#Web legend { grid-column: 1 / -1; font-size: 1.05rem; font-weight: 800; color: var(--navy); padding: 0; margin: 0 0 18px; }
-#Web .InputBlock { margin: 0 0 16px !important; display: flex; flex-direction: column; min-width: 0; }
-#Web .InputBlock label { font-size: .82rem; font-weight: 700; color: var(--navy); margin-bottom: 6px; }
+#Web fieldset { border: 0 !important; padding: 0 !important; margin: 0 !important; display: grid !important; grid-template-columns: 1fr 1fr; gap: 0 18px; }
+#Web legend { grid-column: 1 / -1; font-size: 1.05rem; font-weight: 800; color: var(--navy); padding: 0; margin: 0 0 18px; text-align: left !important; float: none !important; width: auto !important; }
+#Web .InputBlock { margin: 0 0 16px !important; padding: 0 !important; display: flex !important; flex-direction: column !important; align-items: stretch !important; min-width: 0; float: none !important; width: auto !important; }
+#Web .InputBlock label { display: block !important; text-align: left !important; float: none !important; width: auto !important; font-size: .82rem !important; font-weight: 700 !important; color: var(--navy) !important; margin: 0 0 6px !important; padding: 0 !important; }
 #Web .InputBlock label.Required::after { content: " *"; color: var(--terra-dark); }
 #Web input[type="text"], #Web input:not([type]) {
-  width: 100% !important; box-sizing: border-box; border: 1px solid var(--line-strong) !important; border-radius: 10px !important;
+  display: block !important; width: 100% !important; max-width: 100% !important; box-sizing: border-box !important; margin: 0 !important;
+  border: 1px solid var(--line-strong) !important; border-radius: 10px !important; height: auto !important;
   padding: 12px 13px !important; font-family: inherit; font-size: .95rem; outline: none; background: #fff !important; color: var(--ink, #26282b) !important;
 }
 #Web input[type="text"]:focus, #Web input:not([type]):focus { border-color: var(--terra) !important; box-shadow: 0 0 0 3px rgba(215,154,8,.14); }
