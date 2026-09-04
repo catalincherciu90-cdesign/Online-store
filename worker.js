@@ -299,6 +299,20 @@ async function accountRegister(request, env) {
   if (existing) return json({ ok: false, error: 'Există deja un cont cu acest email. Autentifică-te.' }, 409);
   const { hash, salt } = await hashPassword(password);
   await env.DB.prepare('INSERT INTO customers (email, pass_hash, pass_salt, name, phone) VALUES (?,?,?,?,?)').bind(email, hash, salt, name, phone).run();
+  // Email de bun venit (best-effort — nu blochează crearea contului dacă eșuează)
+  if (env.RESEND_API_KEY) {
+    try {
+      const c = await getContact(env);
+      await sendEmail(env, {
+        to: [email],
+        subject: 'Bine ai venit la ExpoTigla — contul tău este activ',
+        html: `<h2>Salut, ${esc(name)}!</h2>
+          <p>Contul tău ExpoTigla a fost creat cu succes. Te poți autentifica oricând cu adresa <b>${esc(email)}</b> ca să-ți vezi comenzile și să comanzi mai rapid.</p>
+          <p><a href="https://expotigla.ro/cont.html" style="display:inline-block;background:#c2890a;color:#fff;text-decoration:none;font-weight:700;padding:11px 22px;border-radius:8px">Intră în cont</a></p>
+          ${contactHtml(c)}`,
+      });
+    } catch (e) { /* ignoră erorile de email */ }
+  }
   const token = await signJWT({ customer: email, name }, env.JWT_SECRET, CUSTOMER_TOKEN_TTL);
   return json({ ok: true, token, name, email });
 }

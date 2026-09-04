@@ -72,11 +72,11 @@
           <label class="filter-opt"><input type="radio" name="price" value="50-100"> 50 – 100 lei</label>
           <label class="filter-opt"><input type="radio" name="price" value="100-9999"> Peste 100 lei</label>
         </div>
-        <div class="filter-group">
+        <div class="filter-group" id="thickness-group" style="display:none">
           <h4>Grosime disponibilă</h4>
           <div id="thickness-filters"></div>
         </div>
-        <div class="filter-group">
+        <div class="filter-group" id="color-group" style="display:none">
           <h4>Culoare disponibilă</h4>
           <div id="color-filters" class="filter-swatches"></div>
         </div>
@@ -179,10 +179,17 @@
     }
     buildCatFilters();
 
-    // La schimbarea categoriei (deschiderea unei secțiuni), derulează sus la rezultate.
+    // Derulează la rezultate DOAR pe mobil (unde filtrele sunt deasupra listei) și
+    // doar dacă e nevoie — după ce s-a așezat layout-ul (evită „săriturile" ciudate).
+    function isMobileFilters() { const t = document.querySelector('.filters-toggle'); return !!(t && getComputedStyle(t).display !== 'none'); }
     function scrollToResults() {
-      const el = document.getElementById('catalog-title') || document.getElementById('product-grid');
-      if (el) window.scrollTo({ top: Math.max(0, el.getBoundingClientRect().top + window.scrollY - 90), behavior: 'smooth' });
+      if (!isMobileFilters()) return;
+      requestAnimationFrame(function () { requestAnimationFrame(function () {
+        const el = document.getElementById('catalog-title') || document.getElementById('product-grid');
+        if (!el) return;
+        const top = Math.max(0, el.getBoundingClientRect().top + window.scrollY - 72);
+        if (Math.abs(window.scrollY - top) > 6) window.scrollTo({ top: top, behavior: 'smooth' });
+      }); });
     }
     catFilters.addEventListener('change', e => { activeCat = e.target.value; render(); updateHeader(); document.querySelector('.filters').classList.remove('open'); scrollToResults(); });
     document.querySelectorAll('input[name="price"]').forEach(r => r.addEventListener('change', e => { activePrice = e.target.value; render(); }));
@@ -212,23 +219,62 @@
       updateHeader(); render();
     });
 
-    // Filtre de grosime & culoare (după personalizarea disponibilă)
+    // Filtre de grosime & culoare — construite dinamic din ce oferă REAL produsele.
     let activeThickness = 'all';
     let activeColor = 'all';
     const thFilters = document.getElementById('thickness-filters');
-    thFilters.innerHTML = `<label class="filter-opt"><input type="radio" name="thickness" value="all" checked> Toate</label>` +
-      OPTIONS.grosime.values.map(v => `<label class="filter-opt"><input type="radio" name="thickness" value="${v.id}"> ${v.name}</label>`).join('');
-    thFilters.addEventListener('change', e => { activeThickness = e.target.value; render(); });
-
     const colFilters = document.getElementById('color-filters');
-    colFilters.innerHTML = `<button type="button" class="fswatch fsw-all sel" data-val="all">Toate</button>` +
-      OPTIONS.culoare.values.map(v => `<button type="button" class="fswatch" data-val="${v.id}" title="${v.name}" style="--sw:${v.hex}"><span></span></button>`).join('');
+    // Culorile/grosimile pe care le oferă efectiv un produs (din finisaje / poze pe culoare / prețuri pe opțiune).
+    function productColorSet(p) {
+      const s = new Set();
+      if (p.finishes) p.finishes.forEach(f => (f.colors || []).forEach(c => s.add(c)));
+      if (p.finishColors) Object.values(p.finishColors).forEach(a => (a || []).forEach(c => s.add(c)));
+      if (p.colorPrices) Object.keys(p.colorPrices).forEach(c => s.add(c));
+      if (p.optionPrices) Object.keys(p.optionPrices).forEach(k => { const x = k.split(':'); if (x[0] === 'culoare' && x[1]) s.add(x[1]); });
+      return s;
+    }
+    function productThicknessSet(p) {
+      const s = new Set();
+      if (p.finishes) p.finishes.forEach(f => (f.thicknesses || []).forEach(t => s.add(t)));
+      if (p.optionPrices) Object.keys(p.optionPrices).forEach(k => { const x = k.split(':'); if (x[0] === 'grosime' && x[1]) s.add(x[1]); });
+      return s;
+    }
+    // Ordonează id-urile prezente după ordinea din OPTIONS, apoi eventualele necunoscute.
+    function orderedPresent(groupVals, present) {
+      const ids = groupVals.map(v => v.id).filter(id => present.has(id));
+      present.forEach(id => { if (!ids.includes(id)) ids.push(id); });
+      return ids;
+    }
+    function buildThicknessFilters() {
+      const present = new Set();
+      PRODUCTS.forEach(p => productThicknessSet(p).forEach(t => present.add(t)));
+      const ids = orderedPresent(OPTIONS.grosime.values, present);
+      const group = document.getElementById('thickness-group');
+      if (!ids.length) { group.style.display = 'none'; if (activeThickness !== 'all') activeThickness = 'all'; return; }
+      group.style.display = '';
+      const nameOf = id => (OPTIONS.grosime.values.find(v => v.id === id) || {}).name || id;
+      thFilters.innerHTML = `<label class="filter-opt"><input type="radio" name="thickness" value="all" ${activeThickness === 'all' ? 'checked' : ''}> Toate</label>` +
+        ids.map(id => `<label class="filter-opt"><input type="radio" name="thickness" value="${id}" ${activeThickness === id ? 'checked' : ''}> ${escAttr(nameOf(id))}</label>`).join('');
+    }
+    function buildColorFilters() {
+      const present = new Set();
+      PRODUCTS.forEach(p => productColorSet(p).forEach(c => present.add(c)));
+      const ids = orderedPresent(OPTIONS.culoare.values, present);
+      const group = document.getElementById('color-group');
+      if (!ids.length) { group.style.display = 'none'; if (activeColor !== 'all') activeColor = 'all'; return; }
+      group.style.display = '';
+      const meta = id => OPTIONS.culoare.values.find(v => v.id === id) || { id, name: id, hex: '#bbbbbb' };
+      colFilters.innerHTML = `<button type="button" class="fswatch fsw-all ${activeColor === 'all' ? 'sel' : ''}" data-val="all">Toate</button>` +
+        ids.map(id => { const m = meta(id); return `<button type="button" class="fswatch ${activeColor === id ? 'sel' : ''}" data-val="${id}" title="${escAttr(m.name)}" style="--sw:${m.hex}"><span></span></button>`; }).join('');
+    }
+    thFilters.addEventListener('change', e => { activeThickness = e.target.value; render(); });
     colFilters.addEventListener('click', e => {
       const btn = e.target.closest('.fswatch'); if (!btn) return;
       activeColor = btn.dataset.val;
       colFilters.querySelectorAll('.fswatch').forEach(b => b.classList.toggle('sel', b === btn));
       render();
     });
+    buildThicknessFilters(); buildColorFilters();
 
     function updateHeader() {
       if (activeQuery) {
@@ -246,16 +292,9 @@
       document.getElementById('catalog-sub').textContent = c ? c.desc : 'Sisteme complete de acoperiș, direct de la producător.';
     }
 
-    // Verifică dacă produsul chiar oferă valoarea selectată (nu doar dacă are grupul de opțiuni)
-    function productHasThickness(p, tid) {
-      if (typeof usesFinishes === 'function' && usesFinishes(p)) return p.finishes.some(f => (f.thicknesses || []).includes(tid));
-      return productOptions(p).includes('grosime');
-    }
-    function productHasColor(p, cid) {
-      if (typeof usesFinishes === 'function' && usesFinishes(p)) return p.finishes.some(f => (f.colors || []).includes(cid));
-      if (p.finishColors) return Object.values(p.finishColors).some(arr => (arr || []).includes(cid));
-      return productOptions(p).includes('culoare');
-    }
+    // Potrivire STRICTĂ: produsul chiar oferă grosimea/culoarea selectată (nu doar categoria o suportă).
+    function productHasThickness(p, tid) { return productThicknessSet(p).has(tid); }
+    function productHasColor(p, cid) { return productColorSet(p).has(cid); }
 
     // Resetează toate filtrele (categorie, producător, preț, grosime, culoare, căutare).
     function resetFilters() {
@@ -268,6 +307,7 @@
       const sortSel = document.getElementById('sort'); if (sortSel) sortSel.value = 'default';
       document.querySelector('.filters').classList.remove('open');
       buildBrandFilters && buildBrandFilters();
+      buildThicknessFilters(); buildColorFilters();
       updateHeader(); render();
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
@@ -325,6 +365,7 @@
     loadCatalog().then(() => {
       buildCatFilters(); // categoriile pot veni din admin (D1)
       buildBrandFilters();
+      buildThicknessFilters(); buildColorFilters(); // grosimi/culori reale din catalog
       if (paramProducer) {
         const match = brandList.find(b => b.toLowerCase() === paramProducer.trim().toLowerCase());
         if (match) {
