@@ -806,8 +806,9 @@
 
             <div id="qe-blocks" style="margin-top:14px"></div>
 
-            <div style="display:flex;align-items:center;gap:12px;margin-top:18px">
+            <div style="display:flex;align-items:center;gap:12px;margin-top:18px;flex-wrap:wrap">
               <button class="btn btn-primary" style="padding:9px 18px" onclick="saveQuoteEmail()">Salvează</button>
+              <button type="button" class="a-btn-sm" onclick="qeLoadTemplate()">Șablon exemplu</button>
               <button type="button" class="a-btn-sm" onclick="qeReset()">Golește tot</button>
               <span id="qe-msg" class="muted-sm"></span>
             </div>
@@ -3548,6 +3549,36 @@
       qeRender(); qePreview();
     }
     function qeReset() { if (!confirm('Golești tot conținutul emailului?')) return; qeBlocks = []; qeRender(); qePreview(); }
+    // Șablon predefinit cu imagini + linkuri reale din site
+    function qeTemplateBlocks() {
+      const S = 'https://expotigla.ro';
+      const raw = [
+        { type: 'image', src: S + '/assets/img/home-sistem.webp', alt: 'Sistem complet de acoperiș ExpoTigla', width: 100, align: 'center', href: S },
+        { type: 'heading', text: 'Îți mulțumim, {nume}!', level: 'h2', align: 'center', color: '#0b6b3a' },
+        { type: 'text', html: 'Am primit cererea ta cu numărul <b>{ref}</b>. Un consultant ExpoTigla te va contacta în <b>maxim 24 de ore</b> pentru detalii și o ofertă personalizată.', align: 'center' },
+        { type: 'button', text: 'Vezi produsele', href: S + '/produse.html', bg: '#0b6b3a', color: '#ffffff', align: 'center' },
+        { type: 'divider' },
+        { type: 'heading', text: 'Până atunci, poți explora:', level: 'h3', align: 'left', color: '#26282b' },
+        { type: 'columns', cols: [
+          { kind: 'image', src: S + '/assets/img/ghiduri/featured.webp', alt: 'Ghiduri acoperiș' },
+          { kind: 'image', src: S + '/assets/img/servicii/montaj.webp', alt: 'Servicii montaj' },
+        ] },
+        { type: 'columns', cols: [
+          { kind: 'text', html: '<b><a href="' + S + '/ghiduri.html">Ghiduri acoperiș →</a></b><br>Sfaturi, costuri și greșeli de evitat.' },
+          { kind: 'text', html: '<b><a href="' + S + '/servicii.html">Servicii →</a></b><br>Consultanță, măsurători și montaj.' },
+        ] },
+        { type: 'divider' },
+        { type: 'text', html: '<b>Linkuri utile:</b><br>• <a href="' + S + '/sistem-complet.html">Ce înseamnă un sistem complet</a><br>• <a href="' + S + '/produse.html">Produse &amp; branduri</a><br>• <a href="' + S + '/despre.html">Despre ExpoTigla</a><br>• <a href="' + S + '/cum-cumpar.html">Cum cumperi</a><br>• <a href="' + S + '/contact.html">Contact</a>', align: 'left' },
+        { type: 'spacer', h: 8 },
+        { type: 'text', html: 'Ai întrebări? Poți răspunde direct la acest email sau ne poți suna.<br>— Echipa <b>ExpoTigla</b>', align: 'left' },
+      ];
+      return raw.map(b => Object.assign({ id: qeNewId() }, b));
+    }
+    function qeLoadTemplate() {
+      if (qeBlocks.length && !confirm('Înlocuiești conținutul actual cu șablonul exemplu?')) return;
+      qeBlocks = qeTemplateBlocks(); qeRender(); qePreview();
+      const msg = document.getElementById('qe-msg'); if (msg) { msg.style.color = ''; msg.textContent = 'Șablon încărcat — editează-l și apasă Salvează.'; }
+    }
 
     // Toolbar text: acționează pe ultimul câmp focusat
     function qeCmd(cmd, val) { if (qeActive) qeActive.focus(); try { document.execCommand(cmd, false, val || null); } catch (e) {} qeSyncActive(); }
