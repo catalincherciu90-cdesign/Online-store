@@ -263,9 +263,12 @@
       if (!groups.length) return '';
       return `<div class="pd-options">` + groups.map(g => {
         if (g === 'finisaj') {
+          const list = finishList(prod);
           return `<div class="opt-group">
             <div class="opt-label">${finishAxisLabel(prod)}: <b id="cur-finisaj">${optionValueName('finisaj', sel.finisaj)}</b></div>
-            <div class="opt-pills">${finishList(prod).map(f =>
+            <select class="opt-select" data-group="finisaj" aria-label="${finishAxisLabel(prod)}">${list.map(f =>
+              `<option value="${f.id}"${f.id === sel.finisaj ? ' selected' : ''}>${f.name}</option>`).join('')}</select>
+            <div class="opt-pills pills-finisaj">${list.map(f =>
               `<button type="button" class="opt-pill${f.id === sel.finisaj ? ' sel' : ''}" data-group="finisaj" data-val="${f.id}">${f.name}</button>`).join('')}</div>
           </div>`;
         }
@@ -317,16 +320,25 @@
       const cont = document.querySelector('.pd-options');
       if (!cont) return;
       renderColors(); renderThickness();
-      cont.addEventListener('click', e => {
-        const btn = e.target.closest('[data-group]');
-        if (!btn) return;
-        const g = btn.dataset.group, v = btn.dataset.val;
+      // Aplică o opțiune și sincronizează pastile + dropdown + etichetă.
+      function applyOption(g, v) {
         sel[g] = v;
-        btn.parentElement.querySelectorAll('[data-group]').forEach(b => b.classList.toggle('sel', b === btn));
+        cont.querySelectorAll('.opt-pill[data-group="' + g + '"], .swatch[data-group="' + g + '"]').forEach(b => b.classList.toggle('sel', b.dataset.val === v));
+        const dd = cont.querySelector('select[data-group="' + g + '"]'); if (dd && dd.value !== v) dd.value = v;
         const cur = document.getElementById('cur-' + g); if (cur) cur.textContent = optionValueName(g, v);
         if (g === 'finisaj') { renderColors(); renderThickness(); }
         if (g === 'culoare') updateGallery(v);
         updatePrice();
+      }
+      cont.addEventListener('click', e => {
+        const btn = e.target.closest('button[data-group]');
+        if (!btn) return;
+        applyOption(btn.dataset.group, btn.dataset.val);
+      });
+      cont.addEventListener('change', e => {
+        const dd = e.target.closest('select[data-group]');
+        if (!dd) return;
+        applyOption(dd.dataset.group, dd.value);
       });
     }
 

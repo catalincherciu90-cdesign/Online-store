@@ -558,6 +558,13 @@ a.pd-doc:hover { border-color: var(--terra); }
 .opt-label { font-size: .9rem; color: var(--slate); margin-bottom: 9px; }
 .opt-label b { color: var(--navy); font-weight: 600; }
 .opt-pills { display: flex; flex-wrap: wrap; gap: 8px; }
+/* Selector finisaj ca dropdown pe mobil; pastile pe desktop */
+.opt-select { display: none; width: 100%; max-width: 340px; padding: 12px 14px; border: 1.5px solid var(--line-strong); border-radius: 10px; background: #fff; font-family: inherit; font-size: .95rem; color: var(--navy); cursor: pointer; }
+.opt-select:focus { outline: none; border-color: var(--terra); box-shadow: 0 0 0 1px var(--terra) inset; }
+@media (max-width: 640px) {
+  .pd-options .opt-select { display: block; }
+  .pd-options .pills-finisaj { display: none; }
+}
 .opt-pill { display: inline-flex; align-items: center; gap: 6px; padding: 9px 14px; border: 1.5px solid var(--line-strong); background: #fff; border-radius: 10px; font-family: inherit; font-size: .9rem; font-weight: 500; color: var(--navy); cursor: pointer; transition: border-color .15s, background .15s, box-shadow .15s; }
 .opt-pill:hover { border-color: var(--navy); }
 .opt-pill.sel { border-color: var(--terra); background: var(--accent-soft); box-shadow: 0 0 0 1px var(--terra) inset; }
