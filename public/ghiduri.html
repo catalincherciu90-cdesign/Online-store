@@ -106,6 +106,8 @@
 #sc .g-news input{flex:1;border:0;padding:15px;outline:none}
 #sc .g-news .note{font-size:11px;color:var(--muted);margin-top:10px}
 #sc .g-news .ok{color:#1c7a3f;font-weight:700}
+/* Permite copiilor din grid/flex sa se micsoreze sub latimea continutului (altfel ies din ecran pe mobil) */
+#sc .g-hero-copy,#sc .g-startcard,#sc .g-news .box>*,#sc .g-news .f,#sc .g-search input,#sc .g-news input,#sc .g-news .row,#sc .g-feat-copy,#sc .g-feat-visual,#sc .g-featured>*{min-width:0}
 /* ARTICLE PAGE */
 #sc .art-hero{background:linear-gradient(180deg,#f7f3ea,#fff);border-bottom:1px solid var(--line);padding:54px 0 46px}
 #sc .art-hero .tagrow{display:flex;gap:12px;align-items:center;font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--gold-dark);margin-bottom:16px}
@@ -144,7 +146,13 @@
  #sc .g-cta .side{text-align:left}#sc .g-feat-checks{grid-template-columns:1fr}
  #sc .g-feat-visual{min-height:220px}
 }
-@media(max-width:560px){#sc .g-grid{grid-template-columns:1fr}#sc .g-hero-grid{padding:44px 0}}
+@media(max-width:560px){
+ #sc .g-grid{grid-template-columns:1fr}#sc .g-hero-grid{padding:44px 0}
+ /* Newsletter: padding mai mic + inputul se poate micsora ca sa incapa pe telefon */
+ #sc .g-news{padding:40px 0}
+ #sc .g-news .box{padding:24px}
+ #sc .g-news input{min-width:0}
+}
 
 </style>
 </head>

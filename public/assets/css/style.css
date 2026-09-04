@@ -36,7 +36,7 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 [hidden] { display: none !important; }
 
-html { scroll-behavior: smooth; }
+html { scroll-behavior: smooth; overflow-x: clip; }
 [id] { scroll-margin-top: 128px; }
 
 body {
@@ -45,6 +45,7 @@ body {
   background: var(--bg);
   line-height: 1.6;
   letter-spacing: -0.006em;
+  overflow-x: clip; /* previne scroll orizontal din depasiri minore, fara a strica header-ul sticky */
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
   -webkit-tap-highlight-color: transparent;
@@ -920,6 +921,19 @@ a.pd-doc:hover { border-color: var(--terra); }
   .hero-stats { gap: 22px; }
   .section { padding: 44px 0; }
 }
+/* Telefoane înguste (≤400px): antet mai compact ca butoanele să încapă fără scroll orizontal */
+@media (max-width: 400px) {
+  .header-inner { gap: 7px; }
+  .header-actions { gap: 4px; }
+  .search-btn, .account-btn { width: 36px; height: 36px; }
+  .search-btn svg, .account-btn svg { width: 18px; height: 18px; }
+  .header-cta { padding: 9px 10px; }
+  .cart-btn { padding: 9px 10px; }
+  .menu-toggle svg { width: 26px; height: 26px; }
+  .logo { font-size: 1rem; gap: 6px; }
+  .logo svg { width: 28px; height: 28px; }
+  .logo .logo-img { height: 32px; }
+}
 
 /* ==========================================================================
    Reveal on scroll (apariție lină) + Skeleton loading
@@ -988,7 +1002,14 @@ a.pd-doc:hover { border-color: var(--terra); }
   #cbot { right: 14px; bottom: 14px; }
   .cbot-panel { bottom: 70px; height: calc(100vh - 100px); }
 }
-@media (max-width: 760px){ .home-montaj{ grid-template-columns:1fr!important; } .home-montaj img{ order:-1; } }
+@media (max-width: 760px){
+  .home-montaj{ grid-template-columns:1fr!important; padding:28px 22px!important; }
+  .home-montaj img{ order:-1; }
+  .home-montaj > *{ min-width:0; }
+  /* Butoanele se aseaza pe toata latimea, unul sub altul (nu ies din ecran) */
+  .home-montaj .btn{ display:block; width:100%; box-sizing:border-box; text-align:center; }
+  .home-montaj .btn[style*="margin-left"]{ margin-left:0!important; margin-top:10px!important; }
+}
 .despre-hero{ display:grid; grid-template-columns:1.05fr .95fr; gap:44px; align-items:center; }
 @media (max-width:760px){ .despre-hero{ grid-template-columns:1fr; gap:24px; } }
 
