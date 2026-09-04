@@ -650,7 +650,8 @@ const PUBLIC_SETTINGS = ['logo', 'brandName', 'phone', 'email', 'email2', 'sched
   'servicii_title', 'servicii_lead', 'servicii_image', 'servicii_montaj_title', 'servicii_montaj_content', 'servicii_consult_title', 'servicii_consult_content', 'servicii_cta_title', 'servicii_cta_text',
   'chatbot_enabled', 'chatbot_greeting', 'chatbot_teaser', 'chatbot_suggestions', 'chatbot_provider', 'chatbot_model', 'chatbot_prompt',
   'seo_default_desc', 'seo_areas', 'coming_soon', 'coming_soon_title', 'coming_soon_text',
-  'ga4_id', 'gtm_id', 'meta_pixel', 'gsc_verification', 'head_code', 'body_code', 'nav'];
+  'ga4_id', 'gtm_id', 'meta_pixel', 'gsc_verification', 'head_code', 'body_code', 'nav',
+  'quote_confirm_subject', 'quote_confirm_body'];
 async function settingsGet(env) {
   if (!env.DB) return json({});
   const r = await env.DB.prepare('SELECT key, value FROM settings').all();
@@ -1140,11 +1141,23 @@ async function quoteCreate(request, env) {
   }
   if (env.DB && !saved && !mail.delivered) return json({ ok: false, error: 'Nu am putut înregistra cererea. Te rugăm sună-ne.' }, 500);
   // Confirmare către CLIENT (best-effort; necesită RESEND_API_KEY + domeniu verificat)
+  // Șablon editabil din admin (quote_confirm_subject / quote_confirm_body); altfel implicit.
   if (email && env.RESEND_API_KEY) {
-    await sendEmail(env, { to: [email], subject: `Am primit cererea ta ${ref} — ExpoTigla`,
-      html: `<h2>Îți mulțumim, ${esc(nume)}!</h2>
+    let cs = '', cb = '';
+    if (env.DB) {
+      try {
+        const rc = await env.DB.prepare("SELECT key,value FROM settings WHERE key IN ('quote_confirm_subject','quote_confirm_body')").all();
+        for (const row of (rc.results || [])) { if (row.key === 'quote_confirm_subject') cs = row.value || ''; if (row.key === 'quote_confirm_body') cb = row.value || ''; }
+      } catch (e) { /* implicit */ }
+    }
+    const fill = t => String(t).replace(/\{nume\}/g, esc(nume)).replace(/\{ref\}/g, esc(ref)).replace(/\{telefon\}/g, esc(telefon || ''));
+    const subject = cs.trim() ? fill(cs) : `Am primit cererea ta ${ref} — ExpoTigla`;
+    const html = cb.trim()
+      ? `<div style="font-family:Arial,sans-serif;font-size:15px;line-height:1.6;color:#26282b">${fill(cb).replace(/\n/g, '<br>')}</div>`
+      : `<h2>Îți mulțumim, ${esc(nume)}!</h2>
         <p>Am primit cererea ta cu numărul <b>${esc(ref)}</b>. Un consultant ExpoTigla te va contacta în <b>maxim 24 de ore</b> pentru detalii și ofertă.</p>
-        <p>Dacă e ceva urgent, ne poți suna direct.<br>Ai întrebări? Poți răspunde la acest email.<br>— Echipa ExpoTigla</p>` });
+        <p>Dacă e ceva urgent, ne poți suna direct.<br>Ai întrebări? Poți răspunde la acest email.<br>— Echipa ExpoTigla</p>`;
+    await sendEmail(env, { to: [email], subject, html });
   }
   return json({ ok: true, ref });
 }

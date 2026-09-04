@@ -174,6 +174,11 @@
     /* Butoane outline/ghost pe fundal închis (modale, panouri) — vizibile */
     .btn-outline { background: rgba(255,255,255,.06) !important; border: 1px solid rgba(255,255,255,.42) !important; color: #eef3f1 !important; }
     .btn-outline:hover { background: rgba(255,255,255,.16) !important; border-color: #fff !important; color: #fff !important; transform: none !important; }
+    /* Sub-taburi (ex. în Cereri de ofertă) */
+    .subtabs { display: flex; gap: 22px; margin-bottom: 18px; border-bottom: 1px solid var(--em-border,#33363a); flex-wrap: wrap; }
+    .subtab { background: none; border: 0; border-bottom: 2px solid transparent; color: var(--em-muted,#9aa6a1); padding: 10px 2px; margin-bottom: -1px; font-family: inherit; font-weight: 700; font-size: .95rem; cursor: pointer; transition: color .14s, border-color .14s; }
+    .subtab:hover { color: #fff; }
+    .subtab.active { color: #fff; border-bottom-color: var(--em-accent,#34d399); }
     .modal { background: #0e2219; border: 1px solid var(--em-border); color: var(--em-text); }
     .modal h3 { color: #fff; }
     .muted-sm { color: var(--em-muted); }
@@ -704,20 +709,45 @@
     </div>
 
     <div id="tab-cereri" style="display:none">
-      <h2 style="font-size:1.3rem;margin-bottom:16px">Cereri de ofertă</h2>
-      <div style="background:var(--em-card,#26282c);border:1px solid var(--em-border,#33363a);border-radius:12px;padding:16px;margin-bottom:18px">
-        <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end">
-          <div><div class="muted-sm" style="margin-bottom:4px">De la</div><input type="date" id="rep-from" style="padding:9px 11px;border-radius:9px;border:1px solid var(--em-border,#3a3d42);background:var(--em-card,#1f2124);color:inherit;font-family:inherit"></div>
-          <div><div class="muted-sm" style="margin-bottom:4px">Până la</div><input type="date" id="rep-to" style="padding:9px 11px;border-radius:9px;border:1px solid var(--em-border,#3a3d42);background:var(--em-card,#1f2124);color:inherit;font-family:inherit"></div>
-          <button class="a-btn-sm" onclick="repPreset('month')">Luna curentă</button>
-          <button class="a-btn-sm" onclick="repPreset('30d')">Ultimele 30 zile</button>
-          <button class="a-btn-sm" onclick="repPreset('year')">Anul curent</button>
-          <button class="btn btn-primary" style="padding:8px 16px" onclick="genQuoteReport()">Generează raport</button>
-          <button class="a-btn-sm" onclick="exportQuotesCsv()">Export CSV</button>
-        </div>
-        <div id="rep-out" style="margin-top:14px"></div>
+      <h2 style="font-size:1.3rem;margin-bottom:12px">Cereri de ofertă</h2>
+      <div class="subtabs">
+        <button class="subtab active" id="sub-pipeline" onclick="cereriSub('pipeline')">Pipeline</button>
+        <button class="subtab" id="sub-raport" onclick="cereriSub('raport')">Raport</button>
+        <button class="subtab" id="sub-email" onclick="cereriSub('email')">Email confirmare</button>
       </div>
-      <div id="quotes-box"></div>
+
+      <div id="csub-pipeline">
+        <div id="quotes-box"></div>
+      </div>
+
+      <div id="csub-raport" style="display:none">
+        <div style="background:var(--em-card,#26282c);border:1px solid var(--em-border,#33363a);border-radius:12px;padding:16px">
+          <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end">
+            <div><div class="muted-sm" style="margin-bottom:4px">De la</div><input type="date" id="rep-from" style="padding:9px 11px;border-radius:9px;border:1px solid var(--em-border,#3a3d42);background:var(--em-card,#1f2124);color:inherit;font-family:inherit"></div>
+            <div><div class="muted-sm" style="margin-bottom:4px">Până la</div><input type="date" id="rep-to" style="padding:9px 11px;border-radius:9px;border:1px solid var(--em-border,#3a3d42);background:var(--em-card,#1f2124);color:inherit;font-family:inherit"></div>
+            <button class="a-btn-sm" onclick="repPreset('month')">Luna curentă</button>
+            <button class="a-btn-sm" onclick="repPreset('30d')">Ultimele 30 zile</button>
+            <button class="a-btn-sm" onclick="repPreset('year')">Anul curent</button>
+            <button class="btn btn-primary" style="padding:8px 16px" onclick="genQuoteReport()">Generează raport</button>
+            <button class="a-btn-sm" onclick="exportQuotesCsv()">Export CSV</button>
+          </div>
+          <div id="rep-out" style="margin-top:14px"></div>
+        </div>
+      </div>
+
+      <div id="csub-email" style="display:none">
+        <div style="max-width:760px;background:var(--em-card,#26282c);border:1px solid var(--em-border,#33363a);border-radius:12px;padding:20px">
+          <p class="muted-sm" style="margin:0 0 16px">Emailul trimis automat clientului când completează formularul de ofertă (Contact + Configurator). Poți folosi în text: <b>{nume}</b>, <b>{ref}</b>, <b>{telefon}</b>. Lasă gol pentru mesajul implicit.</p>
+          <div class="muted-sm" style="margin-bottom:4px">Subiect</div>
+          <input id="qe-subject" placeholder="Am primit cererea ta {ref} — ExpoTigla" style="width:100%;padding:11px 13px;border-radius:10px;border:1px solid var(--em-border,#3a3d42);background:var(--em-card,#1f2124);color:inherit;font-family:inherit;font-size:.95rem;box-sizing:border-box">
+          <div class="muted-sm" style="margin:14px 0 4px">Conținut (rândurile noi devin paragrafe)</div>
+          <textarea id="qe-body" rows="9" placeholder="Îți mulțumim, {nume}!&#10;&#10;Am primit cererea ta cu numărul {ref}. Un consultant ExpoTigla te va contacta în maxim 24 de ore.&#10;&#10;— Echipa ExpoTigla" style="width:100%;padding:11px 13px;border-radius:10px;border:1px solid var(--em-border,#3a3d42);background:var(--em-card,#1f2124);color:inherit;font-family:inherit;font-size:.95rem;box-sizing:border-box;resize:vertical"></textarea>
+          <div style="display:flex;align-items:center;gap:12px;margin-top:14px">
+            <button class="btn btn-primary" style="padding:9px 18px" onclick="saveQuoteEmail()">Salvează</button>
+            <span id="qe-msg" class="muted-sm"></span>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div id="tab-howto" style="display:none">
@@ -3391,6 +3421,34 @@
       const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
       const f = document.getElementById('rep-from').value || 'start', t = document.getElementById('rep-to').value || 'azi';
       a.download = `cereri-oferta_${f}_${t}.csv`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(a.href);
+    }
+    // ── Sub-taburi Cereri (Pipeline / Raport / Email confirmare) ──
+    let qeLoaded = false;
+    function cereriSub(name) {
+      ['pipeline', 'raport', 'email'].forEach(n => {
+        const panel = document.getElementById('csub-' + n); if (panel) panel.style.display = n === name ? '' : 'none';
+        const btn = document.getElementById('sub-' + n); if (btn) btn.classList.toggle('active', n === name);
+      });
+      if (name === 'email' && !qeLoaded) { qeLoaded = true; loadQuoteEmail(); }
+    }
+    async function loadQuoteEmail() {
+      try {
+        const s = await (await api('/settings')).json();
+        document.getElementById('qe-subject').value = s.quote_confirm_subject || '';
+        document.getElementById('qe-body').value = s.quote_confirm_body || '';
+      } catch (e) { /* implicit */ }
+    }
+    async function saveQuoteEmail() {
+      const msg = document.getElementById('qe-msg'); msg.style.color = ''; msg.textContent = 'Se salvează…';
+      const body = {
+        quote_confirm_subject: document.getElementById('qe-subject').value.trim(),
+        quote_confirm_body: document.getElementById('qe-body').value,
+      };
+      try {
+        const d = await (await api('/settings', { method: 'POST', body: JSON.stringify(body) })).json();
+        if (d.ok) { msg.style.color = '#1a8f4c'; msg.textContent = '✓ Salvat. Se aplică la următoarea cerere.'; }
+        else { msg.style.color = '#c0392b'; msg.textContent = d.error || 'Eroare.'; }
+      } catch (e) { msg.style.color = '#c0392b'; msg.textContent = e.message; }
     }
     function closeQuoteView() { document.getElementById('quote-view').classList.remove('open'); }
 
