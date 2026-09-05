@@ -403,6 +403,7 @@
         <button data-tab="bannere" onclick="showTab('bannere')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.8"/><path d="m21 16-5-5-9 9"/></svg>Banner</button>
         <button data-tab="recenzii" onclick="showTab('recenzii')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 2.9 5.9 6.1.9-4.4 4.3 1 6.1-5.6-2.9-5.6 2.9 1-6.1L3 9.8l6.1-.9Z"/></svg>Recenzii</button>
         <button data-tab="blog" onclick="showTab('blog')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v5h5"/><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8Z"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg>Ghiduri</button>
+        <button data-tab="proiecte" onclick="showTab('proiecte')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>Proiecte</button>
         <button data-tab="meniu" onclick="showTab('meniu')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg>Meniu</button>
         <button data-tab="social" onclick="showTab('social')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="10.7" x2="15.4" y2="6.3"/><line x1="8.6" y1="13.3" x2="15.4" y2="17.7"/></svg>Social media</button>
         <div class="nav-cap">Pagini</div>
@@ -751,6 +752,15 @@
       </div>
       <p class="muted-sm" style="margin-bottom:16px">Ghidurile publicate apar pe pagina <a href="ghiduri.html" target="_blank" rel="noopener" style="color:var(--em-accent-2)">Ghiduri</a> și sunt bune pentru Google. Titlu, rezumat, imagine de copertă și conținut (poți folosi HTML simplu).</p>
       <div id="posts-box"></div>
+    </div>
+
+    <div id="tab-proiecte" style="display:none">
+      <div class="toolbar">
+        <h2 class="grow" style="font-size:1.3rem">Proiecte realizate</h2>
+        <button class="btn btn-primary" style="padding:9px 16px" onclick="openProject()">+ Proiect nou</button>
+      </div>
+      <p class="muted-sm" style="margin-bottom:16px">Proiectele apar pe pagina <a href="sistem-complet.html#proiecte" target="_blank" rel="noopener" style="color:var(--em-accent-2)">Sistem complet</a>. Adaugă nume, descriere și poze (poți încărca mai multe).</p>
+      <div id="projects-box"></div>
     </div>
 
     <div id="tab-comenzi" style="display:none">
@@ -1155,6 +1165,32 @@
     </div>
   </div>
 
+  <div class="overlay" id="project-view">
+    <div class="modal" style="max-width:680px">
+      <h3 id="project-title-h" style="margin-bottom:18px">Proiect</h3>
+      <form id="project-form" class="checkout-form" onsubmit="saveProject(event)">
+        <input type="hidden" name="id">
+        <div class="field full"><label>Nume proiect *</label><input name="title" required placeholder="ex: Renovare completă casă în Otopeni"></div>
+        <div class="form-row">
+          <div class="field"><label>Localitate (opțional)</label><input name="location" placeholder="ex: Otopeni, Ilfov"></div>
+          <div class="field"><label>Suprafață (opțional)</label><input name="surface" placeholder="ex: 168 m²"></div>
+        </div>
+        <div class="field full"><label>Descriere</label><textarea name="descr" rows="4" placeholder="Ce s-a folosit, ce a inclus proiectul (materiale, culoare, montaj)…"></textarea></div>
+        <div class="field full">
+          <label>Poze (poți selecta mai multe)</label>
+          <input type="file" accept="image/*" multiple id="project-files" onchange="onProjectFiles(this.files)">
+          <div id="project-previews" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px"></div>
+        </div>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:600"><input type="checkbox" name="active" checked> Vizibil pe site</label>
+        <div style="display:flex;gap:10px;margin-top:14px">
+          <button class="btn btn-primary" style="flex:1">Salvează</button>
+          <button type="button" class="btn btn-outline" onclick="closeProject()">Anulează</button>
+        </div>
+        <div class="form-status" id="project-status"></div>
+      </form>
+    </div>
+  </div>
+
   <!-- EDITOR RECENZIE -->
   <div class="overlay" id="review-view">
     <div class="modal" style="max-width:560px">
@@ -1239,7 +1275,7 @@
       document.getElementById('login-view').style.display = 'none';
       document.getElementById('dash-view').style.display = 'grid';
       document.getElementById('whoami').style.display = 'flex';
-      (typeof loadCategories === 'function' ? loadCategories() : Promise.resolve()).then(() => loadProps().then(loadProducts)); loadOrders(); loadQuotes(); loadReviews(); loadBanners(); loadSettings(); loadPosts(); loadNav(); loadTerms(); loadHowto(); loadPage('livrare'); loadPage('privacy'); loadPage('cookies'); loadPage('faq'); loadServicii(); loadTracking(); loadChatbot(); loadSeo(); loadComing(); loadSocial(); loadDespre(); loadDashboard(); injectHelp();
+      (typeof loadCategories === 'function' ? loadCategories() : Promise.resolve()).then(() => loadProps().then(loadProducts)); loadOrders(); loadQuotes(); loadReviews(); loadBanners(); loadSettings(); loadPosts(); loadProjects(); loadNav(); loadTerms(); loadHowto(); loadPage('livrare'); loadPage('privacy'); loadPage('cookies'); loadPage('faq'); loadServicii(); loadTracking(); loadChatbot(); loadSeo(); loadComing(); loadSocial(); loadDespre(); loadDashboard(); injectHelp();
     }
 
     // Mic tutorial afișat sub titlul fiecărei secțiuni
@@ -1300,7 +1336,7 @@
     }
 
     function showTab(t) {
-      ['dashboard', 'produse', 'proprietati', 'categorii', 'producatori', 'bannere', 'recenzii', 'blog', 'meniu', 'social', 'comenzi', 'cereri', 'despre', 'servicii', 'howto', 'livrare', 'termeni', 'privacy', 'cookies', 'faq', 'integrari', 'chatbot', 'chatlog', 'seo', 'utilizatori', 'setari'].forEach(x => {
+      ['dashboard', 'produse', 'proprietati', 'categorii', 'producatori', 'bannere', 'recenzii', 'blog', 'proiecte', 'meniu', 'social', 'comenzi', 'cereri', 'despre', 'servicii', 'howto', 'livrare', 'termeni', 'privacy', 'cookies', 'faq', 'integrari', 'chatbot', 'chatlog', 'seo', 'utilizatori', 'setari'].forEach(x => {
         document.getElementById('tab-' + x).style.display = x === t ? 'block' : 'none';
         document.querySelector(`.side-nav [data-tab="${x}"]`).classList.toggle('active', x === t);
       });
@@ -2236,6 +2272,84 @@
     async function delPost(id) {
       if (!confirm('Ștergi acest articol definitiv?')) return;
       try { await api('/posts/' + id, { method: 'DELETE' }); loadPosts(); }
+      catch (e) { alert('Eroare: ' + e.message); }
+    }
+
+    // ── Proiecte realizate ──
+    let projectsData = [];
+    let projectImages = []; // pozele proiectului în editare (data URL)
+    async function loadProjects() {
+      const box = document.getElementById('projects-box');
+      try { const res = await api('/projects'); projectsData = await res.json(); }
+      catch (e) { box.innerHTML = `<div class="a-empty">Nu am putut încărca proiectele.</div>`; return; }
+      if (!Array.isArray(projectsData) || !projectsData.length) { box.innerHTML = `<div class="a-empty">Niciun proiect încă. Apasă „+ Proiect nou".</div>`; return; }
+      box.innerHTML = `<table class="a-table"><thead><tr><th>Poză</th><th>Nume</th><th>Detalii</th><th>Poze</th><th>Stare</th><th></th></tr></thead><tbody>` +
+        projectsData.map((p, i) => `<tr>
+          <td>${(p.images && p.images[0]) ? `<img src="${p.images[0]}" style="width:56px;height:42px;object-fit:cover;border-radius:6px">` : '<span class="muted-sm">—</span>'}</td>
+          <td><b>${esc(p.title)}</b></td>
+          <td class="muted-sm">${esc([p.location, p.surface].filter(Boolean).join(' · ') || '—')}</td>
+          <td class="muted-sm">${(p.images || []).length}</td>
+          <td>${p.active ? '<span style="color:#1a8f4c;font-weight:600">vizibil</span>' : '<span class="muted-sm">ascuns</span>'}</td>
+          <td style="white-space:nowrap"><button class="a-btn-sm" onclick="openProject(${i})">Editează</button> <button class="a-btn-sm" onclick="delProject(${p.id})">Șterge</button></td>
+        </tr>`).join('') + `</tbody></table>`;
+    }
+    function renderProjectPreviews() {
+      document.getElementById('project-previews').innerHTML = projectImages.map((src, i) =>
+        `<div style="position:relative"><img src="${src}" style="width:88px;height:66px;object-fit:cover;border-radius:8px;border:1px solid var(--line)">
+          <button type="button" onclick="rmProjectImg(${i})" title="Șterge poza" style="position:absolute;top:-8px;right:-8px;width:22px;height:22px;border-radius:50%;border:0;background:#c0392b;color:#fff;cursor:pointer;font-size:13px;line-height:1">✕</button></div>`).join('');
+    }
+    function rmProjectImg(i) { projectImages.splice(i, 1); renderProjectPreviews(); }
+    function onProjectFiles(files) {
+      [...files].forEach(file => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const img = new Image();
+          img.onload = () => {
+            const maxW = 1400, scale = Math.min(1, maxW / img.width);
+            const w = Math.round(img.width * scale), h = Math.round(img.height * scale);
+            const c = document.createElement('canvas'); c.width = w; c.height = h;
+            c.getContext('2d').drawImage(img, 0, 0, w, h);
+            projectImages.push(c.toDataURL('image/jpeg', 0.8));
+            renderProjectPreviews();
+          };
+          img.src = reader.result;
+        };
+        reader.readAsDataURL(file);
+      });
+      document.getElementById('project-files').value = '';
+    }
+    function openProject(i) {
+      const f = document.getElementById('project-form'); f.reset();
+      document.getElementById('project-status').textContent = '';
+      const ed = typeof i === 'number' ? projectsData[i] : null;
+      document.getElementById('project-title-h').textContent = ed ? 'Editează proiectul' : 'Proiect nou';
+      f.id.value = ed ? ed.id : '';
+      f.title.value = ed ? ed.title : '';
+      f.location.value = ed ? (ed.location || '') : '';
+      f.surface.value = ed ? (ed.surface || '') : '';
+      f.descr.value = ed ? (ed.descr || '') : '';
+      f.active.checked = ed ? !!ed.active : true;
+      projectImages = ed && Array.isArray(ed.images) ? ed.images.slice() : [];
+      renderProjectPreviews();
+      document.getElementById('project-view').classList.add('open');
+    }
+    function closeProject() { document.getElementById('project-view').classList.remove('open'); }
+    async function saveProject(e) {
+      e.preventDefault();
+      const f = e.target;
+      const body = { title: f.title.value.trim(), location: f.location.value.trim(), surface: f.surface.value.trim(), descr: f.descr.value.trim(), images: projectImages, active: f.active.checked };
+      if (f.id.value) body.id = Number(f.id.value);
+      const st = document.getElementById('project-status');
+      st.className = 'form-status'; st.textContent = 'Se salvează…';
+      try {
+        const d = await (await api('/projects', { method: 'POST', body: JSON.stringify(body) })).json();
+        if (d.ok) { closeProject(); loadProjects(); }
+        else { st.className = 'form-status err'; st.textContent = d.error || 'Eroare.'; }
+      } catch (err) { st.className = 'form-status err'; st.textContent = err.message; }
+    }
+    async function delProject(id) {
+      if (!confirm('Ștergi acest proiect definitiv?')) return;
+      try { await api('/projects/' + id, { method: 'DELETE' }); loadProjects(); }
       catch (e) { alert('Eroare: ' + e.message); }
     }
 

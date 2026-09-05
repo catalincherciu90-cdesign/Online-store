@@ -92,7 +92,7 @@
 
   <section class="expert-section"><div class="container expert-grid"><div><p class="eyebrow light">EXPERTIZĂ ÎN TEREN</p><h2>ExpoTigla te ajută să alegi.<br/>ComStore duce proiectul până la capăt.</h2><p>Produsele pot fi completate cu măsurători, transport și montaj prin ComStore Acoperișuri, în zonele deservite.</p><a class="button light-button" href="#configurator">Vreau sistem complet</a></div><div class="expert-list"><div><b>01</b><span><strong>Un singur punct de contact</strong>Nu mai coordonezi separat furnizorul și montatorul.</span></div><div><b>02</b><span><strong>Materiale compatibile</strong>Componentele sunt calculate ca sistem, nu ca listă izolată.</span></div><div><b>03</b><span><strong>Ofertă explicată</strong>Înțelegi ce cumperi, ce este opțional și ce urmează.</span></div></div></div></section>
 
-  <section class="section project-section" id="proiecte"><div class="container"><div class="project-card"><div class="project-visual"><img src="assets/img/sistem/exemplu-casa.webp" alt="Exemplu de proiect — casă cu acoperiș din tablă fălțuită antracit" loading="lazy" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"><div class="badge">PROIECT COMPLET</div></div><div class="project-copy"><p class="eyebrow">EXEMPLU DE PREZENTARE</p><h2>Renovare completă · 168 m²</h2><ul><li>Țiglă metalică finisaj mat</li><li>Membrană, accesorii și ventilație</li><li>Sistem pluvial complet</li><li>Transport și montaj coordonat</li></ul><a href="#configurator" class="text-link">Vreau o soluție similară →</a></div></div></div></section>
+  <section class="section project-section" id="proiecte"><div class="container"><div id="proiecte-list"><div class="project-card"><div class="project-visual"><img src="assets/img/sistem/exemplu-casa.webp" alt="Exemplu de proiect — casă cu acoperiș din tablă fălțuită antracit" loading="lazy" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"><div class="badge">PROIECT COMPLET</div></div><div class="project-copy"><p class="eyebrow">EXEMPLU DE PREZENTARE</p><h2>Renovare completă · 168 m²</h2><ul><li>Țiglă metalică finisaj mat</li><li>Membrană, accesorii și ventilație</li><li>Sistem pluvial complet</li><li>Transport și montaj coordonat</li></ul><a href="#configurator" class="text-link">Vreau o soluție similară →</a></div></div></div></div></section>
 
   <section class="section faq-section" id="faq"><div class="container"><div class="section-head"><div><p class="eyebrow">ÎNTREBĂRI FRECVENTE</p><h2>Înainte să începi</h2></div></div><div class="faq-list"><details open><summary>Oferta este exactă sau orientativă?<span>+</span></summary><p>Prima estimare este orientativă. Oferta finală se confirmă după verificarea dimensiunilor, accesoriilor și condițiilor proiectului.</p></details><details><summary>Pot cere doar materialele?<span>+</span></summary><p>Da. Poți selecta doar materialele sau poți adăuga consultanță, măsurători, transport și montaj.</p></details><details><summary>Cine asigură măsurătorile și montajul?<span>+</span></summary><p>Serviciile din teren sunt realizate prin echipa ComStore Acoperișuri, în zonele în care acestea sunt disponibile.</p></details><details><summary>Pot compara mai multe mărci?<span>+</span></summary><p>Da. Consultantul poate construi variante comparabile în funcție de buget, finisaj, garanție și disponibilitate.</p></details></div></div></section>
 
@@ -229,6 +229,32 @@
     }).catch(function(){busy=false;nx.disabled=false;nx.innerHTML='Trimite proiectul <span aria-hidden="true">→</span>';res.innerHTML='<span style="color:#ffb4a2">Eroare de conexiune.</span>';});
   }
   setStep(1);
+})();
+// Proiecte reale din admin (înlocuiesc exemplul dacă există)
+(function(){
+  var wrap=document.getElementById('proiecte-list'); if(!wrap) return;
+  var esc=function(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');};
+  fetch('/api/projects',{headers:{Accept:'application/json'}}).then(function(r){return r.ok?r.json():[];}).then(function(list){
+    if(!Array.isArray(list)||!list.length) return; // pastreaza exemplul static
+    wrap.innerHTML=list.map(function(p){
+      var imgs=(p.images||[]).filter(Boolean);
+      var main=imgs[0]||'assets/img/sistem/exemplu-casa.webp';
+      var meta=[p.location,p.surface].filter(Boolean).join(' · ');
+      var thumbs=imgs.length>1?('<div class="pj-thumbs" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px">'+imgs.map(function(s,ix){return '<img src="'+esc(s)+'" data-i="'+ix+'" style="width:64px;height:48px;object-fit:cover;cursor:pointer;border:2px solid '+(ix===0?'var(--gold)':'transparent')+'">';}).join('')+'</div>'):'';
+      return '<div class="project-card" style="margin-bottom:24px">'
+        +'<div class="project-visual"><img class="pj-main" src="'+esc(main)+'" alt="'+esc(p.title)+'" loading="lazy" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"><div class="badge">PROIECT REALIZAT</div></div>'
+        +'<div class="project-copy"><p class="eyebrow">'+esc(meta||'PROIECT REALIZAT')+'</p><h2>'+esc(p.title)+'</h2>'
+        +(p.descr?'<p style="color:var(--muted);line-height:1.8;font-size:14px;white-space:pre-line;margin:18px 0 0">'+esc(p.descr)+'</p>':'')
+        +thumbs
+        +'<a href="#configurator" class="text-link" style="margin-top:20px;display:inline-block">Vreau o soluție similară →</a></div></div>';
+    }).join('');
+    // schimbă poza principală la click pe thumbnail
+    wrap.addEventListener('click',function(e){
+      var t=e.target.closest('.pj-thumbs img'); if(!t) return;
+      var card=t.closest('.project-card'); var main=card.querySelector('.pj-main'); if(main) main.src=t.src;
+      card.querySelectorAll('.pj-thumbs img').forEach(function(im){im.style.borderColor='transparent';}); t.style.borderColor='var(--gold)';
+    });
+  }).catch(function(){});
 })();
 </script>
 </body>

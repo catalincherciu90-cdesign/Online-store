@@ -91,6 +91,7 @@ async function ensureSchema(env) {
         `CREATE TABLE IF NOT EXISTS categories (id TEXT PRIMARY KEY, name TEXT NOT NULL, tag TEXT, descr TEXT, icon TEXT, options TEXT, image TEXT, sort INTEGER DEFAULT 0, active INTEGER NOT NULL DEFAULT 1)`,
         `CREATE TABLE IF NOT EXISTS customers (email TEXT PRIMARY KEY, pass_hash TEXT NOT NULL, pass_salt TEXT NOT NULL, name TEXT, phone TEXT, created_at TEXT DEFAULT (datetime('now')))`,
         `CREATE TABLE IF NOT EXISTS email_templates (id TEXT PRIMARY KEY, name TEXT NOT NULL, subject TEXT, blocks TEXT, updated_at TEXT DEFAULT (datetime('now')))`,
+        `CREATE TABLE IF NOT EXISTS projects (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL, descr TEXT, location TEXT, surface TEXT, images TEXT, sort INTEGER DEFAULT 0, active INTEGER NOT NULL DEFAULT 1, created_at TEXT DEFAULT (datetime('now')))`,
       ];
       for (const s of stmts) { try { await env.DB.prepare(s).run(); } catch (e) { console.error('ensureSchema', e); } }
       // Coloane adăugate ulterior pe produse (ALTER nu e idempotent → ignoră „duplicate column").
@@ -1063,6 +1064,44 @@ async function postDelete(request, env, id) {
   return json({ ok: true });
 }
 
+// ── Proiecte / portofoliu (nume, descriere, poze) ──────────────────────────
+async function projectsList(request, env) {
+  if (!env.DB) return json([]);
+  const admin = await requireAdmin(request, env);
+  const sql = admin
+    ? 'SELECT * FROM projects ORDER BY sort, id DESC'
+    : 'SELECT id,title,descr,location,surface,images,created_at FROM projects WHERE active=1 ORDER BY sort, id DESC';
+  const r = await env.DB.prepare(sql).all();
+  return json((r.results || []).map(p => ({ ...p, images: p.images ? JSON.parse(p.images) : [], active: p.active == null ? 1 : p.active })));
+}
+async function projectUpsert(request, env) {
+  if (!await requireAdmin(request, env)) return json({ error: 'Neautorizat' }, 401);
+  if (!env.DB) return json({ error: 'Baza de date nu este configurată.' }, 500);
+  const v = await request.json().catch(() => null);
+  if (!v || !v.title || !String(v.title).trim()) return json({ error: 'Adaugă un nume de proiect.' }, 400);
+  const images = Array.isArray(v.images) ? v.images.filter(x => typeof x === 'string' && x) : [];
+  const imgStr = JSON.stringify(images);
+  if (imgStr.length > 6000000) return json({ error: 'Pozele sunt prea mari în total. Reduce numărul de poze.' }, 413);
+  const active = v.active === false ? 0 : 1;
+  const sort = Number.isFinite(+v.sort) ? +v.sort : 0;
+  const title = String(v.title).slice(0, 200), descr = String(v.descr || '').slice(0, 4000);
+  const location = String(v.location || '').slice(0, 200), surface = String(v.surface || '').slice(0, 100);
+  if (v.id) {
+    await env.DB.prepare('UPDATE projects SET title=?,descr=?,location=?,surface=?,images=?,sort=?,active=? WHERE id=?')
+      .bind(title, descr, location, surface, imgStr, sort, active, v.id).run();
+    return json({ ok: true, id: v.id });
+  }
+  const res = await env.DB.prepare('INSERT INTO projects (title,descr,location,surface,images,sort,active) VALUES (?,?,?,?,?,?,?)')
+    .bind(title, descr, location, surface, imgStr, sort, active).run();
+  return json({ ok: true, id: res.meta ? res.meta.last_row_id : undefined });
+}
+async function projectDelete(request, env, id) {
+  if (!await requireAdmin(request, env)) return json({ error: 'Neautorizat' }, 401);
+  if (!env.DB) return json({ error: 'Baza de date nu este configurată.' }, 500);
+  await env.DB.prepare('DELETE FROM projects WHERE id=?').bind(id).run();
+  return json({ ok: true });
+}
+
 // ── Bannere hero (editabile din admin) ──
 // Admin: obiectul include data URL-ul complet (pentru preview/editare).
 function rowToBanner(r) {
@@ -1384,6 +1423,10 @@ async function api(request, env, url) {
   const pm = p.match(/^\/api\/posts\/(.+)$/);
   if (pm && m === 'GET') return postGet(env, decodeURIComponent(pm[1]));
   if (pm && m === 'DELETE') return postDelete(request, env, Number(pm[1]));
+  if (p === '/api/projects' && m === 'GET') return projectsList(request, env);
+  if (p === '/api/projects' && m === 'POST') return projectUpsert(request, env);
+  const prjDel = p.match(/^\/api\/projects\/(\d+)$/);
+  if (prjDel && m === 'DELETE') return projectDelete(request, env, Number(prjDel[1]));
   if (p === '/api/settings' && m === 'GET') return settingsGet(env);
   if (p === '/api/settings' && m === 'POST') return settingsSave(request, env);
   if (p === '/api/chat' && m === 'POST') return chatHandler(request, env);
