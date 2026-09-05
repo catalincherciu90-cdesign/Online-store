@@ -215,27 +215,62 @@
       if (!m) { m = document.createElement('meta'); m.setAttribute('name', 'description'); document.head.appendChild(m); }
       m.setAttribute('content', String(txt || '').slice(0, 160));
     }
-    // Date structurate: Product + BreadcrumbList
+    // Setează/actualizează un meta property/name (Open Graph, Twitter)
+    function setMeta(attr, key, content) {
+      let m = document.querySelector(`meta[${attr}="${key}"]`);
+      if (!m) { m = document.createElement('meta'); m.setAttribute(attr, key); document.head.appendChild(m); }
+      m.setAttribute('content', String(content == null ? '' : content));
+    }
+    // Date structurate: Product + Offer/AggregateOffer + BreadcrumbList, plus Open Graph.
     function injectProductLd(p) {
-      const price = (typeof priceMin === 'function') ? Number(priceMin(p) || 0) : Number(p.price || 0);
+      const canonUrl = location.origin + '/produs.html?id=' + encodeURIComponent(p.id);
+      const priceless = (typeof isPriceless === 'function') && isPriceless(p);
+      // Data de validitate a prețului: sfârșitul anului următor.
+      const validUntil = (new Date().getFullYear() + 1) + '-12-31';
       const ld = {
-        '@context': 'https://schema.org', '@type': 'Product', name: p.name, sku: p.id,
+        '@context': 'https://schema.org', '@type': 'Product', name: p.name, sku: p.id, mpn: p.id,
         category: categoryName(p.cat),
-        offers: { '@type': 'Offer', price: price.toFixed(2), priceCurrency: 'RON', availability: 'https://schema.org/InStock', url: location.href.split('#')[0] },
       };
-      if (p.producator) ld.brand = { '@type': 'Brand', name: p.producator };
+      if (p.producator) ld.brand = { '@type': 'Brand', name: (typeof brandDisplay === 'function' ? brandDisplay(p.producator) : p.producator) };
       if (p.desc) ld.description = p.desc;
       if (pfMap.main) ld.image = location.origin + pfMap.main;
+      if (priceless) {
+        // „Preț la cerere": nu inventăm un preț, dar marcăm disponibilitatea.
+        ld.offers = { '@type': 'Offer', priceCurrency: 'RON', availability: 'https://schema.org/InStock', itemCondition: 'https://schema.org/NewCondition', url: canonUrl };
+      } else {
+        const lo = Number((typeof priceMin === 'function' ? priceMin(p) : p.price) || 0);
+        const hi = Number((typeof priceMax === 'function' ? priceMax(p) : p.price) || lo);
+        const varies = (typeof priceVaries === 'function') && priceVaries(p) && hi > lo;
+        ld.offers = varies
+          ? { '@type': 'AggregateOffer', lowPrice: lo.toFixed(2), highPrice: hi.toFixed(2), priceCurrency: 'RON', offerCount: 2, availability: 'https://schema.org/InStock', url: canonUrl }
+          : { '@type': 'Offer', price: lo.toFixed(2), priceCurrency: 'RON', priceValidUntil: validUntil, availability: 'https://schema.org/InStock', itemCondition: 'https://schema.org/NewCondition', url: canonUrl };
+      }
       const bc = {
         '@context': 'https://schema.org', '@type': 'BreadcrumbList',
         itemListElement: [
           { '@type': 'ListItem', position: 1, name: 'Acasă', item: location.origin + '/' },
-          { '@type': 'ListItem', position: 2, name: categoryName(p.cat), item: location.origin + '/produse.html?cat=' + p.cat },
-          { '@type': 'ListItem', position: 3, name: p.name },
+          { '@type': 'ListItem', position: 2, name: 'Produse', item: location.origin + '/produse.html' },
+          { '@type': 'ListItem', position: 3, name: categoryName(p.cat), item: location.origin + '/produse.html?cat=' + p.cat },
+          { '@type': 'ListItem', position: 4, name: p.name },
         ],
       };
       const s = document.createElement('script'); s.type = 'application/ld+json'; s.textContent = JSON.stringify([ld, bc]);
       document.head.appendChild(s);
+
+      // Open Graph / Twitter — partajare pe rețele sociale.
+      const ogDesc = (document.querySelector('meta[name="description"]') || {}).content
+        || `${p.name}${p.producator ? ' de la ' + p.producator : ''}. ${categoryName(p.cat)} de calitate la ExpoTigla.`;
+      setMeta('property', 'og:type', 'product');
+      setMeta('property', 'og:title', document.title);
+      setMeta('property', 'og:description', ogDesc);
+      setMeta('name', 'twitter:title', document.title);
+      setMeta('name', 'twitter:description', ogDesc);
+      if (pfMap.main) { setMeta('property', 'og:image', location.origin + pfMap.main); setMeta('name', 'twitter:image', location.origin + pfMap.main); }
+      if (!priceless) {
+        const lo = Number((typeof priceMin === 'function' ? priceMin(p) : p.price) || 0);
+        setMeta('property', 'product:price:amount', lo.toFixed(2));
+        setMeta('property', 'product:price:currency', 'RON');
+      }
     }
 
     // Lightbox: deschide o imagine mărită peste pagină.

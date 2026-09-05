@@ -244,5 +244,27 @@
 <script src="assets/js/cart.js"></script>
 <script src="assets/js/main.js"></script>
 
+<!-- SEO: Article + FAQ JSON-LD (auto) -->
+<script>
+(function(){try{
+  var h1=document.querySelector("h1");
+  var title=(h1?h1.textContent:document.title).replace(/\s+/g," ").trim();
+  var de=document.querySelector("meta[name=\"description\"]");
+  var desc=de?de.content:"";
+  var canon=location.origin+location.pathname;
+  function setMeta(a,k,c){var m=document.querySelector("meta["+a+"=\""+k+"\"]");if(!m){m=document.createElement("meta");m.setAttribute(a,k);document.head.appendChild(m);}m.setAttribute("content",c==null?"":String(c));}
+  var article={"@context":"https://schema.org","@type":"Article",headline:title,description:desc,mainEntityOfPage:canon,url:canon,inLanguage:"ro-RO",isPartOf:{"@type":"Blog",name:"Ghidul acoperisului",url:location.origin+"/ghiduri.html"},publisher:{"@type":"Organization",name:"ExpoTigla",url:location.origin+"/"}};
+  var img=document.querySelector(".g-hero img")||document.querySelector("article img")||document.querySelector("img[src]");
+  if(img&&img.src)article.image=img.src;
+  var faqs=[];
+  document.querySelectorAll(".art-faq details").forEach(function(d){var q=d.querySelector("summary"),a=d.querySelector("p");if(!q||!a)return;var qt=((q.firstChild&&q.firstChild.textContent)||q.textContent).replace(/\+\s*$/,"").replace(/\s+/g," ").trim();var at=a.textContent.replace(/\s+/g," ").trim();if(qt&&at)faqs.push({"@type":"Question",name:qt,acceptedAnswer:{"@type":"Answer",text:at}});});
+  var out=[article];
+  if(faqs.length)out.push({"@context":"https://schema.org","@type":"FAQPage",mainEntity:faqs});
+  out.push({"@context":"https://schema.org","@type":"BreadcrumbList",itemListElement:[{"@type":"ListItem",position:1,name:"Acasa",item:location.origin+"/"},{"@type":"ListItem",position:2,name:"Ghiduri",item:location.origin+"/ghiduri.html"},{"@type":"ListItem",position:3,name:title}]});
+  var s=document.createElement("script");s.type="application/ld+json";s.textContent=JSON.stringify(out);document.head.appendChild(s);
+  setMeta("property","og:title",title);setMeta("property","og:description",desc);setMeta("name","twitter:title",title);setMeta("name","twitter:description",desc);
+  if(img&&img.src){setMeta("property","og:image",img.src);setMeta("name","twitter:image",img.src);}
+}catch(e){}})();
+</script>
 </body>
 </html>

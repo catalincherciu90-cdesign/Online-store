@@ -1591,8 +1591,21 @@ function buildSeoHead(s, url) {
     potentialAction: { '@type': 'SearchAction', target: origin + '/produse.html?q={search_term_string}', 'query-input': 'required name=search_term_string' },
   };
   const jsonld = `<script type="application/ld+json">${JSON.stringify(biz)}</script><script type="application/ld+json">${JSON.stringify(website)}</script>`;
-  const og = `<meta property="og:site_name" content="${esc(name)}"><meta property="og:type" content="website"><meta property="og:locale" content="ro_RO"><meta property="og:url" content="${esc(url.href.split('#')[0])}"><meta name="twitter:card" content="summary_large_image">`;
-  return jsonld + og;
+  // URL canonic: păstrează doar parametrii care definesc conținutul (cat/id/slug),
+  // elimină filtrele/sortările/utm care creează conținut duplicat.
+  const canonical = canonicalUrl(url);
+  const og = `<meta property="og:site_name" content="${esc(name)}"><meta property="og:type" content="website"><meta property="og:locale" content="ro_RO"><meta property="og:url" content="${esc(canonical)}"><meta name="twitter:card" content="summary_large_image">`;
+  const link = `<link rel="canonical" href="${esc(canonical)}">`;
+  return jsonld + og + link;
+}
+// Construiește URL-ul canonic pentru orice pagină publică (folosit la <link canonical> și og:url).
+function canonicalUrl(url) {
+  const KEEP = ['cat', 'id', 'slug'];
+  let path = url.pathname;
+  if (path === '/index.html') path = '/';
+  const cu = new URL(url.origin + path);
+  for (const k of KEEP) { const v = url.searchParams.get(k); if (v) cu.searchParams.set(k, v); }
+  return cu.href;
 }
 // ── Pagini pe zone (SEO local, generate server-side) ───────────────────────
 const ZONE_JUDETE = {
@@ -1693,7 +1706,10 @@ function robotsTxt(url) {
 }
 async function sitemapXml(env, url) {
   const o = url.origin;
-  const staticPages = ['produse.html', 'branduri.html', 'servicii.html', 'despre.html', 'contact.html', 'blog.html', 'livrare.html', 'termeni.html', 'confidentialitate.html', 'cookies.html', 'faq.html', 'cum-cumpar.html'];
+  const staticPages = ['produse.html', 'sistem-complet.html', 'ghiduri.html', 'branduri.html', 'servicii.html', 'despre.html', 'contact.html', 'blog.html',
+    'ghid-cat-costa-un-acoperis-complet-2026.html', 'ghid-ce-contine-un-sistem-complet-de-acoperis.html', 'ghid-cum-alegi-culoarea-acoperisului.html',
+    'ghid-de-ce-conteaza-ventilatia-acoperisului.html', 'ghid-sapte-greseli-frecvente-acoperis.html', 'ghid-tigla-metalica-tabla-faltuita-tabla-cutata.html',
+    'livrare.html', 'termeni.html', 'confidentialitate.html', 'cookies.html', 'faq.html', 'cum-cumpar.html'];
   const cats = ['tigla-metalica', 'tabla-faltuita', 'panouri-sandwich', 'sistem-pluvial', 'folii-membrane', 'borduri', 'ventilatii', 'suruburi', 'accesorii'];
   const u = [`<url><loc>${o}/</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>`];
   staticPages.forEach(p => u.push(`<url><loc>${o}/${p}</loc><changefreq>monthly</changefreq></url>`));

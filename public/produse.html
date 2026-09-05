@@ -187,7 +187,7 @@
         if (Math.abs(window.scrollY - top) > 6) window.scrollTo({ top: top, behavior: 'smooth' });
       }); });
     }
-    catFilters.addEventListener('change', e => { activeCat = e.target.value; render(); updateHeader(); document.querySelector('.filters').classList.remove('open'); scrollToResults(); });
+    catFilters.addEventListener('change', e => { activeCat = e.target.value; render(); updateHeader(); injectCatalogLd(); document.querySelector('.filters').classList.remove('open'); scrollToResults(); });
     document.querySelectorAll('input[name="price"]').forEach(r => r.addEventListener('change', e => { activePrice = e.target.value; render(); }));
     document.getElementById('sort').addEventListener('change', e => { activeSort = e.target.value; render(); });
 
@@ -245,20 +245,77 @@
     thFilters.addEventListener('change', e => { activeThickness = e.target.value; render(); });
     buildThicknessFilters();
 
+    // ── SEO pe categorii: title/meta îmbogățite cu cuvinte-cheie ──────────────
+    const CAT_SEO = {
+      'tigla-metalica': { title: 'Țiglă metalică — preț de la producător', desc: 'Țiglă metalică la preț de la producător: profile clasice și modulare, oțel 0.5–0.6mm, finisaje mate și lucioase, garanție până la 25 ani. Livrare națională și montaj. Cere ofertă la ExpoTigla.' },
+      'tabla-faltuita': { title: 'Tablă fălțuită (standing seam & click) — preț', desc: 'Tablă fălțuită pentru acoperiș: sisteme standing seam și click, aspect modern fără șuruburi vizibile, oțel 0.5–0.6mm. Prețuri de la producător, livrare și montaj. Cere ofertă.' },
+      'panouri-sandwich': { title: 'Panouri sandwich acoperiș PUR/PIR — preț', desc: 'Panouri sandwich pentru acoperiș cu miez PUR și PIR, grosimi 40–100mm, izolare termică superioară pentru hale și case. Prețuri de la producător și livrare rapidă. Cere ofertă.' },
+      'sistem-pluvial': { title: 'Sisteme pluviale — jgheaburi și burlane din oțel', desc: 'Sisteme pluviale complete: jgheaburi și burlane din oțel vopsit, coturi, racorduri și kituri pentru casă. Prețuri corecte, culori asortate acoperișului, livrare națională.' },
+      'borduri': { title: 'Borduri și tinichigerie acoperiș — coame, șorțuri, dolii', desc: 'Borduri și tinichigerie pentru acoperiș: coame, șorțuri, dolii, pazii și parazăpezi, în culori asortate. Finisare și etanșare corectă a acoperișului. Cere ofertă la ExpoTigla.' },
+      'ventilatii': { title: 'Ventilații acoperiș — coșuri de aerisire și treceri', desc: 'Ventilații pentru acoperiș: coșuri de aerisire, treceri de cabluri și elemente de ventilare care protejează șarpanta de condens. Livrare națională și consultanță tehnică.' },
+      'folii-membrane': { title: 'Folii și membrane acoperiș — anticondens și difuzie', desc: 'Folii anticondens și membrane traspirante de difuzie pentru acoperiș: control al umidității și protecția șarpantei. Recomandare tehnică și livrare. Cere ofertă la ExpoTigla.' },
+      'suruburi': { title: 'Șuruburi autoforante pentru acoperiș — torx cu garnitură', desc: 'Șuruburi autoforante pentru țiglă metalică și tablă: cap torx, garnitură EPDM, capete vopsite în culori RAL. Dimensiuni pentru orice montaj. Cere ofertă la ExpoTigla.' },
+      'accesorii': { title: 'Accesorii acoperiș pentru un montaj complet', desc: 'Accesorii pentru acoperiș: coame, parazăpezi și elemente de finisare pentru un sistem montat corect. Calitate de la producător, livrare națională. Cere ofertă la ExpoTigla.' },
+    };
+    function setPageMeta(title, desc) {
+      if (title) {
+        document.title = title.includes('ExpoTigla') ? title : (title + ' | ExpoTigla');
+        setMeta('property', 'og:title', document.title);
+        setMeta('name', 'twitter:title', document.title);
+      }
+      if (desc) {
+        let m = document.querySelector('meta[name="description"]');
+        if (!m) { m = document.createElement('meta'); m.setAttribute('name', 'description'); document.head.appendChild(m); }
+        m.setAttribute('content', String(desc).slice(0, 300));
+        setMeta('property', 'og:description', desc);
+        setMeta('name', 'twitter:description', desc);
+      }
+    }
+    function setMeta(attr, key, content) {
+      let m = document.querySelector(`meta[${attr}="${key}"]`);
+      if (!m) { m = document.createElement('meta'); m.setAttribute(attr, key); document.head.appendChild(m); }
+      m.setAttribute('content', String(content == null ? '' : content));
+    }
+
     function updateHeader() {
       if (activeQuery) {
         document.getElementById('catalog-title').textContent = 'Rezultate căutare';
         document.getElementById('catalog-sub').textContent = `Produse care conțin „${activeQuery}".`;
+        setPageMeta('Rezultate căutare „' + activeQuery + '"', 'Rezultatele căutării pentru „' + activeQuery + '" în catalogul ExpoTigla: sisteme de acoperiș, țiglă metalică, tablă fălțuită, panouri sandwich și accesorii.');
         return;
       }
       if (activeProducer !== 'all') {
         document.getElementById('catalog-title').textContent = activeProducer;
         document.getElementById('catalog-sub').textContent = 'Toate produsele de la ' + activeProducer + '.';
+        setPageMeta(activeProducer + ' — produse pentru acoperiș', 'Produse ' + activeProducer + ' pentru acoperiș disponibile la ExpoTigla: învelitori, accesorii și sisteme complete. Prețuri de la producător și livrare națională.');
         return;
       }
       const c = getCategory(activeCat);
       document.getElementById('catalog-title').textContent = c ? c.name : 'Toate produsele';
       document.getElementById('catalog-sub').textContent = c ? c.desc : 'Sisteme complete de acoperiș, direct de la producător.';
+      const seo = CAT_SEO[activeCat];
+      if (seo) setPageMeta(seo.title, seo.desc);
+      else if (c) setPageMeta(c.name + ' — sisteme de acoperiș', c.desc);
+      else setPageMeta('Produse — sisteme de acoperiș', 'Catalog complet de sisteme de acoperiș: țiglă metalică, tablă fălțuită, panouri sandwich, sisteme pluviale, folii, șuruburi și accesorii. Prețuri de la producător și livrare națională.');
+    }
+
+    // Date structurate pentru pagina de listă/categorie: BreadcrumbList + ItemList.
+    function injectCatalogLd() {
+      const old = document.getElementById('catalog-ld'); if (old) old.remove();
+      const c = (activeCat !== 'all') ? getCategory(activeCat) : null;
+      const bcItems = [{ '@type': 'ListItem', position: 1, name: 'Acasă', item: location.origin + '/' },
+        { '@type': 'ListItem', position: 2, name: 'Produse', item: location.origin + '/produse.html' }];
+      if (c) bcItems.push({ '@type': 'ListItem', position: 3, name: c.name, item: location.origin + '/produse.html?cat=' + c.id });
+      const bc = { '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: bcItems };
+      const listSrc = (c ? PRODUCTS.filter(p => p.cat === c.id) : PRODUCTS).slice(0, 30);
+      const itemList = {
+        '@context': 'https://schema.org', '@type': 'ItemList',
+        name: c ? c.name : 'Toate produsele',
+        itemListElement: listSrc.map((p, i) => ({ '@type': 'ListItem', position: i + 1, url: location.origin + '/produs.html?id=' + encodeURIComponent(p.id), name: p.name })),
+      };
+      const s = document.createElement('script'); s.id = 'catalog-ld'; s.type = 'application/ld+json';
+      s.textContent = JSON.stringify([bc, itemList]);
+      document.head.appendChild(s);
     }
 
     // Potrivire STRICTĂ: produsul chiar oferă grosimea/culoarea selectată (nu doar categoria o suportă).
@@ -342,6 +399,7 @@
       }
       updateHeader();
       render();
+      injectCatalogLd();
     });
   </script>
 </body>
