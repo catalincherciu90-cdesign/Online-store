@@ -1298,7 +1298,7 @@ async function orderCreate(request, env) {
         <p>Am înregistrat comanda <b>${esc(ref)}</b>. Iată rezumatul:</p>
         <table border="1" cellpadding="6" style="border-collapse:collapse">${rows}</table>
         <p>Subtotal: ${fmtLei(subtotal)} · Livrare: ${freeDelivery ? 'gratuită' : 'se calculează separat'}<br><b>Total de plată: ${fmtLei(total)}</b></p>
-        ${freeDelivery ? '<p>Comanda ta beneficiază de <b>livrare gratuită</b> (peste 2.000 lei).</p>' : '<p>Pentru comenzile sub 2.000 lei, costul transportului se calculează separat și ți-l comunicăm după finalizarea comenzii, în urma discuției cu un consultant ExpoTigla.</p>'}
+        <p>Livrare gratuită pentru comenzi de peste 2.000 lei. Pentru comenzile sub această valoare, costul transportului va fi comunicat ulterior de un consultant ExpoTigla.</p>
         <p>Ce urmează: te contactăm în cel mai scurt timp la <b>${esc(telefon)}</b> pentru confirmare și programarea livrării. Plata se efectuează cu un avans de minimum 40% din valoarea comenzii; îți comunicăm detaliile la confirmare.</p>
         ${contactHtml(c)}` });
   }
