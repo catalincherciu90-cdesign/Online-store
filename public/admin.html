@@ -3561,7 +3561,7 @@
         </div>
         <table class="a-table"><thead><tr><th>Produs</th><th style="text-align:center">Cant.</th><th style="text-align:right">Preț</th><th style="text-align:right">Total</th></tr></thead><tbody>${items}</tbody></table>
         <div style="text-align:right;font-size:1.25rem;font-weight:800;color:#e9f1ec;margin-top:16px">Total: ${fmt(o.total)}</div>
-        <p class="muted-sm" style="text-align:right;margin-top:2px">Plată ramburs</p>
+        <p class="muted-sm" style="text-align:right;margin-top:2px">Plată: avans minim 40%</p>
         ${(o.statusLog && o.statusLog.length) ? `<div style="margin-top:22px;border-top:1px solid var(--line);padding-top:14px">
           <div class="muted-sm" style="font-weight:700;margin-bottom:8px">Istoric status</div>
           ${o.statusLog.slice().reverse().map(h => `<div style="display:flex;align-items:center;gap:8px;padding:3px 0;font-size:.85rem">${statusBadge(h.status)}<span class="muted-sm">${esc((h.at || '').replace('T', ' ').slice(0, 16))} · ${esc(h.by || '')}</span></div>`).join('')}
