@@ -78,6 +78,14 @@ async function ensureSchema(env) {
   if (!SCHEMA_READY) {
     SCHEMA_READY = (async () => {
       const stmts = [
+        // Tabele critice (produse, comenzi, oferte) — trebuie create AICI, nu doar în
+        // schema.sql, altfel pe o bază D1 nouă comenzile/ofertele eșuează cu 500.
+        `CREATE TABLE IF NOT EXISTS products (id TEXT PRIMARY KEY, cat TEXT NOT NULL, name TEXT NOT NULL, price REAL NOT NULL, unit TEXT NOT NULL DEFAULT 'buc', badge TEXT, descr TEXT, producator TEXT, specs TEXT, options TEXT, option_prices TEXT, finish_colors TEXT, color_prices TEXT, finishes TEXT, active INTEGER NOT NULL DEFAULT 1, created_at TEXT DEFAULT (datetime('now')))`,
+        `CREATE TABLE IF NOT EXISTS orders (id INTEGER PRIMARY KEY AUTOINCREMENT, ref TEXT UNIQUE, nume TEXT, prenume TEXT, telefon TEXT, email TEXT, adresa TEXT, oras TEXT, judet TEXT, obs TEXT, items TEXT, total REAL, status TEXT DEFAULT 'nou', created_at TEXT DEFAULT (datetime('now')))`,
+        `CREATE TABLE IF NOT EXISTS quotes (id INTEGER PRIMARY KEY AUTOINCREMENT, ref TEXT UNIQUE, nume TEXT, telefon TEXT, email TEXT, tip TEXT, suprafata TEXT, mesaj TEXT, plan TEXT, status TEXT DEFAULT 'nou', created_at TEXT DEFAULT (datetime('now')))`,
+        `CREATE INDEX IF NOT EXISTS idx_orders_created ON orders(created_at DESC)`,
+        `CREATE INDEX IF NOT EXISTS idx_quotes_created ON quotes(created_at DESC)`,
+        `CREATE INDEX IF NOT EXISTS idx_products_cat ON products(cat)`,
         `CREATE TABLE IF NOT EXISTS reviews (id INTEGER PRIMARY KEY AUTOINCREMENT, author TEXT NOT NULL, rating INTEGER NOT NULL DEFAULT 5, text TEXT NOT NULL, source TEXT DEFAULT 'Google', sort INTEGER DEFAULT 0, active INTEGER NOT NULL DEFAULT 1, created_at TEXT DEFAULT (datetime('now')))`,
         `CREATE TABLE IF NOT EXISTS option_values (grp TEXT NOT NULL, id TEXT NOT NULL, name TEXT NOT NULL, delta REAL DEFAULT 0, hex TEXT, sort INTEGER DEFAULT 0, PRIMARY KEY (grp, id))`,
         `CREATE TABLE IF NOT EXISTS banners (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT, subtitle TEXT, cta_label TEXT, cta_href TEXT, image TEXT, align TEXT DEFAULT 'left', height TEXT DEFAULT 'md', sort INTEGER DEFAULT 0, active INTEGER NOT NULL DEFAULT 1, created_at TEXT DEFAULT (datetime('now')))`,
