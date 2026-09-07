@@ -1224,7 +1224,7 @@ async function sendEmail(env, payload) {
 }
 
 // Constante de livrare (trebuie să corespundă cu cele din cos.html)
-const DELIVERY_THRESHOLD = 2000, DELIVERY_FEE = 150;
+const DELIVERY_THRESHOLD = 2000;
 // Taie un string la o lungime maximă (validare defensivă pe câmpurile din formulare)
 const clip = (s, n) => (s == null ? '' : String(s)).slice(0, n);
 // Prețul unitar calculat SERVER-SIDE din produsul din baza de date (nu din payload-ul clientului)
@@ -1269,8 +1269,9 @@ async function orderCreate(request, env) {
     subtotal += pret * qty;
     priced.push({ nume: name, optiuni: clip(it && it.optiuni, 300), cant: qty, unit, pret });
   }
-  const delivery = subtotal >= DELIVERY_THRESHOLD ? 0 : DELIVERY_FEE;
-  const total = subtotal + delivery;
+  // Sub prag transportul se calculează separat (comunicat după comandă), deci nu se adaugă la total acum.
+  const freeDelivery = subtotal >= DELIVERY_THRESHOLD;
+  const total = subtotal;
 
   const ref = 'CMD-' + Date.now().toString().slice(-6);
   let saved = false;
@@ -1285,7 +1286,7 @@ async function orderCreate(request, env) {
   const to = env.ORDER_TO_EMAIL || env.QUOTE_TO_EMAIL;
   let mail = { delivered: false };
   if (to) mail = await sendEmail(env, { to: [to], reply_to: email || undefined, subject: `Comandă ${ref} — ${prenume || ''} ${nume}`,
-    html: `<h2>Comandă ${esc(ref)}</h2><p>${esc(prenume)} ${esc(nume)} · ${esc(telefon)} · ${esc(email)}<br>${esc(adresa)}, ${esc(oras)}, ${esc(judet)}</p>${tipClient === 'juridica' ? `<p><b>Persoană juridică:</b> ${esc(firma)} · CUI ${esc(cui)}${regCom ? ` · Reg. Com. ${esc(regCom)}` : ''}</p>` : '<p>Persoană fizică</p>'}<table border="1" cellpadding="6" style="border-collapse:collapse">${rows}</table><p>Subtotal: ${fmtLei(subtotal)} · Livrare: ${delivery ? fmtLei(delivery) : 'gratuită'}<br><b>Total: ${fmtLei(total)}</b></p>` });
+    html: `<h2>Comandă ${esc(ref)}</h2><p>${esc(prenume)} ${esc(nume)} · ${esc(telefon)} · ${esc(email)}<br>${esc(adresa)}, ${esc(oras)}, ${esc(judet)}</p>${tipClient === 'juridica' ? `<p><b>Persoană juridică:</b> ${esc(firma)} · CUI ${esc(cui)}${regCom ? ` · Reg. Com. ${esc(regCom)}` : ''}</p>` : '<p>Persoană fizică</p>'}<table border="1" cellpadding="6" style="border-collapse:collapse">${rows}</table><p>Subtotal: ${fmtLei(subtotal)} · Livrare: ${freeDelivery ? 'gratuită' : 'se calculează separat'}<br><b>Total: ${fmtLei(total)}</b></p>` });
   // Fail loud: nu confirma o comandă care nu s-a înregistrat nicăieri.
   if (env.DB && !saved) return json({ ok: false, error: 'Nu am putut înregistra comanda. Te rugăm sună-ne pentru confirmare.' }, 500);
   if (!env.DB && !mail.delivered) return json({ ok: false, error: 'Comanda nu a putut fi înregistrată. Te rugăm contactează-ne telefonic.' }, 500);
@@ -1296,7 +1297,8 @@ async function orderCreate(request, env) {
       html: `<h2>Îți mulțumim pentru comandă, ${esc(prenume || nume)}!</h2>
         <p>Am înregistrat comanda <b>${esc(ref)}</b>. Iată rezumatul:</p>
         <table border="1" cellpadding="6" style="border-collapse:collapse">${rows}</table>
-        <p>Subtotal: ${fmtLei(subtotal)} · Livrare: ${delivery ? fmtLei(delivery) : 'gratuită'}<br><b>Total de plată: ${fmtLei(total)}</b></p>
+        <p>Subtotal: ${fmtLei(subtotal)} · Livrare: ${freeDelivery ? 'gratuită' : 'se calculează separat'}<br><b>Total de plată: ${fmtLei(total)}</b></p>
+        ${freeDelivery ? '<p>Comanda ta beneficiază de <b>livrare gratuită</b> (peste 2.000 lei).</p>' : '<p>Pentru comenzile sub 2.000 lei, costul transportului se calculează separat și ți-l comunicăm după finalizarea comenzii, în urma discuției cu un consultant ExpoTigla.</p>'}
         <p>Ce urmează: te contactăm în cel mai scurt timp la <b>${esc(telefon)}</b> pentru confirmare și programarea livrării. Plata se efectuează cu un avans de minimum 40% din valoarea comenzii; îți comunicăm detaliile la confirmare.</p>
         ${contactHtml(c)}` });
   }

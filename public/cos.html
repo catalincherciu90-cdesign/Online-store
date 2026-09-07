@@ -102,8 +102,9 @@
       }
 
       const subtotal = Cart.subtotal();
-      const delivery = subtotal >= DELIVERY_THRESHOLD ? 0 : DELIVERY_FEE;
-      const total = subtotal + delivery;
+      const freeDelivery = subtotal >= DELIVERY_THRESHOLD;
+      // Sub prag transportul se calculează separat (comunicat după comandă), deci nu se adaugă acum la total.
+      const total = subtotal;
 
       const rows = items.map(it => {
         const p = getProduct(it.id);
@@ -132,19 +133,19 @@
         </div>`;
       }).join('');
 
-      const deliveryLabel = delivery === 0
+      const deliveryLabel = freeDelivery
         ? '<span style="color:var(--success);font-weight:600">Gratuită</span>'
-        : formatPrice(delivery);
-      const freeHint = delivery > 0
-        ? `<p class="muted" style="margin-top:8px">Mai adaugă ${formatPrice(DELIVERY_THRESHOLD - subtotal)} pentru livrare gratuită.</p>`
-        : '';
-      const shipMsg = delivery === 0
+        : '<span class="muted">Se calculează separat</span>';
+      const transportNote = freeDelivery
+        ? ''
+        : `<p class="muted" style="margin-top:8px">Pentru comenzile sub 2.000 lei, costul transportului se calculează separat și se comunică după finalizarea comenzii, în urma discuției cu un consultant ExpoTigla.</p>`;
+      const shipMsg = freeDelivery
         ? '✓ Comanda ta beneficiază de <b>livrare gratuită</b>.'
-        : 'Livrarea este <b>GRATUITĂ</b> pentru comenzile de peste 2.000 lei.';
-      const deliveryBanner = `<div style="display:flex;align-items:center;gap:10px;background:${delivery === 0 ? '#eaf7ef' : 'var(--accent-soft,#fbf3e2)'};border:1px solid var(--line,#e6e2d9);border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:.95rem;color:var(--navy,#2c2f33)"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;color:${delivery === 0 ? '#1a8f4c' : 'var(--terra-dark,#a8770a)'}"><rect x="1" y="3" width="15" height="13"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg><span>${shipMsg}</span></div>`;
+        : 'Livrarea este <b>GRATUITĂ</b> pentru comenzile de peste 2.000 lei. Pentru comenzile mai mici, transportul se calculează separat și se comunică după finalizarea comenzii, în urma discuției cu un consultant ExpoTigla.';
+      const deliveryBanner = `<div style="display:flex;align-items:center;gap:10px;background:${freeDelivery ? '#eaf7ef' : 'var(--accent-soft,#fbf3e2)'};border:1px solid var(--line,#e6e2d9);border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:.95rem;color:var(--navy,#2c2f33)"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;color:${freeDelivery ? '#1a8f4c' : 'var(--terra-dark,#a8770a)'}"><rect x="1" y="3" width="15" height="13"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg><span>${shipMsg}</span></div>`;
 
       if (checkoutMode) {
-        root.innerHTML = deliveryBanner + renderCheckout(items, subtotal, deliveryLabel, total);
+        root.innerHTML = deliveryBanner + renderCheckout(items, subtotal, deliveryLabel, total, transportNote);
         hydrateImages(root);
         return;
       }
@@ -156,7 +157,7 @@
           <div class="line"><span>Subtotal</span><span>${formatPrice(subtotal)}</span></div>
           <div class="line"><span>Livrare</span><span>${deliveryLabel}</span></div>
           <div class="line total"><span>Total</span><span>${formatPrice(total)}</span></div>
-          ${freeHint}
+          ${transportNote}
           <button class="btn btn-primary btn-block btn-lg" style="margin-top:18px" onclick="goCheckout()">Finalizează comanda</button>
           <a href="produse.html" class="btn btn-outline btn-block" style="margin-top:10px">Continuă cumpărăturile</a>
         </div>
@@ -165,7 +166,7 @@
     }
 
     // Vedere de checkout pe 2 coloane: formular (stânga) + rezumat comandă (dreapta)
-    function renderCheckout(items, subtotal, deliveryLabel, total) {
+    function renderCheckout(items, subtotal, deliveryLabel, total, transportNote) {
       const recap = items.map(it => {
         const p = getProduct(it.id);
         if (!p) return '';
@@ -227,6 +228,7 @@
             <div class="line"><span>Subtotal</span><span>${formatPrice(subtotal)}</span></div>
             <div class="line"><span>Livrare</span><span>${deliveryLabel}</span></div>
             <div class="line total"><span>Total de plată</span><span>${formatPrice(total)}</span></div>
+            ${transportNote || ''}
             <p class="muted" style="margin-top:10px">Plata se efectuează cu un avans de minimum 40% din valoarea comenzii. Te contactăm pentru confirmare.</p>
           </aside>
         </div>`;
