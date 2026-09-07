@@ -1496,21 +1496,37 @@ async function getTracking(env) {
   TRACK_CACHE = out; TRACK_TS = now;
   return out;
 }
+// ID-uri de tracking: păstrăm doar caractere sigure (evită injecție în <script>).
+function trackId(v) { return String(v || '').replace(/[^A-Za-z0-9_\-]/g, ''); }
 function buildHeadCode(t) {
   let h = '';
   if (t.gsc_verification) {
     h += t.gsc_verification.includes('<meta') ? t.gsc_verification
       : `<meta name="google-site-verification" content="${esc(t.gsc_verification)}">`;
   }
-  if (t.ga4_id) h += `<script async src="https://www.googletagmanager.com/gtag/js?id=${esc(t.ga4_id)}"></script><script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${esc(t.ga4_id)}');</script>`;
-  if (t.gtm_id) h += `<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','${esc(t.gtm_id)}');</script>`;
-  if (t.meta_pixel) h += `<script>!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','${esc(t.meta_pixel)}');fbq('track','PageView');</script>`;
+  // GDPR/ePrivacy: analytics & Meta Pixel (cookie-uri non-esențiale) se încarcă DOAR după
+  // consimțământ. Manager-ul de consimțământ ține scripturile "în așteptare" până la accept.
+  const ga4 = trackId(t.ga4_id), gtm = trackId(t.gtm_id), pixel = trackId(t.meta_pixel);
+  if (ga4 || gtm || pixel) {
+    h += `<script>(function(){var K='et_cookie_consent';function g(){try{return localStorage.getItem(K)}catch(e){return null}}
+function loadGA(id){var s=document.createElement('script');s.async=true;s.src='https://www.googletagmanager.com/gtag/js?id='+id;document.head.appendChild(s);window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}window.gtag=gtag;gtag('js',new Date());gtag('config',id);}
+function loadGTM(id){window.dataLayer=window.dataLayer||[];window.dataLayer.push({'gtm.start':new Date().getTime(),event:'gtm.js'});var s=document.createElement('script');s.async=true;s.src='https://www.googletagmanager.com/gtm.js?id='+id;document.head.appendChild(s);}
+function loadPixel(id){!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init',id);fbq('track','PageView');}
+var done=false;function activate(){if(done)return;done=true;${ga4 ? `loadGA('${ga4}');` : ''}${gtm ? `loadGTM('${gtm}');` : ''}${pixel ? `loadPixel('${pixel}');` : ''}}
+function banner(show){var b=document.getElementById('et-cookie-banner');if(b)b.style.display=show?'block':'none';}
+window.__etConsent={status:g,accept:function(){try{localStorage.setItem(K,'accepted')}catch(e){}document.cookie='et_consent=1;path=/;max-age=31536000;SameSite=Lax';banner(false);activate();},reject:function(){try{localStorage.setItem(K,'rejected')}catch(e){}document.cookie='et_consent=0;path=/;max-age=31536000;SameSite=Lax';banner(false);},open:function(){banner(true);}};
+if(g()==='accepted')activate();})();</script>`;
+  }
   if (t.head_code) h += t.head_code;
   return h;
 }
 function buildBodyCode(t) {
   let b = '';
-  if (t.gtm_id) b += `<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=${esc(t.gtm_id)}" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>`;
+  // Bannerul de consimțământ apare doar dacă există cel puțin un cod de tracking configurat.
+  const hasTrack = trackId(t.ga4_id) || trackId(t.gtm_id) || trackId(t.meta_pixel);
+  if (hasTrack) {
+    b += `<div id="et-cookie-banner" role="dialog" aria-label="Consimțământ cookie-uri" style="display:none;position:fixed;left:0;right:0;bottom:0;z-index:2147483000;background:#2c2f33;color:#f4f2ee;padding:16px 18px;box-shadow:0 -4px 20px rgba(0,0,0,.25)"><div style="max-width:1100px;margin:0 auto;display:flex;flex-wrap:wrap;align-items:center;gap:14px;justify-content:space-between"><p style="margin:0;font-size:.92rem;line-height:1.5;flex:1 1 340px;min-width:0">Folosim cookie-uri pentru analiză și marketing, ca să îți oferim o experiență mai bună. Le activăm doar cu acordul tău. <a href="/cookies.html" style="color:#e6b84f;text-decoration:underline">Detalii</a></p><div style="display:flex;gap:10px;flex-wrap:wrap"><button type="button" onclick="window.__etConsent&&__etConsent.reject()" style="cursor:pointer;background:transparent;border:1px solid #6b7075;color:#f4f2ee;padding:10px 18px;border-radius:8px;font-weight:600;font-size:.9rem">Refuz</button><button type="button" onclick="window.__etConsent&&__etConsent.accept()" style="cursor:pointer;background:#c2890a;border:1px solid #c2890a;color:#fff;padding:10px 20px;border-radius:8px;font-weight:700;font-size:.9rem">Accept</button></div></div></div><script>(function(){if(window.__etConsent&&!__etConsent.status()){var b=document.getElementById('et-cookie-banner');if(b)b.style.display='block';}})();</script>`;
+  }
   if (t.body_code) b += t.body_code;
   return b;
 }

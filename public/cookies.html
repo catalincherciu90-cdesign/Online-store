@@ -54,10 +54,13 @@ Cookie-urile sunt fișiere text mici, stocate în browserul tău, care ajută si
 - Cookie-uri de analiză (dacă sunt activate): ne ajută să înțelegem cum e folosit site-ul, în formă anonimizată.
 
 3. Cum le controlezi
-Poți șterge sau bloca cookie-urile din setările browserului tău. Reține că, dacă blochezi cookie-urile strict necesare, unele funcții (precum coșul) nu vor mai funcționa.
+La prima vizită îți cerem acordul printr-un banner: poți accepta sau refuza cookie-urile de analiză și marketing. Cookie-urile strict necesare (coș, sesiune) funcționează întotdeauna, fiindcă fără ele site-ul nu ar funcționa. Îți poți schimba oricând opțiunea cu butonul de mai jos sau din setările browserului tău.
 
 4. Consimțământ
-Prin continuarea utilizării site-ului, ești de acord cu folosirea cookie-urilor conform acestei politici.</div>
+Cookie-urile de analiză și marketing se activează doar după ce apeși „Accept" în banner. Până atunci nu se încarcă niciun cod de analiză sau marketing. Îți poți retrage consimțământul oricând.</div>
+      <div style="margin-top:26px">
+        <button type="button" id="cookie-prefs-btn" class="btn btn-primary" onclick="if(window.__etConsent){__etConsent.open()}else{alert('Momentan nu sunt active cookie-uri de analiză sau marketing pe acest site.')}">Gestionează preferințele cookie</button>
+      </div>
     </div>
   </section>
 
