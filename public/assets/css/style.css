@@ -845,6 +845,9 @@ a.pd-doc:hover { border-color: var(--terra); }
 .footer-col p a.tel-link { display: inline; padding: 0; transform: none; }
 .footer-col p a.tel-link:hover { transform: none; text-decoration: underline; }
 .footer-bottom { border-top: 1px solid rgba(255,255,255,.1); padding-top: 22px; text-align: center; font-size: .85rem; color: #7f92a3; }
+.footer-credit { display: block; margin-top: 8px; font-size: .8rem; color: #64758a; }
+.footer-credit a { color: inherit; text-decoration: none; }
+.footer-credit a:hover { color: #9fb0c2; }
 .footer-anpc { display: flex; flex-wrap: wrap; gap: 14px; justify-content: center; align-items: center; margin-bottom: 20px; }
 .footer-anpc a { display: inline-flex; }
 .footer-anpc img { height: 46px; width: auto; display: block; border-radius: 4px; }
