@@ -1490,17 +1490,22 @@ async function api(request, env, url) {
 }
 
 // ── Coduri de tracking / verificare (Google, Meta etc.) injectate în pagini ──
+// GA4 implicit al site-ului. E injectat mereu (prin Consent Mode), chiar dacă nu e
+// setat nimic în admin. Dacă se salvează un alt ga4_id din admin, acela are prioritate.
+const DEFAULT_GA4_ID = 'G-NPMGJ30G7Y';
 let TRACK_CACHE = null, TRACK_TS = 0;
 async function getTracking(env) {
-  if (!env.DB) return {};
   const now = Date.now();
   if (TRACK_CACHE && now - TRACK_TS < 60000) return TRACK_CACHE;
   const keys = ['ga4_id', 'gtm_id', 'meta_pixel', 'gsc_verification', 'head_code', 'body_code'];
   const out = {};
-  try {
-    const r = await env.DB.prepare(`SELECT key,value FROM settings WHERE key IN (${keys.map(() => '?').join(',')})`).bind(...keys).all();
-    for (const row of (r.results || [])) if (row.value) out[row.key] = row.value;
-  } catch (e) { /* fără DB → fără injecție */ }
+  if (env.DB) {
+    try {
+      const r = await env.DB.prepare(`SELECT key,value FROM settings WHERE key IN (${keys.map(() => '?').join(',')})`).bind(...keys).all();
+      for (const row of (r.results || [])) if (row.value) out[row.key] = row.value;
+    } catch (e) { /* fără DB → doar valorile implicite */ }
+  }
+  if (!out.ga4_id) out.ga4_id = DEFAULT_GA4_ID;
   TRACK_CACHE = out; TRACK_TS = now;
   return out;
 }
