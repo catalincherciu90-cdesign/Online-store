@@ -1512,18 +1512,25 @@ function buildHeadCode(t) {
     h += t.gsc_verification.includes('<meta') ? t.gsc_verification
       : `<meta name="google-site-verification" content="${esc(t.gsc_verification)}">`;
   }
-  // GDPR/ePrivacy: analytics & Meta Pixel (cookie-uri non-esențiale) se încarcă DOAR după
-  // consimțământ. Manager-ul de consimțământ ține scripturile "în așteptare" până la accept.
+  // GDPR/ePrivacy cu Google Consent Mode v2: biblioteca Google (GA4/GTM) se încarcă pe
+  // fiecare pagină (așa Google detectează tag-ul), dar consimțământul e "denied" implicit,
+  // deci NU se setează cookie-uri de analiză/marketing până la accept. La accept, trecem pe
+  // "granted". Meta Pixel (fără consent mode) rămâne încărcat doar după accept.
   const ga4 = trackId(t.ga4_id), gtm = trackId(t.gtm_id), pixel = trackId(t.meta_pixel);
   if (ga4 || gtm || pixel) {
+    // 1) Consent Mode v2: definește gtag + starea implicită ÎNAINTE de a încărca librăriile.
+    h += `<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}window.gtag=gtag;(function(){var s='denied';try{if(localStorage.getItem('et_cookie_consent')==='accepted')s='granted';}catch(e){}gtag('consent','default',{ad_storage:s,ad_user_data:s,ad_personalization:s,analytics_storage:s,wait_for_update:500});})();</script>`;
+    // 2) Încarcă GA4 și/sau GTM imediat (detectabile de Google; fără cookie-uri până la consimțământ).
+    if (ga4) h += `<script async src="https://www.googletagmanager.com/gtag/js?id=${ga4}"></script><script>gtag('js',new Date());gtag('config','${ga4}');</script>`;
+    if (gtm) h += `<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','${gtm}');</script>`;
+    // 3) Manager de consimțământ: banner + comutarea consimțământului + Meta Pixel (gated).
     h += `<script>(function(){var K='et_cookie_consent';function g(){try{return localStorage.getItem(K)}catch(e){return null}}
-function loadGA(id){var s=document.createElement('script');s.async=true;s.src='https://www.googletagmanager.com/gtag/js?id='+id;document.head.appendChild(s);window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}window.gtag=gtag;gtag('js',new Date());gtag('config',id);}
-function loadGTM(id){window.dataLayer=window.dataLayer||[];window.dataLayer.push({'gtm.start':new Date().getTime(),event:'gtm.js'});var s=document.createElement('script');s.async=true;s.src='https://www.googletagmanager.com/gtm.js?id='+id;document.head.appendChild(s);}
 function loadPixel(id){!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init',id);fbq('track','PageView');}
-var done=false;function activate(){if(done)return;done=true;${ga4 ? `loadGA('${ga4}');` : ''}${gtm ? `loadGTM('${gtm}');` : ''}${pixel ? `loadPixel('${pixel}');` : ''}}
+var pixelDone=false;function grant(){if(window.gtag)gtag('consent','update',{ad_storage:'granted',ad_user_data:'granted',ad_personalization:'granted',analytics_storage:'granted'});${pixel ? `if(!pixelDone){pixelDone=true;loadPixel('${pixel}');}` : ''}}
+function deny(){if(window.gtag)gtag('consent','update',{ad_storage:'denied',ad_user_data:'denied',ad_personalization:'denied',analytics_storage:'denied'});}
 function banner(show){var b=document.getElementById('et-cookie-banner');if(b)b.style.display=show?'block':'none';}
-window.__etConsent={status:g,accept:function(){try{localStorage.setItem(K,'accepted')}catch(e){}document.cookie='et_consent=1;path=/;max-age=31536000;SameSite=Lax';banner(false);activate();},reject:function(){try{localStorage.setItem(K,'rejected')}catch(e){}document.cookie='et_consent=0;path=/;max-age=31536000;SameSite=Lax';banner(false);},open:function(){banner(true);}};
-if(g()==='accepted')activate();})();</script>`;
+window.__etConsent={status:g,accept:function(){try{localStorage.setItem(K,'accepted')}catch(e){}document.cookie='et_consent=1;path=/;max-age=31536000;SameSite=Lax';banner(false);grant();},reject:function(){try{localStorage.setItem(K,'rejected')}catch(e){}document.cookie='et_consent=0;path=/;max-age=31536000;SameSite=Lax';banner(false);deny();},open:function(){banner(true);}};
+if(g()==='accepted')grant();})();</script>`;
   }
   if (t.head_code) h += t.head_code;
   return h;
