@@ -1766,6 +1766,12 @@ async function sitemapXml(env, url) {
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
+    // Canonic: www.expotigla.ro → expotigla.ro (un singur domeniu principal, bun pentru SEO).
+    if (url.hostname.startsWith('www.')) {
+      const to = new URL(url);
+      to.hostname = url.hostname.slice(4);
+      return Response.redirect(to.toString(), 301);
+    }
     if (url.pathname.startsWith('/api/')) {
       try { return await api(request, env, url); }
       catch (e) { console.error(e); return json({ error: 'Eroare internă.' }, 500); }
