@@ -1490,9 +1490,11 @@ async function api(request, env, url) {
 }
 
 // ── Coduri de tracking / verificare (Google, Meta etc.) injectate în pagini ──
-// GA4 implicit al site-ului. E injectat mereu (prin Consent Mode), chiar dacă nu e
-// setat nimic în admin. Dacă se salvează un alt ga4_id din admin, acela are prioritate.
+// GA4 și Meta Pixel implicite ale site-ului. Sunt injectate mereu (prin Consent
+// Mode / după consimțământ), chiar dacă nu e setat nimic în admin. Dacă se salvează
+// alte valori din admin, acelea au prioritate.
 const DEFAULT_GA4_ID = 'G-NPMGJ30G7Y';
+const DEFAULT_META_PIXEL = '3403548513163074';
 let TRACK_CACHE = null, TRACK_TS = 0;
 async function getTracking(env) {
   const now = Date.now();
@@ -1506,6 +1508,7 @@ async function getTracking(env) {
     } catch (e) { /* fără DB → doar valorile implicite */ }
   }
   if (!out.ga4_id) out.ga4_id = DEFAULT_GA4_ID;
+  if (!out.meta_pixel) out.meta_pixel = DEFAULT_META_PIXEL;
   TRACK_CACHE = out; TRACK_TS = now;
   return out;
 }
