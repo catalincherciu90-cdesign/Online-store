@@ -303,13 +303,14 @@ function applySettings(s) {
     const anpc = bottom.querySelector('.footer-anpc');
     if (anpc) anpc.after(cdiv); else bottom.insertBefore(cdiv, bottom.firstChild);
   }
-  // Chatbot AI (Grok) — doar dacă e activat din admin
+  // Chatbot cu răspunsuri fixe — doar dacă e activat din admin
   injectChatbot(s);
 }
 
 /* ==========================================================================
-   Chatbot AI (Grok / xAI) — widget flotant. Trimite conversația la /api/chat,
-   care o proxează server-side către xAI (cheia stă doar pe server).
+   Chatbot cu răspunsuri fixe — widget flotant, complet client-side (fără AI).
+   Potrivește întrebarea cu subiecte cunoscute după cuvinte cheie; nu apelează
+   niciun serviciu extern și nu folosește chei API.
    ========================================================================== */
 function injectChatbot(s) {
   const on = s && (s.chatbot_enabled === 'on' || s.chatbot_enabled === '1' || s.chatbot_enabled === 'true');
@@ -436,30 +437,45 @@ function injectChatbot(s) {
   teaserEl.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); hideTeaser(true); openPanel(); } });
   const _openPanel = openPanel;
   openPanel = function () { hideTeaser(true); _openPanel(); };
-  async function sendMessage(text) {
+  // ── Răspunsuri FIXE (fără AI) ──────────────────────────────────────────
+  // Potrivim întrebarea cu subiecte cunoscute după cuvinte cheie. Datele de
+  // contact vin din setări; dacă lipsesc, trimitem la pagina de contact.
+  const PHONE = (s.phone || '').trim();
+  const EMAIL = (s.email || '').trim();
+  const SCHED = (s.schedule || '').trim();
+  const ADDRESS = (s.address || '').trim();
+  const norm = t => String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+  const BOT_RULES = [
+    { k: ['livrare', 'transport', 'curier', 'expedi', 'livrati'], a: `Livrare GRATUITĂ pentru comenzi de peste 2.000 lei. Sub această valoare, costul transportului se comunică ulterior de un consultant ExpoTigla. Detalii: [Livrare](livrare.html).` },
+    { k: ['plata', 'plat', 'achit', 'avans', 'transfer', 'card', 'ramburs'], a: `Plata se efectuează cu un avans de minimum 40% din valoarea comenzii, diferența conform înțelegerii stabilite la confirmare.` },
+    { k: ['oferta', 'pret', 'cost', 'cat costa', 'deviz', 'cotatie', 'estimare'], a: `Pentru o ofertă personalizată, completează formularul de [Cerere ofertă](contact.html)${PHONE ? ` sau sună-ne la ${PHONE}` : ''}. Îți răspundem în maximum 24 de ore.` },
+    { k: ['montaj', 'montare', 'instalare', 'instalati', 'echipa', 'manopera'], a: `Da, oferim montaj profesionist cu echipe specializate. Detalii pe pagina [Montaj](servicii.html) sau cere o [ofertă cu montaj](contact.html).` },
+    { k: ['consultanta', 'sfat', 'recomand', 'ce imi trebuie', 'ce mi trebuie', 'calcul', 'necesar', 'nu stiu ce'], a: `Te ajutăm gratuit cu recomandarea potrivită și cu calculul necesarului pentru acoperișul tău. Scrie-ne pe [Contact](contact.html)${PHONE ? ` sau sună la ${PHONE}` : ''}.` },
+    { k: ['garantie'], a: `Produsele beneficiază de garanție de la producător. Pentru garanția exactă a unui produs, scrie-ne pe [Contact](contact.html)${PHONE ? ` sau sună la ${PHONE}` : ''}.` },
+    { k: ['retur', 'returnare', 'renunt'], a: `Condițiile de retur le găsești în [Termeni și condiții](termeni.html). Pentru situații punctuale, contactează-ne și te ajutăm.` },
+    { k: ['tigla', 'tabla', 'panou', 'sandwich', 'pluvial', 'jgheab', 'burlan', 'folie', 'membrana', 'accesorii', 'suruburi', 'ce vindeti', 'catalog', 'produs', 'materiale'], a: `Avem 9 categorii de produse pentru acoperiș: țiglă metalică, tablă fălțuită, panouri sandwich, sisteme pluviale, borduri, ventilații, folii & membrane, șuruburi și accesorii. Vezi tot [catalogul](produse.html).` },
+    { k: ['program', 'orar', 'deschis', 'ore', 'cand sunteti', 'cand lucrati'], a: SCHED ? `Programul nostru: ${SCHED}.` : `Scrie-ne oricând prin formularul de [Contact](contact.html) — revenim în cel mai scurt timp.` },
+    { k: ['contact', 'telefon', 'suna', 'email', 'mail', 'adresa', 'unde sunteti', 'unde va gasesc', 'sediu'], a: `Ne poți contacta${PHONE ? ` la telefon ${PHONE}` : ''}${EMAIL ? `, pe email ${EMAIL}` : ''} sau prin [formularul de contact](contact.html).${ADDRESS ? ` Adresă: ${ADDRESS}.` : ''}` },
+    { k: ['salut', 'buna', 'hey', 'hello', 'noroc', 'ziua'], a: `Salut! 👋 Te pot ajuta cu informații despre produse, montaj, livrare, plată sau o ofertă. Alege un subiect de mai jos sau scrie întrebarea ta.` },
+    { k: ['multumesc', 'mersi', 'ms', 'merci'], a: `Cu plăcere! Dacă mai ai întrebări, sunt aici. 🙂` },
+  ];
+  const BOT_FALLBACK = `Pot răspunde despre produse, montaj, livrare, plată și oferte. Pentru întrebări specifice, scrie-ne pe [Contact](contact.html)${PHONE ? ` sau sună la ${PHONE}` : ''} — te ajutăm rapid.`;
+  function botAnswer(text) {
+    const t = norm(text);
+    for (const r of BOT_RULES) { if (r.k.some(k => t.includes(norm(k)))) return r.a; }
+    return BOT_FALLBACK;
+  }
+  function sendMessage(text) {
     text = (text || '').trim();
     if (!text || busy) return;
     removeChips();
     input.value = '';
     addBubble('user', text);
-    history.push({ role: 'user', content: text });
     busy = true;
     const typing = addBubble('bot', '…'); typing.classList.add('cbot-typing');
-    try {
-      const res = await fetch('/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ messages: history.slice(-12), session_id: cbotSid }) });
-      const data = await res.json().catch(() => ({}));
-      typing.remove();
-      if (res.ok && data.reply) {
-        renderBotReply(data.reply);
-        history.push({ role: 'assistant', content: data.reply });
-      } else {
-        addBubble('bot', data.error || 'Momentan nu pot răspunde. Încearcă din nou sau scrie-ne pe pagina de contact.');
-      }
-    } catch (err) {
-      typing.remove();
-      addBubble('bot', 'Eroare de conexiune. Încearcă din nou.');
-    }
-    busy = false; scroll();
+    const reply = botAnswer(text);
+    // Mică întârziere ca să pară natural („scrie...")
+    setTimeout(() => { typing.remove(); renderBotReply(reply); busy = false; scroll(); }, 350);
   }
   form.addEventListener('submit', (e) => { e.preventDefault(); sendMessage(input.value); });
 }
