@@ -254,7 +254,7 @@
       };
 
       btn.disabled = true; btn.textContent = 'Se trimite...';
-      let ref;
+      let ref, orderTotal = 0;
       try {
         const res = await fetch('/api/order', {
           method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
@@ -262,60 +262,21 @@
         const data = await res.json().catch(() => ({}));
         if (!res.ok || !data.ok) { showErr((data && data.error) || 'Nu am putut trimite comanda. Încearcă din nou sau sună-ne.'); return; }
         ref = data.ref;
+        orderTotal = data.total || 0;
       } catch (err) {
         showErr('Eroare de rețea. Verifică conexiunea și încearcă din nou.');
         return;
       }
       Cart.clear();
-      const loggedIn = (() => { try { return !!localStorage.getItem('et_customer_token'); } catch (e) { return false; } })();
-      const acctOffer = (loggedIn || !order.email) ? '' : `
-        <div id="acct-offer" style="max-width:520px;margin:28px auto 0;background:#fff;border:1px solid var(--line);border-radius:16px;padding:24px 26px;text-align:left;box-shadow:var(--shadow-sm)">
-          <h3 style="margin:0 0 6px;color:var(--navy)">Îți creezi un cont?</h3>
-          <p class="muted" style="margin:0 0 16px;font-size:.92rem">Setează o parolă și urmărești statusul comenzilor oricând. Restul datelor le avem deja din comandă.</p>
-          <div style="display:flex;gap:10px;flex-wrap:wrap">
-            <input type="password" id="acct-pass" placeholder="Alege o parolă (min. 6 caractere)" autocomplete="new-password" style="flex:1;min-width:200px;border:1px solid var(--line-strong);border-radius:10px;padding:12px 13px;font-family:inherit;font-size:.95rem">
-            <button type="button" class="btn btn-primary" id="acct-create">Creează cont</button>
-          </div>
-          <div id="acct-offer-msg" style="font-size:.86rem;margin-top:10px"></div>
-          <a href="cont.html" class="muted" style="font-size:.85rem">Am deja cont — autentifică-te →</a>
-        </div>`;
-      root.innerHTML = `<div class="cart-empty">
-        <svg viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M8 12l3 3 5-6"/></svg>
-        <h2>Mulțumim, ${order.prenume || ''}!</h2>
-        <p>Comanda <strong>${ref}</strong> a fost înregistrată. Te contactăm în cel mai scurt timp la <strong>${order.telefon || ''}</strong> pentru confirmare.</p>
-        <a href="produse.html" class="btn btn-primary btn-lg">Continuă cumpărăturile</a>
-      </div>${acctOffer}`;
-      if (!loggedIn && order.email) wireAccountOffer(order, ref);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-
-    function wireAccountOffer(order, ref) {
-      const btn = document.getElementById('acct-create');
-      if (!btn) return;
-      btn.addEventListener('click', async () => {
-        const pass = (document.getElementById('acct-pass').value || '');
-        const msg = document.getElementById('acct-offer-msg');
-        msg.style.color = '#c0392b';
-        if (pass.length < 6) { msg.textContent = 'Parola trebuie să aibă minim 6 caractere.'; return; }
-        btn.disabled = true; btn.textContent = 'Se creează…'; msg.textContent = '';
-        try {
-          const r = await fetch('/api/account/register', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name: ((order.prenume || '') + ' ' + (order.nume || '')).trim(), email: order.email, phone: order.telefon, password: pass }),
-          });
-          const d = await r.json().catch(() => ({}));
-          if (r.ok && d.token) {
-            try { localStorage.setItem('et_customer_token', d.token); } catch (e) {}
-            document.getElementById('acct-offer').innerHTML =
-              '<h3 style="margin:0 0 6px;color:var(--navy)">Cont creat! ✅</h3>' +
-              '<p class="muted" style="margin:0 0 16px;font-size:.92rem">Comanda <strong>' + ref + '</strong> apare deja în contul tău. Îți poți vedea statusul oricând.</p>' +
-              '<a href="cont.html" class="btn btn-primary">Vezi comenzile mele</a>';
-          } else {
-            btn.disabled = false; btn.textContent = 'Creează cont';
-            msg.innerHTML = (d.error || 'Nu am putut crea contul.') + (r.status === 409 ? ' <a href="cont.html">Autentifică-te</a>' : '');
-          }
-        } catch (e) { btn.disabled = false; btn.textContent = 'Creează cont'; msg.textContent = 'Eroare de conexiune.'; }
-      });
+      // Trimitem clientul pe pagina de confirmare. Datele sensibile trec prin sessionStorage
+      // (nu prin URL, pentru intimitate); în URL rămâne doar referința comenzii.
+      try {
+        sessionStorage.setItem('et_last_order', JSON.stringify({
+          ref: ref, prenume: order.prenume || '', nume: order.nume || '',
+          email: order.email || '', telefon: order.telefon || '', total: orderTotal,
+        }));
+      } catch (e) {}
+      window.location.href = 'comanda-plasata.html?ref=' + encodeURIComponent(ref);
     }
 
     document.addEventListener('cart:change', () => { if (!document.getElementById('checkout-form')) render(); });
