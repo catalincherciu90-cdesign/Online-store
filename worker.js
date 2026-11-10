@@ -1495,6 +1495,8 @@ async function api(request, env, url) {
 // alte valori din admin, acelea au prioritate.
 const DEFAULT_GA4_ID = 'G-NPMGJ30G7Y';
 const DEFAULT_META_PIXEL = '3403548513163074';
+// Verificarea domeniului în Meta (Business Manager) — simplu <meta> în <head>, fără tracking.
+const DEFAULT_FB_DOMAIN_VERIFY = 'cm8dqdc9ati5c0nbzw6ml8bydgduqv';
 let TRACK_CACHE = null, TRACK_TS = 0;
 async function getTracking(env) {
   const now = Date.now();
@@ -1520,6 +1522,8 @@ function buildHeadCode(t) {
     h += t.gsc_verification.includes('<meta') ? t.gsc_verification
       : `<meta name="google-site-verification" content="${esc(t.gsc_verification)}">`;
   }
+  // Verificarea domeniului în Meta (Facebook Business) — meta tag pe toate paginile.
+  if (DEFAULT_FB_DOMAIN_VERIFY) h += `<meta name="facebook-domain-verification" content="${esc(DEFAULT_FB_DOMAIN_VERIFY)}">`;
   // GDPR/ePrivacy cu Google Consent Mode v2: biblioteca Google (GA4/GTM) se încarcă pe
   // fiecare pagină (așa Google detectează tag-ul), dar consimțământul e "denied" implicit,
   // deci NU se setează cookie-uri de analiză/marketing până la accept. La accept, trecem pe
