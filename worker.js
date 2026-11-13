@@ -322,6 +322,20 @@ async function accountRegister(request, env) {
       });
     } catch (e) { /* ignoră erorile de email */ }
   }
+  // Notificare către admin: s-a creat un cont nou (best-effort)
+  const adminTo = env.ORDER_TO_EMAIL || env.QUOTE_TO_EMAIL;
+  if (env.RESEND_API_KEY && adminTo) {
+    try {
+      await sendEmail(env, {
+        to: [adminTo],
+        reply_to: email || undefined,
+        subject: `Cont client nou — ${name || email}`,
+        html: `<h2>Cont client nou pe ExpoTigla</h2>
+          <p>Un client tocmai și-a creat un cont:</p>
+          <p><b>Nume:</b> ${esc(name || '—')}<br><b>Email:</b> ${esc(email)}<br><b>Telefon:</b> ${esc(phone || '—')}</p>`,
+      });
+    } catch (e) { /* ignoră erorile de email */ }
+  }
   const token = await signJWT({ customer: email, name }, env.JWT_SECRET, CUSTOMER_TOKEN_TTL);
   return json({ ok: true, token, name, email });
 }
